@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+if [[ ! -f "baserom.jp.z64" ]]; then
+    echo "Error: baserom.jp.z64 not found in current directory"
+    exit 1
+fi
+
+expected_hash="4161b5c100ec82b0241b20ca8f81366e23564ccb"
+actual_hash=$(sha1sum baserom.jp.z64 | awk '{ print $1 }')
+
+if [[ "$actual_hash" != "$expected_hash" ]]; then
+    echo "Error: baserom.jp.z64 has an invalid SHA1 hash"
+    exit 1
+fi
+# the Python environment made by tools/setup.sh, if there is one
+PYTHON=python3
+if [[ -x .venv/bin/python3 ]]; then
+    PYTHON=.venv/bin/python3
+fi
+for f in tools/splat/split.py tools/asm-processor/build.py tools/ido_5.3/usr/lib/cc include/2.0I/ultra64.h; do
+    if [[ ! -e "$f" ]]; then
+        echo "Error: $f not found: run tools/setup.sh first"
+        exit 1
+    fi
+done
+"$PYTHON" tools/splat/split.py eltail.jp.yaml
+"$PYTHON" configure.py "$@"

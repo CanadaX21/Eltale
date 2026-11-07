@@ -1,0 +1,787 @@
+name: Eltail (Japanese)
+sha1: 4161b5c100ec82b0241b20ca8f81366e23564ccb
+options:
+  basename: eltail
+  target_path: baserom.jp.z64
+  base_path: .
+  compiler: IDO
+  find_file_boundaries: True
+  header_encoding: ASCII
+  platform: n64
+  # undefined_funcs_auto: True
+  # undefined_funcs_auto_path: undefined_funcs_auto.txt
+  # undefined_syms_auto: True
+  # undefined_syms_auto_path: undefined_syms_auto.txt
+  # symbol_addrs_path: symbol_addrs.txt
+  # asm_path: asm
+  # src_path: src
+  # build_path: build
+  # extensions_path: tools/splat_ext
+  # mips_abi_float_regs: o32
+  # section_order: [".text", ".data", ".rodata", ".bss"]
+  # auto_all_sections: [".data", ".rodata", ".bss"]
+  # libultra_symbols: True
+  # hardware_regs: True
+segments:
+  - name: header
+    type: header
+    start: 0x0
+  - name: boot
+    type: bin
+    start: 0x40
+  - name: main
+    type: code
+    start: 0x1000
+    vram: 0x80000400
+    bss_size: 0x261A0
+    subsegments:
+      - [0x1000, asm, entry]   # the hand-written boot entry, as the SDK's hand-written routines
+      - [0x1050, c, game/boot]
+      - [0x1130, c, sched/nnsched]
+      - [0x1870, c, game/main]
+      - [0x3B40, c, game/ending_text]
+      - [0x3F50, c, game/player]
+      - [0x9D50, c, game/enemy]
+      - [0xDAE0, c, game/boss]
+      - [0xE2A0, c, game/map]
+      - [0x113F0, c, game/collision]
+      - [0x12660, c, game/lighting]
+      - [0x13DE0, c, game/shadow]
+      - [0x140D0, c, game/map_objects]
+      - [0x147A0, c, game/spirits]
+      - [0x14D30, c, game/signs]
+      - [0x15150, c, game/camera]
+      - [0x17360, c, game/spells]
+      - [0x1B200, c, game/effects]
+      - [0x1E570, c, game/dust]
+      - [0x1FA00, c, game/encounter]
+      - [0x20DA0, c, game/model]
+      - [0x216E0, c, game/hud]
+      - [0x272D0, c, game/screen_fade]
+      - [0x27600, c, game/spline]
+      - [0x27A90, c, game/math]
+      - [0x28D20, c, game/dma]
+      - [0x29150, c, game/audio]
+      - [0x2B0F0, c, game/sound]
+      - [0x2B530, c, game/start_menu]
+      - [0x30600, c, game/save_menu]
+      - [0x337B0, c, game/message]
+      - [0x35EC0, c, game/text]
+      - [0x363B0, c, game/controller]
+      - [0x36DB0, c, game/overlay]
+      - [0x36E60, c, game/ending]
+      - [0x376C0, c, libultra/initialize]
+      - [0x37980, c, libultra/createthread]
+      - [0x37AD0, c, libultra/startthread]
+      - [0x37C20, c, libultra/pimgr]
+      - [0x37E10, c, libultra/createmesgqueue]
+      - [0x37E40, c, libultra/visetevent]
+      - [0x37EB0, asm]
+      - [0x37F20, asm]
+      - [0x38060, asm]
+      - [0x382C0, asm]
+      - [0x382F0, asm]
+      - [0x38680, asm]
+      - [0x38770, asm]
+      - [0x38A80, asm]
+      - [0x38AF0, asm]
+      - [0x38CB0, asm]
+      - [0x38D30, asm]
+      - [0x38DB0, asm]
+      - [0x38E40, asm]
+      - [0x39110, asm]
+      - [0x39330, asm]
+      - [0x39610, asm]
+      - [0x39820, asm]
+      - [0x39BA0, asm]
+      - [0x39E30, asm]
+      - [0x3A2C0, asm]
+      - [0x3A360, asm]
+      - [0x3A4D0, asm]
+      - [0x3A550, asm]
+      - [0x3A5D0, asm]
+      - [0x3A680, asm]
+      - [0x3A790, asm]
+      - [0x3A7D0, asm]
+      - [0x3A830, asm]
+      - [0x3A980, asm]
+      - [0x3AA80, asm]
+      - [0x3B170, asm]
+      - [0x3B220, asm]
+      - [0x3B230, asm]
+      - [0x3C460, asm]
+      - [0x3C6B0, asm]
+      - [0x3C6F0, asm]
+      - [0x3D1B0, asm]
+      - [0x3D1F0, asm]
+      - [0x3D280, asm]
+      - [0x3D2C0, asm]
+      - [0x3D9D0, asm]
+      - [0x3DA70, asm]
+      - [0x3DA90, asm]
+      - [0x3DB20, asm]
+      - [0x3DB80, asm]
+      - [0x3DBD0, asm]
+      - [0x3DC30, asm]
+      - [0x3DC90, asm]
+      - [0x3DCF0, asm]
+      - [0x3E4D0, asm]
+      - [0x3E510, asm]
+      - [0x3E850, asm]
+      - [0x3E8C0, asm]
+      - [0x3EAA0, asm]
+      - [0x3EC80, asm]
+      - [0x3EE20, asm]
+      - [0x3F2A0, asm]
+      - [0x3F510, asm]
+      - [0x3F960, asm]
+      - [0x3F9C0, asm]
+      - [0x3FB90, asm]
+      - [0x3FBB0, asm]
+      - [0x3FC60, asm]
+      - [0x405B0, asm]
+      - [0x40610, asm]
+      - [0x40670, asm]
+      - [0x40710, asm]
+      - [0x40750, asm]
+      - [0x40870, asm]
+      - [0x40C60, asm]
+      - [0x41230, asm]
+      - [0x41240, asm]
+      - [0x41250, asm]
+      - [0x415A0, asm]
+      - [0x41630, asm]
+      - [0x41660, asm]
+      - [0x41A70, asm]
+      - [0x41D70, asm]
+      - [0x41D80, asm]
+      - [0x41E40, asm]
+      - [0x42B00, asm]
+      - [0x42BA0, asm]
+      - [0x42D20, asm]
+      - [0x42D30, asm]
+      - [0x43810, asm]
+      - [0x438B0, asm]
+      - [0x44550, asm]
+      - [0x44850, asm]
+      - [0x454B0, asm]
+      - [0x455C0, asm]
+      - [0x46FF0, asm]
+      - [0x470C0, asm]
+      - [0x47210, asm]
+      - [0x472A0, asm]
+      - [0x474D0, asm]
+      - [0x47610, asm]
+      - [0x476A0, asm]
+      - [0x47740, asm]
+      - [0x477D0, asm]
+      - [0x47AC0, asm]
+      - [0x47B40, asm]
+      - [0x47D70, asm]
+      - [0x488F0, asm]
+      - [0x49340, asm]
+      - [0x494B0, asm]
+      - [0x49700, asm]
+      - [0x497E0, asm]
+      - [0x49990, asm]
+      - [0x499C0, asm]
+      - [0x49AD0, asm]
+      - [0x49B30, asm]
+      - [0x49E60, asm]
+      - [0x49EB0, asm]
+      - [0x49F00, asm]
+      - [0x49F10, asm]
+      - [0x4A1B0, asm]
+      - [0x4AC70, asm]
+      - [0x4ACF0, asm]
+      - [0x4AD10, asm]
+      - [0x4B960, asm]
+      - [0x4C3F0, asm]
+      - [0x4C580, bin]
+      - [0x4C7B0, bin]
+      - [0x4E8B0, .data, game/player]
+      - [0x4E910, bin]
+      - [0x4E970, .data, game/map]
+      - [0x4EAD0, bin]
+      - [0x4F250, .data, game/spirits]
+      - [0x4F2A0, bin]
+      - [0x4F770, .data, game/camera]
+      - [0x4F890, bin]
+      - [0x4FA20, .data, game/effects]
+      - [0x4FC60, bin]
+      - [0x50370, .data, game/math]
+      - [0x50380, .data, game/audio]
+      - [0x56740, bin]
+      - [0x621E0, .data, game/start_menu]
+      - [0x62250, bin]
+      - [0x6D900, .data, libultra/initialize]
+      - [0x6D920, bin]
+      - [0x6F870, .rodata, game/main]
+      - [0x6F8C0, .rodata, game/ending_text]
+      - [0x6F8D0, .rodata, game/player]
+      - [0x6FB30, .rodata, game/enemy]
+      - [0x6FC20, .rodata, game/boss]
+      - [0x6FC30, .rodata, game/map]
+      - [0x6FCA0, .rodata, game/collision]
+      - [0x6FCF0, .rodata, game/lighting]
+      - [0x6FD00, .rodata, game/map_objects]
+      - [0x6FD30, .rodata, game/spirits]
+      - [0x6FD50, .rodata, game/signs]
+      - [0x6FD60, .rodata, game/camera]
+      - [0x6FEF0, .rodata, game/spells]
+      - [0x6FF90, .rodata, game/effects]
+      - [0x70080, .rodata, game/dust]
+      - [0x700A0, .rodata, game/encounter]
+      - [0x70130, rodata]
+      - [0x701A0, .rodata, game/audio]
+      - [0x701D0, .rodata, game/start_menu]
+      - [0x70210, .rodata, game/save_menu]
+      - [0x70490, .rodata, game/message]
+      - [0x70510, .rodata, game/controller]
+      - [0x70540, .rodata, game/ending]
+      - { start: 0x70550, type: bss, vram: 0x8006F950, name: main_bss }
+      - { start: 0x70550, type: .bss, vram: 0x8007A170, name: game/main }
+      - { start: 0x70550, type: bss, vram: 0x8007A8C0, name: main_bss_8007A8C0 }
+      - { start: 0x70550, type: .bss, vram: 0x8007A8F0, name: game/player }
+      - { start: 0x70550, type: .bss, vram: 0x8007AB70, name: game/enemy }
+      - { start: 0x70550, type: .bss, vram: 0x8007C0B0, name: game/boss }
+      - { start: 0x70550, type: .bss, vram: 0x8007C280, name: game/map }
+      - { start: 0x70550, type: bss, vram: 0x800842F0, name: main_bss_800842F0 }
+      - { start: 0x70550, type: .bss, vram: 0x80084330, name: game/lighting }
+      - { start: 0x70550, type: bss, vram: 0x80084B80, name: main_bss_80084B80 }
+      - { start: 0x70550, type: .bss, vram: 0x800859B0, name: game/spirits }
+      - { start: 0x70550, type: bss, vram: 0x80085AB0, name: main_bss_80085AB0 }
+      - { start: 0x70550, type: .bss, vram: 0x80085B80, name: game/camera }
+      - { start: 0x70550, type: bss, vram: 0x80085F90, name: main_bss_80085F90 }
+      - { start: 0x70550, type: .bss, vram: 0x800863F0, name: game/effects }
+      - { start: 0x70550, type: bss, vram: 0x80087E30, name: main_bss_80087E30 }
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/audio }
+      - { start: 0x70550, type: .bss, vram: 0x8008FAF0, name: game/sound }
+      - { start: 0x70550, type: .bss, vram: 0x8008FB30, name: game/start_menu }
+      - { start: 0x70550, type: bss, vram: 0x8008FB70, name: main_bss_8008FB70 }
+  # the rest of the ROM, block by block
+  - name: main_tail  # 0x70550-0x71920: the main segment's tail: libultra .rodata
+    type: bin
+    start: 0x70550
+  - name: segment1_gfx  # 0x71920-0x753F0: segment 1: shared display lists + textures
+    type: bin
+    start: 0x71920
+  - name: gameplay_common  # 0x753F0-0x851F0: gameplay common block
+    type: bin
+    start: 0x753F0
+  - name: interiors_common  # 0x851F0-0xC8DE0: interiors common block
+    type: bin
+    start: 0x851F0
+  # region_blocks: 6 region blocks
+  - name: region_0  # 0xC8DE0-0xD0570
+    type: bin
+    start: 0xC8DE0
+  - name: region_1  # 0xD0570-0xD7FE0
+    type: bin
+    start: 0xD0570
+  - name: region_2  # 0xD7FE0-0xDD790
+    type: bin
+    start: 0xD7FE0
+  - name: region_3  # 0xDD790-0xE4D00
+    type: bin
+    start: 0xDD790
+  - name: region_4  # 0xE4D00-0xEBDE0
+    type: bin
+    start: 0xE4D00
+  - name: region_5  # 0xEBDE0-0xEF280
+    type: bin
+    start: 0xEBDE0
+  # maps_outdoor: map blobs 0-12
+  - name: map_00  # 0xEF280-0x133F20: Melrode
+    type: bin
+    start: 0xEF280
+  - name: map_01  # 0x133F20-0x165E70: Dondoran
+    type: bin
+    start: 0x133F20
+  - name: map_02  # 0x165E70-0x19C1D0: Holy Plains
+    type: bin
+    start: 0x165E70
+  - name: map_03  # 0x19C1D0-0x1CA8C0: Dondoran Flats
+    type: bin
+    start: 0x19C1D0
+  - name: map_04  # 0x1CA8C0-0x206D70: Larapool
+    type: bin
+    start: 0x1CA8C0
+  - name: map_05  # 0x206D70-0x251D30: West Carmagh
+    type: bin
+    start: 0x206D70
+  - name: map_06  # 0x251D30-0x2768B0: Normoon
+    type: bin
+    start: 0x251D30
+  - name: map_07  # 0x2768B0-0x2A8510: East Limelin
+    type: bin
+    start: 0x2768B0
+  - name: map_08  # 0x2A8510-0x2F63B0: Limelin
+    type: bin
+    start: 0x2A8510
+  - name: map_09  # 0x2F63B0-0x3457F0: Dindom Dries
+    type: bin
+    start: 0x2F63B0
+  - name: map_10  # 0x3457F0-0x36B800: Shamwood
+    type: bin
+    start: 0x3457F0
+  - name: map_11  # 0x36B800-0x3C9490: Baragoon Moor
+    type: bin
+    start: 0x36B800
+  - name: map_12  # 0x3C9490-0x3E1090: Isle of Skye (doors to the Pirate Ship 25/0 and Nepty's lair 35/0)
+    type: bin
+    start: 0x3C9490
+  - name: field_shared  # 0x3E1090-0x3F1BA0: shared field block for maps 3 / 5 / 7 / 12
+    type: bin
+    start: 0x3E1090
+  # maps_interiors_dungeons: map blobs 13-35
+  - name: map_13  # 0x3F1BA0-0x4374F0: Melrode Monastery
+    type: bin
+    start: 0x3F1BA0
+  - name: map_14  # 0x4374F0-0x487890: Dondoran Castle
+    type: bin
+    start: 0x4374F0
+  - name: map_15  # 0x487890-0x49D830: Melrode buildings
+    type: bin
+    start: 0x487890
+  - name: map_16  # 0x49D830-0x4CD2E0: Dondoran buildings
+    type: bin
+    start: 0x49D830
+  - name: map_17  # 0x4CD2E0-0x4E44A0: Larapool inn
+    type: bin
+    start: 0x4CD2E0
+  - name: map_18  # 0x4E44A0-0x4F4E70: West Carmagh buildings
+    type: bin
+    start: 0x4E44A0
+  - name: map_19  # 0x4F4E70-0x4FFFE0: rooms off Normoon (every exit leads to map 6)
+    type: bin
+    start: 0x4F4E70
+  - name: map_20  # 0x4FFFE0-0x51A6C0: Normoon buildings
+    type: bin
+    start: 0x4FFFE0
+  - name: map_21  # 0x51A6C0-0x56DB40: Limelin Castle
+    type: bin
+    start: 0x51A6C0
+  - name: map_22  # 0x56DB40-0x59D6F0: Limelin buildings
+    type: bin
+    start: 0x56DB40
+  - name: map_23  # 0x59D6F0-0x5D6D20: Highland buildings
+    type: bin
+    start: 0x59D6F0
+  - name: map_24  # 0x5D6D20-0x5E99E0: Shamwood (Lavaar)
+    type: bin
+    start: 0x5D6D20
+  - name: map_25  # 0x5E99E0-0x6078D0: ship and cabin rooms: the Pirate Ship at Skye (0-1, save point), rooms off Skye (2-4), the ferry cabins (5, 8, 9), two rooms off the World of Mammon (6-7)
+    type: bin
+    start: 0x5E99E0
+  - name: map_26  # 0x6078D0-0x665670: Blue Cave (room 2 Crystal Valley, 3-4 Epona's Cottage; 4 warps to the Pirate Ship 25/1)
+    type: bin
+    start: 0x6078D0
+  - name: map_27  # 0x665670-0x6C4880: Cull Hazard
+    type: bin
+    start: 0x665670
+  - name: map_28  # 0x6C4880-0x71EB90: Baragoon Tunnel (Shilf)
+    type: bin
+    start: 0x6C4880
+  - name: map_29  # 0x71EB90-0x7428A0: Boil Hole (Fargo)
+    type: bin
+    start: 0x71EB90
+  - name: map_30  # 0x7428A0-0x785690: Brannoch Castle
+    type: bin
+    start: 0x7428A0
+  - name: map_31  # 0x785690-0x7C1CE0: Connor Forest
+    type: bin
+    start: 0x785690
+  - name: map_32  # 0x7C1CE0-0x7EF930: Glencoe Forest
+    type: bin
+    start: 0x7C1CE0
+  - name: map_33  # 0x7EF930-0x8231F0: Windward Forest
+    type: bin
+    start: 0x7EF930
+  - name: map_34  # 0x8231F0-0x851240: World of Mammon
+    type: bin
+    start: 0x8231F0
+  - name: map_35  # 0x851240-0x869620: Nepty's lair (underwater; warp from the Isle of Skye)
+    type: bin
+    start: 0x851240
+  - name: brian_model  # 0x869620-0x86F6F0: Brian's model
+    type: bin
+    start: 0x869620
+  - name: npc_held_objects  # 0x86F6F0-0x871D10: NPC held objects
+    type: bin
+    start: 0x86F6F0
+  # npc_blobs: 7 NPC model blobs
+  - name: npc_blob_0  # 0x871D10-0x8D1960
+    type: bin
+    start: 0x871D10
+  - name: npc_blob_1  # 0x8D1960-0x926C00
+    type: bin
+    start: 0x8D1960
+  - name: npc_blob_2  # 0x926C00-0x95D4E0
+    type: bin
+    start: 0x926C00
+  - name: npc_blob_3  # 0x95D4E0-0x988580
+    type: bin
+    start: 0x95D4E0
+  - name: npc_blob_4  # 0x988580-0x9E16C0
+    type: bin
+    start: 0x988580
+  - name: npc_blob_5  # 0x9E16C0-0xA14190
+    type: bin
+    start: 0x9E16C0
+  - name: npc_blob_6  # 0xA14190-0xA70350
+    type: bin
+    start: 0xA14190
+  - name: shannon_actor  # 0xA70350-0xA77F10: Shannon's actor
+    type: bin
+    start: 0xA70350
+  # monster_sets: 6 monster sets
+  - name: monsters_0  # 0xA77F10-0xADA190: Quest's HolyPlains
+    type: bin
+    start: 0xA77F10
+  - name: monsters_1  # 0xADA190-0xB61550: Quest's Dondoran
+    type: bin
+    start: 0xADA190
+  - name: monsters_2  # 0xB61550-0xBBBF30: Quest's BlueCave
+    type: bin
+    start: 0xB61550
+  - name: monsters_3  # 0xBBBF30-0xC2F900: Quest's Desert
+    type: bin
+    start: 0xBBBF30
+  - name: monsters_4  # 0xC2F900-0xC99EF0: Quest's Normoon
+    type: bin
+    start: 0xC2F900
+  - name: monsters_5  # 0xC99EF0-0xCC2280: Quest's Mammon
+    type: bin
+    start: 0xC99EF0
+  # boss_files: 8 boss files
+  - name: boss_nepty  # 0xCC2280-0xCCD170: boss 2
+    type: bin
+    start: 0xCC2280
+  - name: boss_solvaring  # 0xCCD170-0xCD9440: boss 0
+    type: bin
+    start: 0xCCD170
+  - name: boss_zelse  # 0xCD9440-0xCE30F0: boss 1
+    type: bin
+    start: 0xCD9440
+  - name: boss_shilf  # 0xCE30F0-0xCF0720: boss 3
+    type: bin
+    start: 0xCE30F0
+  - name: boss_fargo  # 0xCF0720-0xCFE3C0: boss 4
+    type: bin
+    start: 0xCF0720
+  - name: boss_guilty  # 0xCFE3C0-0xD0DBF0: boss 5
+    type: bin
+    start: 0xCFE3C0
+  - name: boss_mammon  # 0xD0DBF0-0xD21500: boss 7
+    type: bin
+    start: 0xD0DBF0
+  - name: boss_beigis  # 0xD21500-0xD2E2F0: boss 6
+    type: bin
+    start: 0xD21500
+  - name: dialogue_bank  # 0xD2E2F0-0xD384B0: dialogue + sign bank
+    type: bin
+    start: 0xD2E2F0
+  - name: item_icon_palettes  # 0xD384B0-0xD388B0: item icon palettes
+    type: bin
+    start: 0xD384B0
+  # item_icons: 32 item icon slots
+  - name: item_icon_00  # 0xD388B0-0xD389B0: Spirit Light
+    type: bin
+    start: 0xD388B0
+  - name: item_icon_01  # 0xD389B0-0xD38AB0: Fresh Bread
+    type: bin
+    start: 0xD389B0
+  - name: item_icon_02  # 0xD38AB0-0xD38BB0: Honey Bread
+    type: bin
+    start: 0xD38AB0
+  - name: item_icon_03  # 0xD38BB0-0xD38CB0: Healing Potion
+    type: bin
+    start: 0xD38BB0
+  - name: item_icon_04  # 0xD38CB0-0xD38DB0: Dragon's Potion
+    type: bin
+    start: 0xD38CB0
+  - name: item_icon_05  # 0xD38DB0-0xD38EB0: Dew Drop
+    type: bin
+    start: 0xD38DB0
+  - name: item_icon_06  # 0xD38EB0-0xD38FB0: Mint Leaves
+    type: bin
+    start: 0xD38EB0
+  - name: item_icon_07  # 0xD38FB0-0xD390B0: Hero's Drink
+    type: bin
+    start: 0xD38FB0
+  - name: item_icon_08  # 0xD390B0-0xD391B0: Silent Flute
+    type: bin
+    start: 0xD390B0
+  - name: item_icon_09  # 0xD391B0-0xD392B0: Celine's Bell
+    type: bin
+    start: 0xD391B0
+  - name: item_icon_10  # 0xD392B0-0xD393B0: Replica
+    type: bin
+    start: 0xD392B0
+  - name: item_icon_11  # 0xD393B0-0xD394B0: Giant's Shoes
+    type: bin
+    start: 0xD393B0
+  - name: item_icon_12  # 0xD394B0-0xD395B0: Silver Amulet
+    type: bin
+    start: 0xD394B0
+  - name: item_icon_13  # 0xD395B0-0xD396B0: Golden Amulet
+    type: bin
+    start: 0xD395B0
+  - name: item_icon_14  # 0xD396B0-0xD397B0: White Wings
+    type: bin
+    start: 0xD396B0
+  - name: item_icon_15  # 0xD397B0-0xD398B0: Yellow Wings
+    type: bin
+    start: 0xD397B0
+  - name: item_icon_16  # 0xD398B0-0xD399B0: Blue Wings
+    type: bin
+    start: 0xD398B0
+  - name: item_icon_17  # 0xD399B0-0xD39AB0: Green Wings
+    type: bin
+    start: 0xD399B0
+  - name: item_icon_18  # 0xD39AB0-0xD39BB0: Red Wings
+    type: bin
+    start: 0xD39AB0
+  - name: item_icon_19  # 0xD39BB0-0xD39CB0: Black Wings
+    type: bin
+    start: 0xD39BB0
+  - name: item_icon_20  # 0xD39CB0-0xD39DB0: Earth Orb
+    type: bin
+    start: 0xD39CB0
+  - name: item_icon_21  # 0xD39DB0-0xD39EB0: Wind Jade
+    type: bin
+    start: 0xD39DB0
+  - name: item_icon_22  # 0xD39EB0-0xD39FB0: Water Jewel
+    type: bin
+    start: 0xD39EB0
+  - name: item_icon_23  # 0xD39FB0-0xD3A0B0: Fire Ruby
+    type: bin
+    start: 0xD39FB0
+  - name: item_icon_24  # 0xD3A0B0-0xD3A1B0: Eletale Book
+    type: bin
+    start: 0xD3A0B0
+  - name: item_icon_25  # 0xD3A1B0-0xD3A2B0: Dark Gaol Key
+    type: bin
+    start: 0xD3A1B0
+  - name: item_icon_26  # 0xD3A2B0-0xD3A3B0: no item
+    type: bin
+    start: 0xD3A2B0
+  - name: item_icon_27  # 0xD3A3B0-0xD3A4B0: no item
+    type: bin
+    start: 0xD3A3B0
+  - name: item_icon_28  # 0xD3A4B0-0xD3A5B0: no item
+    type: bin
+    start: 0xD3A4B0
+  - name: item_icon_29  # 0xD3A5B0-0xD3A6B0: no item
+    type: bin
+    start: 0xD3A5B0
+  - name: item_icon_30  # 0xD3A6B0-0xD3A7B0: no item
+    type: bin
+    start: 0xD3A6B0
+  - name: item_icon_31  # 0xD3A7B0-0xD3A8B0: no item
+    type: bin
+    start: 0xD3A7B0
+  - name: text_palettes  # 0xD3A8B0-0xD3A930: text palettes
+    type: bin
+    start: 0xD3A8B0
+  - name: font_sheet  # 0xD3A930-0xD490C0: font sheet
+    type: bin
+    start: 0xD3A930
+  - name: spell_bank  # 0xD490C0-0xD74AC0: spell bank
+    type: bin
+    start: 0xD490C0
+  - name: cutscene_bank  # 0xD74AC0-0xD86170: cutscene bank
+    type: bin
+    start: 0xD74AC0
+  - name: sky_palettes  # 0xD86170-0xD86770: sky palettes
+    type: bin
+    start: 0xD86170
+  - name: rotating_palette  # 0xD86770-0xD86970: the rotating palette
+    type: bin
+    start: 0xD86770
+  # sky_records: 8 sky records: 0x800 B of palettes
+  - name: sky_0  # 0xD86970-0xD8B170
+    type: bin
+    start: 0xD86970
+  - name: sky_1  # 0xD8B170-0xD8F970
+    type: bin
+    start: 0xD8B170
+  - name: sky_2  # 0xD8F970-0xD92D70
+    type: bin
+    start: 0xD8F970
+  - name: sky_3  # 0xD92D70-0xD96570
+    type: bin
+    start: 0xD92D70
+  - name: sky_4  # 0xD96570-0xD99D70
+    type: bin
+    start: 0xD96570
+  - name: sky_5  # 0xD99D70-0xD9D570
+    type: bin
+    start: 0xD99D70
+  - name: sky_6  # 0xD9D570-0xDA0D70
+    type: bin
+    start: 0xD9D570
+  - name: sky_7  # 0xDA0D70-0xDA4570
+    type: bin
+    start: 0xDA0D70
+  - name: pak_menu_module  # 0xDA4570-0xDAB5F0: Controller Pak menu module
+    type: bin
+    start: 0xDA4570
+  - name: title_overlay  # 0xDAB5F0-0xDC62B0: title overlay
+    type: bin
+    start: 0xDAB5F0
+  - name: intro_overlay  # 0xDC62B0-0xE22690: intro overlay
+    type: bin
+    start: 0xDC62B0
+  - name: credits_overlay  # 0xE22690-0xE420D0: credits overlay
+    type: bin
+    start: 0xE22690
+  - name: event_blob_a  # 0xE420D0-0xE43780: event blob A
+    type: bin
+    start: 0xE420D0
+  - name: event_blob_b  # 0xE43780-0xE5BF60: event blob B
+    type: bin
+    start: 0xE43780
+  - name: instrument_ctl  # 0xE5BF60-0xE5ED70: instrument bank .ctl
+    type: bin
+    start: 0xE5BF60
+  - name: instrument_tbl  # 0xE5ED70-0xE98330: instrument bank .tbl
+    type: bin
+    start: 0xE5ED70
+  - name: sequence_bank  # 0xE98330-0xECB7B0: sequence bank
+    type: bin
+    start: 0xE98330
+  - name: sfx_ctl  # 0xECB7B0-0xECD470: sound-effect bank .ctl
+    type: bin
+    start: 0xECB7B0
+  - name: sfx_tbl  # 0xECD470-0xEF21A0: sound-effect bank .tbl
+    type: bin
+    start: 0xECD470
+  # brian_animations: Brian's 30 animations
+  - name: brian_anim_00  # 0xEF21A0-0xEF3770
+    type: bin
+    start: 0xEF21A0
+  - name: brian_anim_01  # 0xEF3770-0xEF5B10
+    type: bin
+    start: 0xEF3770
+  - name: brian_anim_02  # 0xEF5B10-0xEF7EB0
+    type: bin
+    start: 0xEF5B10
+  - name: brian_anim_03  # 0xEF7EB0-0xEFA2A0
+    type: bin
+    start: 0xEF7EB0
+  - name: brian_anim_04  # 0xEFA2A0-0xEFBD30
+    type: bin
+    start: 0xEFA2A0
+  - name: brian_anim_05  # 0xEFBD30-0xEFD390
+    type: bin
+    start: 0xEFBD30
+  - name: brian_anim_06  # 0xEFD390-0xEFF280
+    type: bin
+    start: 0xEFD390
+  - name: brian_anim_07  # 0xEFF280-0xF00D10
+    type: bin
+    start: 0xEFF280
+  - name: brian_anim_08  # 0xF00D10-0xF027A0
+    type: bin
+    start: 0xF00D10
+  - name: brian_anim_09  # 0xF027A0-0xF05F50
+    type: bin
+    start: 0xF027A0
+  - name: brian_anim_10  # 0xF05F50-0xF07D40
+    type: bin
+    start: 0xF05F50
+  - name: brian_anim_11  # 0xF07D40-0xF09E30
+    type: bin
+    start: 0xF07D40
+  - name: brian_anim_15  # 0xF09E30-0xF0C1D0
+    type: bin
+    start: 0xF09E30
+  - name: brian_anim_16  # 0xF0C1D0-0xF10A60
+    type: bin
+    start: 0xF0C1D0
+  - name: brian_anim_17  # 0xF10A60-0xF11FF0
+    type: bin
+    start: 0xF10A60
+  - name: brian_anim_18  # 0xF11FF0-0xF143E0
+    type: bin
+    start: 0xF11FF0
+  - name: brian_anim_19  # 0xF143E0-0xF15770
+    type: bin
+    start: 0xF143E0
+  - name: brian_anim_20  # 0xF15770-0xF192D0
+    type: bin
+    start: 0xF15770
+  - name: brian_anim_21  # 0xF192D0-0xF1DBD0
+    type: bin
+    start: 0xF192D0
+  - name: brian_anim_22  # 0xF1DBD0-0xF1F660
+    type: bin
+    start: 0xF1DBD0
+  - name: brian_anim_23  # 0xF1F660-0xF210A0
+    type: bin
+    start: 0xF1F660
+  - name: brian_anim_24  # 0xF210A0-0xF22AE0
+    type: bin
+    start: 0xF210A0
+  - name: brian_anim_25  # 0xF22AE0-0xF23ED0
+    type: bin
+    start: 0xF22AE0
+  - name: brian_anim_26  # 0xF23ED0-0xF26B90
+    type: bin
+    start: 0xF23ED0
+  - name: brian_anim_27  # 0xF26B90-0xF28740
+    type: bin
+    start: 0xF26B90
+  - name: brian_anim_28  # 0xF28740-0xF2A2F0
+    type: bin
+    start: 0xF28740
+  - name: brian_anim_29  # 0xF2A2F0-0xF2C170
+    type: bin
+    start: 0xF2A2F0
+  - name: brian_anim_12  # 0xF2C170-0xF2D120
+    type: bin
+    start: 0xF2C170
+  - name: brian_anim_13  # 0xF2D120-0xF2E9F0
+    type: bin
+    start: 0xF2D120
+  - name: brian_anim_14  # 0xF2E9F0-0xF2FB70
+    type: bin
+    start: 0xF2E9F0
+  # map_images: the six region map images
+  - name: map_image_0  # 0xF2FB70-0xF3ADD0: Holy Plains
+    type: bin
+    start: 0xF2FB70
+  - name: map_image_1  # 0xF3ADD0-0xF46030: Dondoran Flats
+    type: bin
+    start: 0xF3ADD0
+  - name: map_image_2  # 0xF46030-0xF51290: West Carmagh
+    type: bin
+    start: 0xF46030
+  - name: map_image_3  # 0xF51290-0xF5C4F0: East Limelin
+    type: bin
+    start: 0xF51290
+  - name: map_image_4  # 0xF5C4F0-0xF67750: Dindom Dries
+    type: bin
+    start: 0xF5C4F0
+  - name: map_image_5  # 0xF67750-0xF729B0: Baragoon Moor
+    type: bin
+    start: 0xF67750
+  # map_cards_jp: the four Map page cards of the JP release
+  - name: map_card_jp_6  # 0xF729B0-0xF73050: word card
+    type: bin
+    start: 0xF729B0
+  - name: map_card_jp_7  # 0xF73050-0xF73730: word card
+    type: bin
+    start: 0xF73050
+  - name: map_card_jp_8  # 0xF73730-0xF73F90: word card
+    type: bin
+    start: 0xF73730
+  - name: map_card_jp_9  # 0xF73F90-0xF74890: word card
+    type: bin
+    start: 0xF73F90
+  - name: rom_padding  # 0xF74890-0x1000000: all 0xFF in the JP ROM
+    type: bin
+    start: 0xF74890
+  - [0x1000000]

@@ -1,0 +1,32 @@
+# Your ROM and everything the build makes from it: never commit these.
+*.z64
+*.n64
+*.v64
+baserom*
+asm/
+assets/
+build/
+expected/
+*.ok
+
+# Written by ./configure (splat and configure.py)
+build.ninja
+.ninja_log
+.ninja_deps
+objdiff.ninja
+objdiff.json
+eltail.ld
+undefined_funcs_auto.txt
+undefined_syms_auto.txt
+.splache
+
+# Downloaded by tools/setup.sh: proprietary, not part of this repository
+tools/ido_5.3/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Context files made for decompilation tools
+ctx.c

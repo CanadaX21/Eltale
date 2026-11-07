@@ -1,0 +1,46 @@
+D_8008A184 = 0x8008A184;
+
+
+
+gspF3DEXTextStart = 0x8004BA50; /* the graphics microcode text (the boot code ends at the same address) */
+gspF3DEXDataStart = 0x80070260; /* its data */
+gMapDustGfx = 0x80060A38; /* the map dust display list (gMapDustTemplate points at it) */
+gDustTexture2 = 0x80060AB8; /* the second dust texture (gDustEmitterTemplate) */
+gDustGfx2 = 0x80060BF8; /* its display list */
+gFlameFrameTables = 0x8005E5F0; /* the flame kinds' texture frame tables, [kind - 0x11] (DrawFlames; splat names the folded address D_8005E5AC) */
+gPuffTexture = 0x800C3650; /* effects block: puff texture (effects.c data points at it) */
+gPuffGfx = 0x800C3790; /* effects block: puff display list (effects.c data points at it) */
+gFadingPuffGfx = 0x800C37E0; /* effects block: fading puff display list (effects.c data points at it) */
+gSparkleTexture = 0x800C3830; /* effects block: sparkle texture (effects.c data points at it) */
+gSparkleGfx = 0x800C4070; /* effects block: sparkle display list (effects.c data points at it) */
+D_800C3A30 = 0x800C3A30; /* effects block: sparkle frame (effects.c data points at it) */
+D_800C3C30 = 0x800C3C30; /* effects block: sparkle frame (effects.c data points at it) */
+D_800C3E30 = 0x800C3E30; /* effects block: sparkle frame (effects.c data points at it) */
+gBurstTexture = 0x800C4128; /* effects block: burst texture (effects.c data points at it) */
+gBurstGfx = 0x800C4268; /* effects block: burst display list (effects.c data points at it) */
+D_800CAE68 = 0x800CAE68; /* effects block: gProjPalettes image (effects.c data points at it) */
+D_800CB068 = 0x800CB068; /* effects block: gProjPalettes image (effects.c data points at it) */
+D_800CB268 = 0x800CB268; /* effects block: gProjPalettes image (effects.c data points at it) */
+D_800CB468 = 0x800CB468; /* effects block: gProjPalettes image (effects.c data points at it) */
+D_8007A9E0 = gBrianStats + 0x10; /* inside gBrianStats (player.c) */
+D_8007AA04 = gBrianStats + 0x34; /* inside gBrianStats (player.c) */
+gSparkleDisplayList = 0x8004E208; /* the spirit sparkle display list (spirits.c's template points at it) */
+gMammonBaseData = 0x803AB9A8; /* Mammon's base data, boss 7 of gBossBaseData (= D_803AB9A8); SpawnBoss's second test names it so */
+gLavaPalette = 0x80124E00; /* a palette map 0x1D loads (UpdateLavaPalette) */
+D_80068EB0 = 0x80068EB0;
+D_8006A8F0 = 0x8006A8F0;
+D_8006B4D8 = 0x8006B4D8;
+D_80069A98 = 0x80069A98;
+D_800690B8 = 0x800690B8;
+D_800695A8 = 0x800695A8;
+D_8006AAF8 = 0x8006AAF8;
+D_8006AFE8 = 0x8006AFE8;
+D_8006B6E0 = 0x8006B6E0;
+D_8006BBD0 = 0x8006BBD0;
+D_80069CA0 = 0x80069CA0;
+D_8006A2C8 = 0x8006A2C8;
+D_80067090 = 0x80067090;
+D_80067898 = 0x80067898;
+D_800680A0 = 0x800680A0;
+D_800688A8 = 0x800688A8;
+osViModeTable = 0x8006CD50; /* the SDK's VI mode table, in the SDK data block (main.c) */
