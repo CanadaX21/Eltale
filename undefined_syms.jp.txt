@@ -26,6 +26,7 @@ D_8007A9E0 = gBrianStats + 0x10; /* inside gBrianStats (player.c) */
 D_8007AA04 = gBrianStats + 0x34; /* inside gBrianStats (player.c) */
 gSparkleDisplayList = 0x8004E208; /* the spirit sparkle display list (spirits.c's template points at it) */
 gMammonBaseData = 0x803AB9A8; /* Mammon's base data, boss 7 of gBossBaseData (= D_803AB9A8); SpawnBoss's second test names it so */
+gBossTalkRadii = 0x803AB490; /* the bosses' talk radii, [gBossLoaded - 1] (IsNearBoss; splat names the folded address D_803AB48C) */
 gLavaPalette = 0x80124E00; /* a palette map 0x1D loads (UpdateLavaPalette) */
 D_80068EB0 = 0x80068EB0;
 D_8006A8F0 = 0x8006A8F0;

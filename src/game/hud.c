@@ -118,7 +118,7 @@ void DrawHUD(mkst* dyn) {
     EnemyAction* enemy;
 
     gSPMatrix(gDisplayListHead++, &D_2000040, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
-    guTranslate(&dyn->unkC0[gMatrixHead], -160.0f, -120.0f, 0.0f);
+    guTranslate(&dyn->drawMtx[gMatrixHead], -160.0f, -120.0f, 0.0f);
     gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_MUL | G_MTX_PROJECTION);
     gMatrixHead++;
     gClipRight = 320;
@@ -152,7 +152,7 @@ void DrawHUD(mkst* dyn) {
     gScreenOffsetX = gScreenOffsetY = 0;
     if (gBattleState & 1) {
         Draw_MISS_Icon();
-        if (!(gBattleState & 2) && gPlayerState.staffTarget != 0 && !(gPlayerState.brian.transform.unk60 & 1) && !(gSpellLightState & 1)) {
+        if (!(gBattleState & 2) && gPlayerState.staffTarget != 0 && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && !(gSpellLightState & 1)) {
             DrawEnemyMarker(gPlayerState.staffTarget - 1);
         }
         if ((gPlayerState.flags & 0x20) && !(gGameState & 0x800)) {
@@ -168,7 +168,7 @@ void DrawHUD(mkst* dyn) {
             }
             enemy++;
         }
-    } else if (!(gGameState & 0x87) && !(gPlayerState.brian.transform.unk60 & 1)) {
+    } else if (!(gGameState & 0x87) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY)) {
         if (gTalkTarget != 0) {
             UpdateTalkMarker();
         } else if (gSpiritTarget != 0 && !(gGameState & 8)) {
@@ -274,7 +274,7 @@ void DrawSpiritCounters(mkst* dyn, BrianData1* stats) {
             colour = &gElementColours[i];
             posX = i * 22.0f + 5.0 + (f32)gScreenOffsetX;
             posY = gScreenOffsetY + 5.0f;
-            guTranslate(&dyn->unkC0[gMatrixHead], posX, posY, 0.0f);
+            guTranslate(&dyn->drawMtx[gMatrixHead], posX, posY, 0.0f);
             gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gMatrixHead++;
             gDPPipeSync(gDisplayListHead++);
@@ -287,7 +287,7 @@ void DrawSpiritCounters(mkst* dyn, BrianData1* stats) {
         colour = &gElementColours[gSpiritGainElement * 4];
         posX = gSpiritGainElement * 22.0f + 5.0 + (f32)gScreenOffsetX;
         posY = gScreenOffsetY + 5.0f;
-        guTranslate(&dyn->unkC0[gMatrixHead], posX, posY, 0.0f);
+        guTranslate(&dyn->drawMtx[gMatrixHead], posX, posY, 0.0f);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPPipeSync(gDisplayListHead++);
@@ -323,7 +323,7 @@ void DrawCompass(mkst* dyn) {
     mtx.mf[3][0] = gScreenOffsetX + 17;
     mtx.mf[3][1] = gScreenOffsetY + 17;
     mtx.mf[3][2] = 0.0f;
-    guMtxF2L(mtx.mf, &dyn->unkC0[gMatrixHead]);
+    guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
     gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
     gMatrixHead++;
     gSPDisplayList(gDisplayListHead++, gCompassDialGfx);
@@ -445,7 +445,7 @@ void DrawSpellCross(mkst* dyn, PlayerState* player) {
         colour = &gElementColours[player->path[player->spellPresses - 1] * 4];
         x = gSpellCrossFlashPos[player->path[player->spellPresses - 1] * 2] + 109.0f + gScreenOffsetX;
         y = gSpellCrossFlashPos[player->path[player->spellPresses - 1] * 2 + 1] + 13.0f + gScreenOffsetY;
-        guTranslate(&dyn->unkC0[gMatrixHead], x, y, 0.0f);
+        guTranslate(&dyn->drawMtx[gMatrixHead], x, y, 0.0f);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPPipeSync(gDisplayListHead++);
@@ -537,7 +537,7 @@ void SpiritGainWindow(mkst* dyn, PlayerState* player) {
         colour = &gElementColours[gSpiritGainElement * 4];
         posX = gSpiritGainFlashPos[gSpiritGainElement * 2] + gScreenOffsetX;
         posY = gSpiritGainFlashPos[gSpiritGainElement * 2 + 1] + gScreenOffsetY;
-        guTranslate(&dyn->unkC0[gMatrixHead], posX, posY, 0.0f);
+        guTranslate(&dyn->drawMtx[gMatrixHead], posX, posY, 0.0f);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPPipeSync(gDisplayListHead++);

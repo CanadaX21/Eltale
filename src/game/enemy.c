@@ -252,9 +252,9 @@ void SpawnNPCs(NpcRecord* rec, s32 count) {
             obj->spawnZ = rec->z;
             obj->spawnYaw = rec->yrot;
             if (rec->flags & 1) {
-                obj->transform.unk60 = 0x1000;
+                obj->transform.stateFlags = NPC_WIDE_TALK;
             } else {
-                obj->transform.unk60 = 0;
+                obj->transform.stateFlags = 0;
             }
             obj++;
             gNpcCount++;
@@ -604,7 +604,7 @@ void SpawnEnemy(s32 id, f32 x, f32 z, f32 yrot, MonsterBattleData* m, EnemyActio
     m->transform.base.monster = base;
     e->monBaseData = base;
     e->currHP = base->maxHP;
-    e->currMP = base->maxHP;
+    e->currMP = base->maxHP;   /* from maxHP: maxMP is 0 in every record */
     e->actionID = 0;
     e->flags = 0;
     e->movementBoundSize = (f32)(u32)base->agi * 0.2857 + 17.0;
@@ -632,7 +632,7 @@ void SpawnEnemy(s32 id, f32 x, f32 z, f32 yrot, MonsterBattleData* m, EnemyActio
     m->transform.shadowZRot = gEnemyFloorPoll.sn_z;
     m->transform.floorFlags = gEnemyFloorPoll.flags;
     m->transform.actorFlags = 1;
-    m->transform.unk60 = 0;
+    m->transform.stateFlags = 0;
     e->battleData.statsBuf.statusFlags = 0;
     e->battleData.statsBuf.hitMask = 0;
     e->battleData.statsBuf.atk = e->monBaseData->atk;
@@ -780,7 +780,7 @@ void EnemyKnockback(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
             ClearStatusEffects(actor);
             SpawnEnemyLandingBurst(actor);
             actor->transform.modelID = -1;
-            actor->transform.unk60 &= ~1;
+            actor->transform.stateFlags &= ~ACTOR_BUSY;
             gEnemyCount--;
             gBattleExp += actor->transform.base.monster->expValue;
             gBattleStone += actor->transform.base.monster->stone;
@@ -788,13 +788,13 @@ void EnemyKnockback(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
             return;
         }
         enemy->actionID = 0;
-        actor->transform.unk60 &= ~3;
+        actor->transform.stateFlags &= ~(ACTOR_BUSY | ACTOR_NO_MELEE_HIT);
     }
 }
 s32 EnemyAgilityCheck(MonsterBattleData* actor);
 u16 CalcEnemyMeleeDamage(EnemyAction* enemy);
 u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker);   /* hurt Brian; returns the damage */
-void StartBrianHit(void);            /* Brian dodges */
+void StartBrianDodge(void);            /* Brian dodges */
 void SpawnStaffHitEffect(f32 x, f32 y, f32 z);   /* hit sparks */
 void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage);   /* damage / heal digits */
 void UpdateStatusVisuals(MonsterBattleData* actor, u16 statusBits, u16 kind, s16 duration);
@@ -805,7 +805,7 @@ void EnemyFaceBrian(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
     enemy->actionTimer--;
     if (enemy->actionTimer == 0) {
         enemy->actionID = 0;
-        actor->transform.unk60 &= ~1;
+        actor->transform.stateFlags &= ~ACTOR_BUSY;
         EndBattleTurn(actor);
     }
 }
@@ -837,7 +837,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                 GetRootMotionOffset(actor, &gEnemyStep);
                 MoveEnemy(0, gEnemyStep.x, gEnemyStep.y, actor, enemy);
             }
-            if (!(gPlayerState.brian.transform.unk60 & 2) && !(enemy->flags & 8)) {
+            if (!(gPlayerState.brian.transform.stateFlags & ACTOR_NO_MELEE_HIT) && !(enemy->flags & 8)) {
                 dx = gPlayerState.brian.transform.pos.x - actor->transform.pos.x;
                 dz = gPlayerState.brian.transform.pos.z - actor->transform.pos.z;
                 dist = sqrtf(dx * dx + dz * dz) - gPlayerState.brian.transform.scale * gPlayerState.stats->radius;
@@ -866,7 +866,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                             UpdateStatusVisuals(actor, 2, 1, 30);
                         }
                     } else {
-                        StartBrianHit();
+                        StartBrianDodge();
                         gPlayerState.stats->agiXP++;
                     }
                     enemy->flags |= 8;
@@ -895,7 +895,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
             enemy->actionTimer--;
             if (enemy->actionTimer == 0) {
                 enemy->actionID = 0;
-                actor->transform.unk60 &= ~1;
+                actor->transform.stateFlags &= ~ACTOR_BUSY;
             }
             break;
     }
@@ -912,7 +912,7 @@ void EnemyCastAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* an
             }
             enemy->actionTimer--;
             if (enemy->actionTimer == 0) {
-                SpawnSpell(actor, enemy->defaultOption->action_tag & ~0x8000, 0, 0);
+                SpawnSpell(actor, enemy->defaultOption->action_tag & ~AI_ACTION_SPELL, 0, 0);
                 option = enemy->defaultOption;
                 enemy->phase++;
                 if (option->next_anim == -1) {
@@ -935,7 +935,7 @@ void EnemyCastAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* an
             enemy->actionTimer--;
             if (enemy->actionTimer == 0) {
                 enemy->actionID = 0;
-                actor->transform.unk60 &= ~1;
+                actor->transform.stateFlags &= ~ACTOR_BUSY;
                 enemy->pushX = 0.0f;
                 enemy->pushZ = 0.0f;
             }
@@ -1044,7 +1044,7 @@ void CommitEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor, EnemyAIOp
     s32 isSpell;
     s32 nextAnim;
 
-    isSpell = option->action_tag & 0x8000;
+    isSpell = option->action_tag & AI_ACTION_SPELL;
     if ((isSpell != 0) && (enemy->battleData.statsBuf.statusFlags & 0x40)) {
         enemy->actionID = 0;
         SetAnimation(&actor->transform, 0, 1, 0, 1, 1);
@@ -1061,7 +1061,7 @@ void CommitEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor, EnemyAIOp
     enemy->actionTimer = option->cast_delay;
     enemy->flags &= ~0x28;
 
-    actor->transform.unk60 = 1;
+    actor->transform.stateFlags = ACTOR_BUSY;
     actor->transform.yrot = Atan2(gPlayerState.brian.transform.pos.x - actor->transform.pos.x, gPlayerState.brian.transform.pos.z - actor->transform.pos.z);
 
     if (option->next_anim == -1) {
@@ -1163,8 +1163,8 @@ void GetRootMotionOffset(MonsterBattleData* actor, Coordinates2D* offset) {
     AnimEntry* anims = gMonsterAnims[actor->transform.modelID];
 
     ApplyRootMotion(&actor->transform, &anims[actor->transform.animID], actor->transform.scale);
-    offset->x = -actor->transform.unkDoor44;
-    offset->y = actor->transform.unkDoor4C;
+    offset->x = -actor->transform.rootMoveX;
+    offset->y = actor->transform.rootMoveZ;
     rotateCoordinatesByAngle(actor->transform.yrot, offset);
 }
 void PushEnemyOut(f32* dx, f32* dz, MonsterBattleData* m) {
@@ -1336,9 +1336,9 @@ u16 DamageEnemy(s32 index, u16 damage, u16 element, u16 flags, MonsterBattleData
             SpawnDamageNumber(actor, (flags & 0x4000) ? 0x8003 : 0, damage);
         }
         enemy->actionID = 2;
-        actor->transform.unk60 |= 1;
+        actor->transform.stateFlags |= ACTOR_BUSY;
         if (flags & 4) {
-            actor->transform.unk60 |= 2;
+            actor->transform.stateFlags |= ACTOR_NO_MELEE_HIT;
         }
         if (gBattleState & 0x100) {
             enemy->actionTimer = anims[enemy->monBaseData->hitAnim].frames;
@@ -1459,7 +1459,7 @@ void UpdateBossEffectScript(void) {
                 z += gEnemyStep.y * actor->transform.scale;
                 ((OddVector*)&gEnemyStep)->x = stage->size_x;
                 ((OddVector*)&gEnemyStep)->y = stage->size_y;
-                if (script->enemy->defaultOption->action_tag & 0x8000) {
+                if (script->enemy->defaultOption->action_tag & AI_ACTION_SPELL) {
                     element = script->enemy->defaultOption->action_tag >> 8;
                     index = script->enemy->defaultOption->action_tag & 0xFF;
                     def = &gSpellDefs[element & 0xF][index];

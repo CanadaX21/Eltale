@@ -40,7 +40,8 @@ recomputes every figure in this table from your own build.
 A byte match proves that the original compiler turns this C into the original machine code. It does not prove that
 this is the text the original authors wrote: names, formatting and the choice between equivalent forms are
 reconstructions. [docs/METHODOLOGY.md](docs/METHODOLOGY.md) describes the matching standard, the documented exceptions
-and the limits.
+and the limits. [CHANGELOG.md](CHANGELOG.md) lists what changed since the first publication: names, types and data
+structures, with the compiled code unchanged.
 
 ## Building
 

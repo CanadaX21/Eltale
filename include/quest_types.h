@@ -106,24 +106,27 @@ typedef struct {
     u8 unk0[0x18];
 }AIScript;
 typedef struct {            /* one move an enemy's AI can pick (names from vbhayden's Quest 64 scratches) */
-    u16 action_tag;         /* 0x00: 0x8000 = a spell; low byte: a boss's special animation (StartBossEffectScript) */
+    u16 action_tag;         /* 0x00: AI_ACTION_SPELL, and below it the spell (element << 8 | index: gSpellDefs[element][index]);
+                               in a boss battle the low byte also names the boss effect script (StartBossEffectScript) */
     u16 move_flags;         /* 0x02: 2 = keeps moving while winding up, 0xA = while casting (EnemyCastAttack) */
     u16 cast_delay;         /* 0x04: frames before it acts */
     u16 hold;               /* 0x06: frames held after the cast when next_anim is set (EnemyCastAttack) */
     s16 anim;               /* 0x08 */
     s16 next_anim;          /* 0x0A: -1 = back to animation 0 */
     s16 recover_anim;       /* 0x0C: played after the hold (EnemyCastAttack) */
-    char unkE[2];
+    char unkE[2];           /* 0 in every option; never read */
     f32 max_range;          /* 0x10 */
     f32 hit_range;          /* 0x14: a melee hit's reach, times the attacker's scale (EnemyMeleeAttack) */
-} EnemyAIOption;            /* 0x18: MonsterBaseData.AIScript points at aiScriptNumber of these (PickEnemyAIOption) */
+} EnemyAIOption;            /* 0x18: MonsterBaseData.aiOptions points at aiScriptNumber of these (PickEnemyAIOption) */
+#define AI_ACTION_SPELL 0x8000  /* action_tag: the option casts the spell in the bits below */
 typedef struct {
      u16 monsterType; 
-     s16 monsterID;  /* loaded signed everywhere (SpawnEnemy, SpawnBoss, the battle card) */
-     u16 currHP;
+     s16 monsterID;  /* the record's own index in its table: the model (gMonsterAnims[]) and name (gEnemyNames[])
+                        index; loaded signed everywhere (SpawnEnemy, SpawnBoss, the battle card) */
+     u16 currHP;     /* equal to maxHP in every record */
      u16 maxHP;
-     u16 currMP;     /* 0x08 (was f32 unk8; the MP drain spell SpellEffect_DrainMP reads both as u16) */
-     u16 maxMP;      /* 0x0A */
+     u16 currMP;     /* 0x08: 0 in every record (the MP drain spell SpellEffect_DrainMP reads both as u16) */
+     u16 maxMP;      /* 0x0A: 0 in every record; SpawnEnemy and SpawnBoss start an enemy's MP from maxHP */
      u16 agi;
      u16 def;
      s32 expValue;
@@ -138,11 +141,11 @@ typedef struct {
      s16 hitAnim;           /* the animation it plays when hit (DamageEnemy) */
      u16 atk; 
      u16 aiScriptNumber;
-     u16 unk2E;
+     u16 unk2E;             /* 0 in every record; never read */
      EnemyAIOption* aiOptions;
      u8 itemDrop;
-     u8 unk35;
-     u16 unk36;
+     u8 unk35;              /* 0 in every record; never read */
+     u16 unk36;             /* 0 in every record; never read */
 } MonsterBaseData; 
 typedef struct {
      u16 unk0;
@@ -188,13 +191,14 @@ typedef struct {                /* an actor's place, motion, model and animation
      f32 shadowXRot;
      f32 shadowYRot;
      f32 shadowZRot;
-     f32 unkDoor38;         /* 0x38-0x40: the root part's key position this frame, times the scale (ApplyRootMotion) */
-     f32 unkDoor3C;
-     f32 unkDoor40;
-     f32 unkDoor44;         /* 0x44-0x4C: the root part's move since the last frame (ApplyRootMotion); a map object
-                               keeps its door point's x / z in 0x44 / 0x4C (FindMapObjectInFront) */
-     f32 unkDoor48;
-     f32 unkDoor4C;
+     f32 rootX;             /* 0x38: the root part's key position this frame, times the scale (ApplyRootMotion) */
+     f32 rootY;
+     f32 rootZ;
+     f32 rootMoveX;         /* 0x44: the root part's move since the last frame (ApplyRootMotion; GetRootMotionOffset
+                               turns it into the actor's step). A map object keeps its use point's x / z in
+                               rootMoveX / rootMoveZ instead (SpawnMapObjects; FindMapObjectInFront) */
+     f32 rootMoveY;
+     f32 rootMoveZ;
      s16 modelID;           /* 0x50 */
      s16 animID;
      u16 animFrame;
@@ -203,8 +207,8 @@ typedef struct {                /* an actor's place, motion, model and animation
      s16 afterAnim;          /* 0x5A: the animation to play when this one ends (SetAnimation) */
      u16 afterFramerate;     /* 0x5C: its framerate (AdvanceAnimation reads it unsigned) */
      u16 actorFlags;         /* 0x5E: 1 = an enemy (not Brian), 4 = the last boss */
-     u16 unk60;              /* 0x60: flags; 0x200 / 0x400 are set by SetAnimation / AdvanceAnimation and steer
-                                ApplyRootMotion */
+     u16 stateFlags;         /* 0x60: the actor's state bits (ACTOR_, ANIM_ and NPC_, below); a map object keeps its
+                                opening countdown here instead (MAPOBJ_OPENING) */
      u16 floorFlags;         /* 0x62: the floor poll's flags (Brian, enemies; bits 6-8 = the floor kind); a map object
                                 keeps its opened-flag id here (IsMapObjectOpened) */
      union {
@@ -214,6 +218,15 @@ typedef struct {                /* an actor's place, motion, model and animation
                                 defence, exp, radius, height, modelScale), and code that runs for any actor reads
                                 that part through base.monster */
 } ActorTransform;           /* 0x68 */
+/* ActorTransform.stateFlags */
+#define ACTOR_BUSY          0x0001  /* in an action: input, the battle turn and the Start menu wait for its end */
+#define ACTOR_NO_MELEE_HIT  0x0002  /* a melee attack can't land (EnemyMeleeAttack): a dodge, or a hit with damage
+                                       flag 4 (DamageBrian, DamageEnemy) */
+#define ANIM_LOOPED         0x0200  /* the animation wrapped round this frame (AdvanceAnimation; ApplyRootMotion) */
+#define ANIM_CHANGED        0x0400  /* a new animation started this frame (SetAnimation, AdvanceAnimation) */
+#define NPC_WIDE_TALK       0x1000  /* an NPC Brian can talk to from 25 units, not 15 (its record's flag bit 0) */
+#define MAPOBJ_OPENING      0x8000  /* a map object opening: the low bits count its frames down (OpenMapObject,
+                                       DrawMapObjects) */
 typedef struct unk_D_80086DC0_s
 {
     s32 mode;                       /* 0x00: the camera mode (a setup's type; 4 = spell, 5 = transition) */
@@ -1199,7 +1212,7 @@ typedef struct unkStruct {
 /* 33D0.c */
 typedef struct {
      u8 unk_000[0x56];
-     s16 unk_056;           /* frames Brian stays hurt (StartBrianHit) */
+     s16 unk_056;           /* frames Brian stays hurt (StartBrianDodge) */
      u8 unk_058[0xA];
      s16 unk_062;           /* frames of state 5, Brian hit by an enemy (DamageBrian) */
      u8 unk_064[0x76];
@@ -1254,7 +1267,7 @@ typedef struct {
     u16 submap;               /* the submap it appears in */
     u16 talkType;               /* its kind? 6: after talking to it Brian is sent to map gCurrentMap/C0 (BrianState_TalkEnd) */
     u8 kind;
-    u8 flags;                /* bit 0: transform.unk60 |= 0x1000 at spawn; bit 1: doesn't turn to face Brian */
+    u8 flags;                /* bit 0: transform.stateFlags = NPC_WIDE_TALK at spawn; bit 1: doesn't turn to face Brian */
     u16 talkParam;               /* kind 5: a flag (IsStoryFlagSet); kind 2: the low byte is an item (StartNPCTalk) */
     u16 message;               /* the text when talked to (StartNPCText) */
     u16 altMessage;               /* the other text: item already taken / flag set (StartNPCTalk) */
@@ -1351,7 +1364,7 @@ typedef struct {
     u8* fileEnd;
     AnimEntry** anims;
     MonsterBaseData* baseStats; 
-    void* namePtr;
+    u8** namePtr;           /* the set's enemy names, by monsterID (LoadMonsterSet makes it gEnemyNames) */
 }MonsterSet; 
 /* 97B0.c */
 typedef struct {
@@ -1372,13 +1385,13 @@ typedef struct {
 typedef struct {
      u16 bossMap;
      u16 bossSubmap;
-     u16 bossNumber;
-     u16 unk6; 
-     void* modelVram;
+     u16 bossNumber;         /* its boss file (gBossFiles[]) */
+     u16 unk6;               /* 0 in every placement */
+     AnimEntry* anims;       /* the boss model's animation table, the same as its gBossAnimTables entry; no code reads it */
      f32 x;
-     f32 y;
      f32 z;
-}BossData;
+     f32 yrot;               /* the boss's facing (SpawnBoss's yrot) */
+}BossPlacement;                   /* 0x18: one boss placement (gBossPlacements[8], LoadMapBoss) */
 /* C120.c */
 typedef struct {
     s32 fileStart;
@@ -1532,11 +1545,13 @@ typedef struct {
 }unk803a9190s;
 /* shadow.c */
 typedef struct {
-    Mtx unk0[3];
-    Mtx unkC0[1];
+    Mtx list[3];        /* the frame's matrices from the start, the draw functions' mtxList: [0] the projection and
+                           [2] the view (UpdateCamera), [1] the HUD's orthographic projection (InitRoomCamera) */
+    Mtx drawMtx[1];     /* list[3] on: one matrix per draw, gMatrixHead counts them (segment 2 + 3 + n); the code
+                           indexes past this member's end, into the rest of FrameDynamic */
 } mkst;
 typedef struct {
-    mkst mtx;                      /* the frame's matrices (the draw functions index mtx.unkC0[] past its end) */
+    mkst mtx;                      /* the frame's matrices */
     char unk100[0x8940];
     LookAt lookat;                 /* 0x8A40: the camera's look-at (UpdateCamera) */
     char unk8A60[0x10];
@@ -1844,8 +1859,8 @@ typedef struct {
     f32 x;                          /* 0x00 */
     f32 z;
     f32 yrot;
-    f32 unkC;                       /* -> transform.unkDoor44 */
-    f32 unk10;                      /* -> transform.unkDoor4C */
+    f32 unkC;                       /* -> transform.rootMoveX */
+    f32 unk10;                      /* -> transform.rootMoveZ */
     f32 unk14;                      /* -> transform.yspeed */
     f32 unk18;                      /* -> transform.xspeed */
     f32 unk1C;                      /* -> transform.zspeed */

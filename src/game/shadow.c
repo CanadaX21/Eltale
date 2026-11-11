@@ -45,7 +45,7 @@ void DrawShadows(mkst* dyn) {
         mtx.mf[3][1] = shadow->unk4;
         mtx.mf[3][2] = shadow->unk8;
         ScaleMatrix(&mtx, shadow->unk18, shadow->unk18, shadow->unk18);
-        guMtxF2L(mtx.mf, &dyn->unkC0[gMatrixHead]);
+        guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gSPVertex(gDisplayListHead++, D_1000230, 4, 0);

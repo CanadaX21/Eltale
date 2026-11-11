@@ -89,7 +89,7 @@ void DrawDust(mkst* dyn) {
             ScaleMatrix(&mtx, d->scaleX, d->scaleY, 1.0f);
         }
         if (gMatrixHead < 486) {
-            guMtxF2L(mtx.mf, &dyn->unkC0[gMatrixHead]);
+            guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
             gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gMatrixHead++;
             gSPDisplayList(gDisplayListHead++, d->dustDL);

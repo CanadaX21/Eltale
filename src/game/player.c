@@ -134,7 +134,7 @@ void InitBrian(void) {
     state->brian.transform.base.player = &gBrianStats;
     state->brian.stats = &gPlayerState.brian.statsBuf;
     state->brian.transform.actorFlags = 0;
-    state->brian.transform.unk60 = 0;
+    state->brian.transform.stateFlags = 0;
     gArrivalFlags = 0x108;
     gSavedMap = 0xD;
     gSavedSubmap = 0x11;
@@ -180,7 +180,7 @@ void SpawnBrian(void) {
     if (gArrivalFlags & 8) {
         state->state = 3;
         state->timer = 15;
-        brian->unk60 = 1;
+        brian->stateFlags = ACTOR_BUSY;
     } else {
         switch ((gArrivalFlags >> 8) & 7) {
             case 1:
@@ -192,7 +192,7 @@ void SpawnBrian(void) {
                 rotateCoordinatesByAngle(brian->yrot, &gBrianMovement);
                 state->stepX = gBrianMovement.x;
                 state->stepZ = gBrianMovement.y;
-                brian->unk60 = 1;
+                brian->stateFlags = ACTOR_BUSY;
                 PlaySound(5, 0x21, 0xFF);
                 PlaySound(0xF, 0x21, 0xFF);
                 break;
@@ -217,7 +217,7 @@ void SpawnBrian(void) {
                 rotateCoordinatesByAngle(-door->angle * 0.017453292519943295, &gBrianMovement);
                 brian->pos.x = door->x - gBrianMovement.x * brian->scale;
                 brian->pos.z = door->z + gBrianMovement.y * brian->scale;
-                brian->unk60 = 1;
+                brian->stateFlags = ACTOR_BUSY;
                 LoadBrianAnimation(brian);
                 ApplyRootMotion(brian, &anims[brian->animID], brian->scale);
                 StartDoorAnimation(1, brian->animFrame, gArrivalFlags, door);
@@ -231,7 +231,7 @@ void SpawnBrian(void) {
                 rotateCoordinatesByAngle(brian->yrot, &gBrianMovement);
                 state->stepX = gBrianMovement.x;
                 state->stepZ = gBrianMovement.y;
-                brian->unk60 = 1;
+                brian->stateFlags = ACTOR_BUSY;
                 LoadBrianAnimation(brian);
                 ApplyRootMotion(brian, &anims[brian->animID], brian->scale);
                 StartDoorAnimation(1, brian->animFrame, gArrivalFlags, door);   /* BUG: door unset on this path */
@@ -335,10 +335,10 @@ void UpdateBrian(void) {
     gBrianMoveX = gBrianMoveZ = 0.0f;
     if (!(gGameState & 0x87)) {
         if (gBattleState & 1) {
-            if (!(gBattleState & 2) && !(brian->unk60 & 1)) {
+            if (!(gBattleState & 2) && !(brian->stateFlags & ACTOR_BUSY)) {
                 state->staffTarget = FindStaffTarget(brian);
             }
-        } else if (!(brian->unk60 & 1)) {
+        } else if (!(brian->stateFlags & ACTOR_BUSY)) {
             gTalkTarget = FindTalkTarget(state, brian);
             if (gTalkTarget == 0) {
                 gSpiritTarget = CheckSpiritPickup(brian);
@@ -361,7 +361,7 @@ void UpdateBrian(void) {
     }
     if (!(gGameState & 0xF)) {
         if (gButtonsPressed & (A_BUTTON | Z_TRIG)) {
-            if ((gBattleState & 1) && !(brian->unk60 & 1)) {
+            if ((gBattleState & 1) && !(brian->stateFlags & ACTOR_BUSY)) {
                 if (!(gBattleState & 6) && AnySpellActive() == 0) {
                     if (state->staffTarget != 0) {
                         StartBrianStaffSwing(state, brian, anims);
@@ -371,7 +371,7 @@ void UpdateBrian(void) {
                         EndBattleTurn(&state->brian);
                     }
                 }
-            } else if (!(brian->unk60 & 1)) {
+            } else if (!(brian->stateFlags & ACTOR_BUSY)) {
                 if (gTalkTarget != 0) {
                     gTalkTarget--;
                     state->state = 7;
@@ -405,7 +405,7 @@ void UpdateBrian(void) {
                 } else if (gSignTarget != NULL) {
                     LoadSignText((SignRef*)gSignTarget);   /* SignRef: LoadSignText's type for this record */
                     state->state = 0x11;
-                    brian->unk60 |= 1;
+                    brian->stateFlags |= ACTOR_BUSY;
                     brian->xrot = brian->zrot = brian->xspeed = brian->zspeed = 0.0f;
                     if (gSignTarget->npc->flags & 2) {
                         state->timer = 0xF;
@@ -420,7 +420,7 @@ void UpdateBrian(void) {
                     state->state = 3;
                     state->timer = 0xF;
                     brian->xrot = brian->zrot = brian->xspeed = brian->zspeed = 0.0f;
-                    brian->unk60 |= 1;
+                    brian->stateFlags |= ACTOR_BUSY;
                     SetAnimation(brian, 0x1B, 1, gBrianIdleAnim, 1, 1);
                 }
             }
@@ -429,7 +429,7 @@ void UpdateBrian(void) {
                 gGameState ^= 1;
                 StartScreenFade(6, 2, gFadeRampBlack16);
                 PlaySound(0, 1, 0xFF);
-                brian->unk60 |= 1;
+                brian->stateFlags |= ACTOR_BUSY;
             }
             if (!(gGameState & 1) && !(state->brian.stats->statusFlags & 0x40) && BrianSpellInput(state)) {
                 BrianStartCast(state, brian, anims);
@@ -443,7 +443,7 @@ void UpdateBrian(void) {
         gGameState ^= 1;
         StartScreenFade(6, 4, gFadeRampBlack16[5]);
         PlaySound(0, 2, 0xFF);
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
     }
     if (gBattleState & 8) {
         gBattleState &= ~8;
@@ -456,7 +456,7 @@ void UpdateBrian(void) {
         state->brian.statsBuf.statusFlags = 0;
         state->state = 0xF;
         state->timer = anims[16].frames;
-        brian->unk60 |= 1;
+        brian->stateFlags |= ACTOR_BUSY;
         brian->xrot = brian->zrot = brian->xspeed = brian->zspeed = 0.0f;
         SetAnimation(brian, 0x10, 1, gBrianIdleAnim, 1, 1);
     } else if (gBattleState & 0x10) {
@@ -548,7 +548,7 @@ void SetupBrianForBattle(void) {
     state->staffTarget = 0;
     state->savedYRot = state->brian.transform.yrot;
     state->flags &= ~0x20;
-    state->brian.transform.unk60 |= 1;
+    state->brian.transform.stateFlags |= ACTOR_BUSY;
     if (gBrianIdleAnim != 0x19) {
         gBrianIdleAnim = 0x11;
     }
@@ -651,7 +651,7 @@ void BrianState_Wait(ActorTransform* brian, PlayerState* state, AnimEntry* anims
     state->timer--;
     if (state->timer == 0) {
         state->state = 0;
-        brian->unk60 &= ~3;
+        brian->stateFlags &= ~(ACTOR_BUSY | ACTOR_NO_MELEE_HIT);
     }
 }
 void BrianState_Slide(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
@@ -663,7 +663,7 @@ void BrianState_Slide(ActorTransform* brian, PlayerState* state, AnimEntry* anim
         state->state = 0;
         brian->zspeed = 0.0f;
         brian->xspeed = 0.0f;
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
     }
 }
 extern s32 gModeCountdown;
@@ -707,7 +707,7 @@ void BrianState_KnockedDown(ActorTransform* brian, PlayerState* state, AnimEntry
             return;
         }
         state->state = 0;
-        brian->unk60 &= ~3;
+        brian->stateFlags &= ~(ACTOR_BUSY | ACTOR_NO_MELEE_HIT);
     }
 }
 void BrianState_Defeated(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
@@ -732,7 +732,7 @@ void BrianState_TalkEnd(ActorTransform* brian, PlayerState* state, AnimEntry* an
     if (gMessageWindowsOpen == 0) {
         ResumeNpcAfterTalk(gTalkTarget);
         state->state = 0;
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
         gGameState &= ~2;
         if (gGameState & 0x10) {
             gGameState &= ~0x10;
@@ -744,7 +744,7 @@ void BrianState_TalkEnd(ActorTransform* brian, PlayerState* state, AnimEntry* an
                 gSavedSubmap = gCurrentSubmap;
                 state->state = 3;
                 state->timer = 0x41;
-                brian->unk60 |= 1;
+                brian->stateFlags |= ACTOR_BUSY;
                 StartMusicFadeOut(0x3C);
             }
         } else if (state->flags & 0x40) {
@@ -762,7 +762,7 @@ void BrianState_WalkIn(ActorTransform* brian, PlayerState* state, AnimEntry* ani
         state->state = 0;
         brian->zspeed = 0.0f;
         brian->xspeed = 0.0f;
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
     }
 }
 extern u8 gCritFade[];             /* the critical hit cue */
@@ -820,7 +820,7 @@ void BrianState_StaffSwing(MonsterBattleData* brian, PlayerState* state, AnimEnt
             state->state = 0x10;
             state->timer = 0x12;
             state->flags &= ~0x100;
-            brian->transform.unk60 |= 1;
+            brian->transform.stateFlags |= ACTOR_BUSY;
             SetAnimation(&brian->transform, 0xB, 1, gBrianIdleAnim, 1, 1);
             gCamera.timer = 0x23;
             return;
@@ -853,7 +853,7 @@ void BrianState_Cast(MonsterBattleData* brian, PlayerState* state, AnimEntry* an
         if (AnySpellActive() != 0) {
             state->timer = 8;
         } else {
-            brian->transform.unk60 &= ~1;
+            brian->transform.stateFlags &= ~ACTOR_BUSY;
             if (state->flags & 4) {
                 state->state = 3;
                 state->timer = anims[24].frames;
@@ -913,7 +913,7 @@ void BrianState_ThroughDoor(ActorTransform* brian, PlayerState* state, AnimEntry
     state->timer--;
     if (!state->timer) {
         state->state = 0;
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
         brian->yrot = state->endYaw;
     }
 }
@@ -937,7 +937,7 @@ void BrianState_PickUpItem(ActorTransform* brian, PlayerState* state, AnimEntry*
         }
     } else if (gMessageWindowsOpen == 0) {
         state->state = 0;
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
         gGameState &= ~2;
         gTalkTarget = 0;
     }
@@ -993,7 +993,7 @@ void BrianState_Escape(ActorTransform* brian, PlayerState* state, AnimEntry* ani
     state->timer--;
     if (state->timer == 0) {
         state->state = 0;
-        brian->unk60 &= ~2;
+        brian->stateFlags &= ~ACTOR_NO_MELEE_HIT;
         if (gFieldMode != 4) {
             FindMapBGM(gCurrentMap, gCurrentSubmap, 0x1E);
         }
@@ -1233,8 +1233,8 @@ void BrianState_Run(f32 x, f32 y, ActorTransform* brian, PlayerState* state) {
 void ApplyBrianMovement(ActorTransform* brian, AnimEntry* anims, Coordinates2D* offset) {
     LoadBrianAnimation(brian);
     ApplyRootMotion(brian, &anims[brian->animID], brian->scale);
-    offset->x = -brian->unkDoor44;
-    offset->y = brian->unkDoor4C;
+    offset->x = -brian->rootMoveX;
+    offset->y = brian->rootMoveZ;
     rotateCoordinatesByAngle(brian->yrot, offset);
 }
 void func_80006A50(void) {
@@ -1312,7 +1312,7 @@ s32 FindTalkTarget(PlayerState* state, ActorTransform* brian) {
             dy = npc->pos.y - brian->pos.y;
             dz = npc->pos.z - brian->pos.z;
             if (dy > -15.0 && dy < 15.0) {
-                if (dx * dx + dz * dz < ((npc->unk60 & 0x1000) ? 625.0f : 225.0f)) {
+                if (dx * dx + dz * dz < ((npc->stateFlags & NPC_WIDE_TALK) ? 625.0f : 225.0f)) {
                     gBrianMovement.x = dx;
                     gBrianMovement.y = dz;
                     rotateCoordinatesByAngle(brian->yrot, &gBrianMovement);
@@ -1457,7 +1457,7 @@ void StartBrianArrival(void) {
         state->state = 3;
         state->timer = 30;
         state->animCue = 0;
-        brian->transform.unk60 |= 1;
+        brian->transform.stateFlags |= ACTOR_BUSY;
         SetAnimation(&brian->transform, gBrianIdleAnim, 1, gBrianIdleAnim, 1, 1);
         gModeCountdown = 0x13;
         return;
@@ -1475,7 +1475,7 @@ void StartBrianArrival(void) {
             rotateCoordinatesByAngle(brian->transform.yrot, &gBrianMovement);
             state->stepX = gBrianMovement.x;
             state->stepZ = gBrianMovement.y;
-            brian->transform.unk60 |= 1;
+            brian->transform.stateFlags |= ACTOR_BUSY;
             PlaySound(5, 0x21, 0xFF);
             PlaySound(0xF, 0x21, 0xFF);
             gModeCountdown = 0x13;
@@ -1488,7 +1488,7 @@ void StartBrianArrival(void) {
             } else {
                 gModeCountdown = 50;
             }
-            brian->transform.unk60 |= 1;
+            brian->transform.stateFlags |= ACTOR_BUSY;
             break;
         case 4:
             door = &gMapModels[gPendingWarp.door];
@@ -1496,7 +1496,7 @@ void StartBrianArrival(void) {
             state->state = 3;
             state->timer = 30;
             state->animCue = 0;
-            brian->transform.unk60 |= 1;
+            brian->transform.stateFlags |= ACTOR_BUSY;
             SetAnimation(&brian->transform, gBrianIdleAnim, 1, gBrianIdleAnim, 1, 1);
             gModeCountdown = 0x19;
             break;
@@ -1560,7 +1560,7 @@ void BrianWalkThroughDoor(PlayerState* state, ActorTransform* brian) {
         brian->xrot = 0.0f;
         brian->zrot = 0.0f;
     }
-    brian->unk60 |= 1;
+    brian->stateFlags |= ACTOR_BUSY;
 }
 void StartBrianPickUp(PlayerState* state, ActorTransform* brian, AnimEntry* anims) {
     SetAnimation(brian, 0x1C, 1, 0x1D, 1, 1);
@@ -1568,14 +1568,14 @@ void StartBrianPickUp(PlayerState* state, ActorTransform* brian, AnimEntry* anim
     ApplyRootMotion(brian, &anims[brian->animID], brian->scale);
     state->state = 0xB;
     state->timer = 0x5A;
-    brian->unk60 |= 1;
+    brian->stateFlags |= ACTOR_BUSY;
 }
 void StartBrianUseItem(u8 itemID) {
     AnimEntry* anims = gBrianAnims[gPlayerState.brian.transform.modelID];
     gPlayerState.itemId = itemID;
     gPlayerState.state = 0xC;
     gPlayerState.timer = anims[23].frames;
-    gPlayerState.brian.transform.unk60 |= 1;
+    gPlayerState.brian.transform.stateFlags |= ACTOR_BUSY;
     SetAnimation(&gPlayerState.brian.transform, 0x17, 1, 0x16, 1, 1);
 }
 void LoadBrianAnimation(ActorTransform* brian) {
@@ -1656,7 +1656,7 @@ void StartBrianStaffSwing(PlayerState* state, ActorTransform* brian, AnimEntry* 
     state->state = 0xD;
     state->timer = 0x14;
     state->flags &= ~0x400;
-    brian->unk60 |= 1;
+    brian->stateFlags |= ACTOR_BUSY;
     SetAnimation(brian, 0xA, 1, gBrianIdleAnim, 1, 1);
     dx = gEnemies[state->staffTarget - 1].battleData.transform.pos.x - brian->pos.x;
     dz = gEnemies[state->staffTarget - 1].battleData.transform.pos.z - brian->pos.z;
@@ -1760,9 +1760,9 @@ u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker) {
         }
         state->state = 5;
         state->timer = anims[8].frames;
-        actor->transform.unk60 |= 1;
+        actor->transform.stateFlags |= ACTOR_BUSY;
         if (flags & 4) {
-            actor->transform.unk60 |= 2;
+            actor->transform.stateFlags |= ACTOR_NO_MELEE_HIT;
         }
         SetAnimation(&actor->transform, 8, 1, gBrianIdleAnim, 1, 1);
         if (power) {
@@ -1776,9 +1776,9 @@ u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker) {
 }
 
 void Setup_MISS_Icon(MonsterBattleData* actor);
-void StartBrianHit(void) {
-    /* Brian is hit (Quest twin func_80006F6C): unless he is in state 6 or out of HP, state 3 for the length of
-       his hit animation (entry 7's frames at +0x56), hit flags, the MISS / damage icon and sound 0x17 */
+void StartBrianDodge(void) {
+    /* An attack missed Brian (Quest twin func_80006F6C): unless he is in state 6 or out of HP, state 3 for the
+       length of his dodge animation (entry 7's frames at +0x56), busy and melee-proof, the MISS icon, sound 0x17 */
     PlayerState* state;
     MonsterBattleData* brian;
     AnimEntry* anims;
@@ -1789,7 +1789,7 @@ void StartBrianHit(void) {
         anims = gBrianAnims[brian->transform.modelID];
         state->state = 3;
         state->timer = anims[7].frames;
-        brian->transform.unk60 |= 3;
+        brian->transform.stateFlags |= ACTOR_BUSY | ACTOR_NO_MELEE_HIT;
         SetAnimation(&brian->transform, 7, 1, gBrianIdleAnim, 1, 1);
         Setup_MISS_Icon(brian);
         PlaySound(0, 0x17, 0xFF);
@@ -1798,7 +1798,7 @@ void StartBrianHit(void) {
 s32 CanBrianAct(PlayerState* state, ActorTransform* brian) {
     s32 ret = 0;
 
-    if (!(brian->unk60 & 1) && !(gGameState & 0x80) && !(gBattleState & 8)) {
+    if (!(brian->stateFlags & ACTOR_BUSY) && !(gGameState & 0x80) && !(gBattleState & 8)) {
         if (gBattleState & 1) {
             if (!(gBattleState & 0x202) && AnySpellActive() == 0 && gTurnDelay == 0) {
                 ret = 1;
@@ -1903,7 +1903,7 @@ void BrianStartCast(PlayerState* state, ActorTransform* brian, AnimEntry* anims)
 
     brian->xspeed = 0.0f;
     brian->zspeed = 0.0f;
-    brian->unk60 |= 1;
+    brian->stateFlags |= ACTOR_BUSY;
 
     SetAnimation(brian, anim, 1, nextAnim, 1, 1);
     SnapSpellCamera(0x2D, (MonsterBattleData*) brian);
@@ -2043,6 +2043,6 @@ void UpdateBrianGrowth(PlayerState* state, ActorTransform* brian) {
         PlaySound(0, 0x3B, 0xFF);
     }
     if (!(gGameState & 0xA)) {
-        brian->unk60 &= ~1;
+        brian->stateFlags &= ~ACTOR_BUSY;
     }
 }

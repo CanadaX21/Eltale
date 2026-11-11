@@ -100,7 +100,7 @@ void RollRandomEncounter(void) {
     EncounterCircle* circle;
     f32 angle;
 
-    if (!(gBattleState & 1) && !(gBattleState & 0x8000) && !(gPlayerState.brian.transform.unk60 & 1) && gBrianStepDistance != 0.0f) {
+    if (!(gBattleState & 1) && !(gBattleState & 0x8000) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && gBrianStepDistance != 0.0f) {
         gEncounterWalkDistance += gBrianStepDistance;
         if (gEncounterWalkDistance >= 50.0) {
             gEncounterChance += 50;
@@ -148,11 +148,11 @@ extern AnimEntry** gMonsterAnims;
 extern u8** gEnemyNames;
 extern s32 gBossLoaded;
 extern EnemyAction gBoss;
-extern void* gFieldMonsterAnims;
-extern void* gFieldEnemyNames;
+extern AnimEntry** gFieldMonsterAnims;  /* the field's gMonsterAnims, kept while a boss battle uses gBossAnimTables */
+extern u8** gFieldEnemyNames;           /* the field's gEnemyNames, kept while a boss battle uses gBossNames */
 extern s32 gBattleBoss;
 extern AnimEntry* gBossAnimTables[];
-extern u8 gBossNames[];
+extern u8* gBossNames[];                /* the bosses' names, by monsterID */
 void SpawnBoss(s32 arg0, f32 x, f32 z, f32 angle, EnemyAction* enemy);
 void StopBossEffectScript(void);
 void StartScriptedBattle(void) {
@@ -323,7 +323,7 @@ void StepBattleRound(void) {
         return;
     }
     actor = (gBattleState & 2) ? &gEnemies[gTurnOrder[gTurnIndex]].battleData : &gPlayerState.brian;
-    if (actor->transform.unk60 & 1) {
+    if (actor->transform.stateFlags & ACTOR_BUSY) {
         return;
     }
     done = FALSE;

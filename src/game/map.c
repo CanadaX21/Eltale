@@ -105,8 +105,8 @@ s32 gPropsNearCount;
 ModelTransform* gPropsNear[256];               /* the props near Brian (player.c, enemy.c) */
 s32 gSpinningPropsLast;
 s32 gSpinningPropsAdded;                /* entries this frame */
-u8 gSkyTexture[0x4000];                  /* the map's loaded data (LoadMap's 0x4000-byte DMA after the sky palettes);
-                                           spells.c, encounter.c and enemy.c read records inside it (D_8007C990, D_8007C998) */
+u8 gSkyTexture[0x4000];                  /* the sky's texture data: LoadMap reads 0x4000 bytes of the sky record into it,
+                                           after its 0x800 of palettes (gSkyPalettes); the sky's display lists use it */
 u16 gFadingPalette[256];                /* the palette being faded (lighting.c) */
 u16 gSkyPalettes[1024];                 /* the sky palettes, 256 colours each */
 u16 gSkyFadedPalette[512];              /* the faded sky palette (FadeSkyPalette output) */
@@ -461,7 +461,7 @@ void DrawMapFrame(mkst* arg0) {
                 angle += rec->yRotation;
             }
         }
-        guPosition(&arg0->unkC0[gMatrixHead], 0.0f, angle, 0.0f, t->model_scale, px, py, pz);
+        guPosition(&arg0->drawMtx[gMatrixHead], 0.0f, angle, 0.0f, t->model_scale, px, py, pz);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gSPDisplayList(gDisplayListHead++, gMapGeometry[t->index].dl);
@@ -470,7 +470,7 @@ void DrawMapFrame(mkst* arg0) {
     gDrawListPtrs = gLateDrawList;
     for (n = gLateDrawCount; n != 0; n--) {
         t = *gDrawListPtrs++;
-        guPosition(&arg0->unkC0[gMatrixHead], 0.0f, t->angle, 0.0f, t->model_scale, t->x, t->y, t->z);
+        guPosition(&arg0->drawMtx[gMatrixHead], 0.0f, t->angle, 0.0f, t->model_scale, t->x, t->y, t->z);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gSPDisplayList(gDisplayListHead++, gMapGeometry[t->index].dl);
@@ -550,7 +550,7 @@ void DrawMapBillboards(mkst* dyn) {
     for (; n != 0; n--) {
         t = *gBillboardPtr++;
         type = t->index;
-        guPosition(&dyn->unkC0[gMatrixHead], 0.0f, t->angle, 0.0f, t->model_scale, t->x, t->y, t->z);
+        guPosition(&dyn->drawMtx[gMatrixHead], 0.0f, t->angle, 0.0f, t->model_scale, t->x, t->y, t->z);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gSPDisplayList(gDisplayListHead++, gMapGeometry[type].dl);
@@ -568,7 +568,7 @@ void DrawMapBillboards(mkst* dyn) {
         angle = t->angle;
         type = t->index;
         kind = (t->flags & 0xFF) - 0x40;
-        guPosition(&dyn->unkC0[gMatrixHead], 0.0f, angle, 0.0f, t->model_scale, t->x, t->y, t->z);
+        guPosition(&dyn->drawMtx[gMatrixHead], 0.0f, angle, 0.0f, t->model_scale, t->x, t->y, t->z);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPLoadTextureTile(gDisplayListHead++, sTextures[kind], G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, sHeights[kind], 0, 0, 31,
@@ -827,7 +827,7 @@ void DrawMapProps(mkst* dyn, s32 count, s32 type, ModelTransform** props) {
                         gDPSetTextureFilter(gDisplayListHead++, G_TF_BILERP);
                     }
                     BuildActorMatrix(&mtx, 0.0f, gCamera.yaw, 0.0f, prop->model_scale, prop->x, prop->y, prop->z);
-                    guMtxF2L(mtx.mf, &dyn->unkC0[gMatrixHead]);
+                    guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
                     gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                     gMatrixHead++;
                     gSPDisplayList(gDisplayListHead++, model);
@@ -986,7 +986,7 @@ void DrawSpinningProps(mkst* dyn) {
         if (rec->active != 0) {
             prop = rec->prop;
             rec->spin -= 0.015707963267948967;
-            BuildActorMtx(&dyn->unkC0[gMatrixHead], 0.0f, rec->angle * 0.017453292519943295, rec->spin, prop->model_scale,
+            BuildActorMtx(&dyn->drawMtx[gMatrixHead], 0.0f, rec->angle * 0.017453292519943295, rec->spin, prop->model_scale,
                           prop->x, prop->y, prop->z);
             gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gMatrixHead++;
@@ -1017,7 +1017,7 @@ void DrawFlames(mkst* dyn, s32 count, s32 kind, ModelTransform** list) {
             gDPLoadTextureBlock(gDisplayListHead++, frames[(t->index >> 1) & 7], G_IM_FMT_CI, G_IM_SIZ_8b,
                                 gFlameTexWidths[kind - 0x11], 32, 0, G_TX_NOMIRROR | G_TX_WRAP, G_TX_NOMIRROR | G_TX_WRAP,
                                 G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
-            BuildActorMtx(&dyn->unkC0[gMatrixHead], 0.0f, gCamera.yaw, 0.0f, t->model_scale, t->x, t->y, t->z);
+            BuildActorMtx(&dyn->drawMtx[gMatrixHead], 0.0f, gCamera.yaw, 0.0f, t->model_scale, t->x, t->y, t->z);
             gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gMatrixHead++;
             gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, gFlameAlphas[t->index & 3]);

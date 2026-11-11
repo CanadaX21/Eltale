@@ -335,18 +335,18 @@ void BuildFrame(GfxFrame* frame) {
         UpdateFrameLights();
         if (gLightRecordFlags & 4) {
             StepLightAnim(gMapLightAnim);
-            DrawSky(dyn->mtx.unk0);
+            DrawSky(dyn->mtx.list);
         }
         StepLightAnim(gMapLightAnim);
         DrawMapFrame(&dyn->mtx);
         if (!(gGameState & 0x10000)) {
-            DrawBrian(dyn->mtx.unk0);
+            DrawBrian(dyn->mtx.list);
         }
-        DrawNPCs(dyn->mtx.unk0);
-        DrawMapObjects(dyn->mtx.unk0);
+        DrawNPCs(dyn->mtx.list);
+        DrawMapObjects(dyn->mtx.list);
         DrawMapBillboards(&dyn->mtx);
-        DrawEnemies(dyn->mtx.unk0);
-        DrawBoss(dyn->mtx.unk0);
+        DrawEnemies(dyn->mtx.list);
+        DrawBoss(dyn->mtx.list);
         UpdateSpiritSparkles();
         StepLightAnim(gActorLightAnim);
         DrawShadows(&dyn->mtx);
@@ -580,13 +580,13 @@ void FieldLoop(void) {
         BuildFrame(&gFrames[gCurrentFrame]);
         frame = &gFrames[gCurrentFrame];
         if (!(gGameState & 0x87)) {
-            if (!(gPlayerState.brian.transform.unk60 & 1) &&
+            if (!(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) &&
                 CheckDoorTriggers(gPlayerState.brian.transform.pos.x, gPlayerState.brian.transform.pos.z, gPlayerState.brian.transform.yrot) != 0) {
                 gGameState |= 0x80;
                 ClampCameraToTarget();
                 StartBrianArrival();
                 gTransitionStyle = 0;
-            } else if (!(gGameState & 0x1000) && !(gPlayerState.brian.transform.unk60 & 1) && (gButtonsPressed & START_BUTTON) &&
+            } else if (!(gGameState & 0x1000) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && (gButtonsPressed & START_BUTTON) &&
                        !(gBattleState & 1) && !(gButtonsHeld & Z_TRIG) && !(gGameState & 1)) {
                 gGameMode = MODE_PAUSED;
                 PlaySound(0, 1, 0xFF);

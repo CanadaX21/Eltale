@@ -32,7 +32,7 @@ void DrawScreenFade(mkst* arg0) {
     if (gScreenFadeFlags & 1) {
         gDPPipeSync(gDisplayListHead++);
         gSPMatrix(gDisplayListHead++, &D_2000000[1], G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
-        func_80038928(&arg0->unkC0[gMatrixHead]);
+        func_80038928(&arg0->drawMtx[gMatrixHead]);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPSetEnvColor(gDisplayListHead++, gFadeRampEntry->r, gFadeRampEntry->g, gFadeRampEntry->b, gFadeRampEntry->a);

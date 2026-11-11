@@ -70,12 +70,12 @@ void SpawnMapObjects(void) {
             obj->transform.yspeed = rec->unk14;
             obj->transform.xspeed = rec->unk18;
             obj->transform.zspeed = rec->unk1C;
-            obj->transform.unkDoor44 = rec->unkC;
-            obj->transform.unkDoor4C = rec->unk10;
+            obj->transform.rootMoveX = rec->unkC;
+            obj->transform.rootMoveZ = rec->unk10;
             obj->transform.scale = 0.07f;
             obj->transform.floorFlags = rec->flags;
             obj->transform.modelID = rec->unk21;
-            obj->transform.unk60 = 0;
+            obj->transform.stateFlags = 0;
             anim = IsMapObjectOpened(obj->transform.floorFlags) ? 3 : 0;
             SetAnimation(&obj->transform, anim, 1, anim, 1, 1);
         }
@@ -97,15 +97,15 @@ void DrawMapObjects(Mtx* mtxList) {
     i = gMapObjectCount;
     obj = gMapObjects;
     while (i != 0) {
-        timer = obj->transform.unk60;
-        if (obj->transform.unk60 & 0x8000) {
-            t = timer & ~0x8000;
+        timer = obj->transform.stateFlags;
+        if (obj->transform.stateFlags & MAPOBJ_OPENING) {
+            t = timer & ~MAPOBJ_OPENING;
             t--;
             if (t == 0) {
-                obj->transform.unk60 = 0;
+                obj->transform.stateFlags = 0;
                 SetAnimation(&obj->transform, 3, 1, 3, 1, 1);
             } else {
-                obj->transform.unk60 = t | 0x8000;
+                obj->transform.stateFlags = t | MAPOBJ_OPENING;
             }
         }
         DrawModel(0, &obj->transform, &gMapObjectAnims[obj->transform.animID], mtxList);
@@ -136,8 +136,8 @@ MapObject* FindMapObjectInFront(ActorTransform* brian) {
                     d += 3.141592653589793;
                 }
                 if (d < 0.7853981633974483 && d > -0.7853981633974483) {
-                    dx = brian->pos.x - obj->transform.unkDoor44;
-                    dz = brian->pos.z - obj->transform.unkDoor4C;
+                    dx = brian->pos.x - obj->transform.rootMoveX;
+                    dz = brian->pos.z - obj->transform.rootMoveZ;
                     if ((dx * dx) + (dz * dz) < 300.0f) {
                         gMapObjectOffset.x = dx;
                         gMapObjectOffset.y = dz;
@@ -168,7 +168,7 @@ MapObject* FindMapObjectInFront(ActorTransform* brian) {
 void SetMapObjectOpened(u16 id);
 void OpenMapObject(ActorTransform* obj) {
     SetMapObjectOpened(obj->floorFlags);
-    obj->unk60 = 0x805B;
+    obj->stateFlags = MAPOBJ_OPENING | 91;
     SetAnimation(obj, 1, 1, 2, 1, 1);
     PlaySound(0x1A, 8, 0xFF);
 }

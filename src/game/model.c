@@ -14,8 +14,8 @@ void SetAnimation(ActorTransform* actor, s32 nextAnim, s32 nextFramerate, s32 af
     if (nextAnim != -1) {
         if (nextAnim != actor->animID) {
             actor->animID = nextAnim;
-            actor->unk60 |= 0x400;
-            actor->unk60 &= ~0x200;
+            actor->stateFlags |= ANIM_CHANGED;
+            actor->stateFlags &= ~ANIM_LOOPED;
         }
         actor->animFramerate = nextFramerate;
         if (flags & 1) {
@@ -56,7 +56,7 @@ void ApplyRootMotion(ActorTransform* actor, AnimEntry* anim, f32 scale) {
         n = 0;
     }
     SampleSpline(part, &key, n);
-    if (actor->unk60 & 0x200) {
+    if (actor->stateFlags & ANIM_LOOPED) {
         rec = part->keys;
         n = part->frames;
         while (rec->frame != n) {
@@ -65,26 +65,26 @@ void ApplyRootMotion(ActorTransform* actor, AnimEntry* anim, f32 scale) {
         rx = rec->x;
         ry = rec->y;
         rz = rec->z;
-        actor->unkDoor44 = (key.x + rx) * scale - actor->unkDoor38;
-        actor->unkDoor48 = (key.y + ry) * scale - actor->unkDoor3C;
-        actor->unkDoor4C = (key.z + rz) * scale - actor->unkDoor40;
-        actor->unkDoor38 = key.x * scale;
-        actor->unkDoor3C = key.y * scale;
-        actor->unkDoor40 = key.z * scale;
-    } else if (actor->unk60 & 0x400) {
-        actor->unkDoor44 = 0.0f;
-        actor->unkDoor48 = 0.0f;
-        actor->unkDoor4C = 0.0f;
-        actor->unkDoor38 = key.x * scale;
-        actor->unkDoor3C = key.y * scale;
-        actor->unkDoor40 = key.z * scale;
+        actor->rootMoveX = (key.x + rx) * scale - actor->rootX;
+        actor->rootMoveY = (key.y + ry) * scale - actor->rootY;
+        actor->rootMoveZ = (key.z + rz) * scale - actor->rootZ;
+        actor->rootX = key.x * scale;
+        actor->rootY = key.y * scale;
+        actor->rootZ = key.z * scale;
+    } else if (actor->stateFlags & ANIM_CHANGED) {
+        actor->rootMoveX = 0.0f;
+        actor->rootMoveY = 0.0f;
+        actor->rootMoveZ = 0.0f;
+        actor->rootX = key.x * scale;
+        actor->rootY = key.y * scale;
+        actor->rootZ = key.z * scale;
     } else {
-        actor->unkDoor44 = key.x * scale - actor->unkDoor38;
-        actor->unkDoor48 = key.y * scale - actor->unkDoor3C;
-        actor->unkDoor4C = key.z * scale - actor->unkDoor40;
-        actor->unkDoor38 = key.x * scale;
-        actor->unkDoor3C = key.y * scale;
-        actor->unkDoor40 = key.z * scale;
+        actor->rootMoveX = key.x * scale - actor->rootX;
+        actor->rootMoveY = key.y * scale - actor->rootY;
+        actor->rootMoveZ = key.z * scale - actor->rootZ;
+        actor->rootX = key.x * scale;
+        actor->rootY = key.y * scale;
+        actor->rootZ = key.z * scale;
     }
 }
 void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, Mtx* mtxList) {
@@ -196,13 +196,13 @@ void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim) {
             model->animFrame = 0;
             model->totalAnimFrames = 0;
             model->animFramerate = model->afterFramerate;
-            model->unk60 |= 0x400;
+            model->stateFlags |= ANIM_CHANGED;
         } else {
             model->animFrame = frame - anim->frames;
-            model->unk60 |= 0x200;
+            model->stateFlags |= ANIM_LOOPED;
         }
     } else {
-        model->unk60 &= ~0x600;
+        model->stateFlags &= ~(ANIM_LOOPED | ANIM_CHANGED);
     }
     model->totalAnimFrames++;
 }

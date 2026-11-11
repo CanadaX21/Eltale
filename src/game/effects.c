@@ -752,7 +752,7 @@ void DrawStaffHitEffects(mkst* dyn) {
                 mtx.mf[3][0] = slot->x;
                 mtx.mf[3][1] = slot->y;
                 mtx.mf[3][2] = slot->z;
-                guMtxF2L(&mtx, &dyn->unkC0[gMatrixHead]);
+                guMtxF2L(&mtx, &dyn->drawMtx[gMatrixHead]);
                 gSPMatrix(gDisplayListHead++, D_2000000 + 3 + gMatrixHead++, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 gDPSetEnvColor(gDisplayListHead++, 0xFF, 0xFF, 0xFF, alpha);
                 gSPDisplayList(gDisplayListHead++, gStaffHitGfx);
@@ -982,7 +982,7 @@ void DrawGroundRings(mkst* dyn) {
                     mtx.mf[3][0] = ax;
                     mtx.mf[3][1] = ay;
                     mtx.mf[3][2] = az;
-                    guMtxF2L(mtx.mf, &dyn->unkC0[gMatrixHead]);
+                    guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
                     gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                     gMatrixHead++;
                     gSPDisplayList(gDisplayListHead++, gRingSegmentGfx);
@@ -1081,7 +1081,7 @@ void DrawProjectiles(mkst* dyn) {
             } else {
                 gSPClearGeometryMode(gDisplayListHead++, G_CULL_BACK);
             }
-            DrawProjectileModel(slot, dyn->unk0);
+            DrawProjectileModel(slot, dyn->list);
             slot->frame++;
             slot->timer--;
             if (slot->timer == 0 && (slot->flags & 1)) {
@@ -1264,7 +1264,7 @@ void DrawGlows(mkst* dyn) {
                 z = gBrianFloorPos.z;
                 BuildLookAtMatrix(&mtx, x, y, z, gCamera.cam_x, gCamera.cam_y, gCamera.cam_z);
                 ScaleMatrix(&mtx, gPlayerState.brian.transform.scale, gPlayerState.brian.transform.scale, gPlayerState.brian.transform.scale);
-                guMtxF2L(&mtx, &dyn->unkC0[gMatrixHead]);
+                guMtxF2L(&mtx, &dyn->drawMtx[gMatrixHead]);
                 gSPMatrix(gDisplayListHead++, D_2000000 + 3 + gMatrixHead++, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
                 c = gGlowColours + i;
                 gDPSetEnvColor(gDisplayListHead++, (*c)[0], (*c)[1], (*c)[2], alpha);

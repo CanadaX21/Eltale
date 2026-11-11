@@ -113,8 +113,8 @@ void InitRoomCamera(void) {
 
     cam = &gCamera;
     brian = &gPlayerState.brian.transform;
-    guOrtho(&gFrames[0].dyn.mtx.unk0[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
-    guOrtho(&gFrames[1].dyn.mtx.unk0[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
+    guOrtho(&gFrames[0].dyn.mtx.list[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
+    guOrtho(&gFrames[1].dyn.mtx.list[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
     if (gPendingWarp.entrance < 0) {
         cam->unk84 = 3.1415927f;
     }
@@ -231,10 +231,10 @@ void UpdateCamera(FrameDynamic* dyn) {
     look = &dyn->lookat;
     guLookAtReflectF(gViewMtxF.mf, look, cam->cam_x, cam->cam_y + gCameraOffset.y, cam->cam_z, cam->focus_x, cam->focus_y,
                   cam->focus_z, 0.0f, 1.0f, 0.0f);
-    guMtxF2L(gProjectionMtxF.mf, &dyn->mtx.unk0[0]);
-    guMtxF2L(gViewMtxF.mf, &dyn->mtx.unk0[2]);
+    guMtxF2L(gProjectionMtxF.mf, &dyn->mtx.list[0]);
+    guMtxF2L(gViewMtxF.mf, &dyn->mtx.list[2]);
     if (gCameraShakeTimer != 0) {
-        guTranslate(&dyn->mtx.unkC0[gMatrixHead], gCameraShakeX, gCameraShakeY, 0.0f);
+        guTranslate(&dyn->mtx.drawMtx[gMatrixHead], gCameraShakeX, gCameraShakeY, 0.0f);
         gCameraShakeTimer--;
         gCameraShakeX *= -0.8;
         gCameraShakeY *= -0.8;

@@ -121,7 +121,7 @@ void RollStatusDuration(SpellSlot* spell, MonsterBattleData* hit, s32 effect);
 void SpawnSpellTrail(SpellSlot* spell, MonsterBattleData* target);
 void StartSpellHitVisual(SpellSlot* spell, MonsterBattleData* hit);
 void ShowEnemyMiss(MonsterBattleData* actor);
-void StartBrianHit();   /* RULE-EXCEPTION R25: unprototyped; this caller passes the caster (a0), the definition in player.c takes nothing */
+void StartBrianDodge();   /* RULE-EXCEPTION R25: unprototyped; this caller passes the caster, the definition in player.c takes nothing */
 void SetLightAnimLights(s32 n, s32 mode, s32 count, s32* keys);
 f32 Atan2(f32 dx, f32 dz);
 void QueueSparkleBurst(s32 kind, s32 frames, f32 x, f32 y, f32 z, f32 size);
@@ -483,7 +483,7 @@ void UpdateSpells(void) {
                             } else if (actor_hit->transform.actorFlags & 1) {
                                 ShowEnemyMiss(actor_hit);
                             } else {
-                                StartBrianHit(caster);
+                                StartBrianDodge(caster);
                             }
                         } else {
                             gSpellEffectHandlers[spell_obj->def->spell_type](spell_obj, actor_hit);
@@ -698,7 +698,7 @@ void SpellMovement1(SpellSlot* spell) {
         }
         if (spell->def->target_type == 0) {
             proj_target = spell->target;
-            if (!(proj_target->transform.unk60 & 1)) {
+            if (!(proj_target->transform.stateFlags & ACTOR_BUSY)) {
                 spell->x = proj_target->transform.pos.x;
                 spell->z = proj_target->transform.pos.z;
             }
@@ -956,7 +956,7 @@ void SpellEffect_InstantKill(SpellSlot* spell, MonsterBattleData* hit) {
         if (!(gBattleState & 0x100)) {
             ClearStatusEffects(hit);
             hit->transform.modelID = -1;
-            hit->transform.unk60 &= ~1;
+            hit->transform.stateFlags &= ~ACTOR_BUSY;
             gEnemyCount--;
             gPlayerState.stats->MPXP++;
             return;
@@ -1097,7 +1097,7 @@ void ApplyStatusSlot3(s32 level, MonsterBattleData* target) {
     if (!(gBattleState & 0x100)) {
         data = target->stats;
         data->statusFlags |= 8;
-        target->transform.unk60 |= 1;
+        target->transform.stateFlags |= ACTOR_BUSY;
         UpdateStatusVisuals(target, 8, (u16) (level - 1), -1);
         return;
     }
@@ -1474,7 +1474,7 @@ void CountDownStatuses(MonsterBattleData* actor) {
                 } else if (bit & 0x400) {
                     actor->stats->def = actor->transform.base.monster->def;
                 } else if (bit & 8) {
-                    actor->transform.unk60 &= ~1;
+                    actor->transform.stateFlags &= ~ACTOR_BUSY;
                 }
             }
         }

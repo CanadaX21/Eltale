@@ -1,8 +1,8 @@
 #include "common.h"
 extern PlayerState gPlayerState;
 float sqrtf(float value);
-extern f32 gBossTalkRadii[];
-extern BossData gBossPlacements[];
+extern f32 gBossTalkRadii[];  /* per boss placement, how near Brian must be for its scene; gBossLoaded is the placement + 1 */
+extern BossPlacement gBossPlacements[];
 extern s32 gCurrentMap;
 extern s32 gCurrentSubmap;
 u32 IsStoryFlagSet(u32 flag);
@@ -43,7 +43,7 @@ void LoadMapBoss(void)
   s32 fileEnd;
   int i;
   s32 fileSize;
-  BossData *data;
+  BossPlacement *data;
   gBossLoaded = 0;
     
   for (i = 0; i < 8; i++)
@@ -57,7 +57,7 @@ void LoadMapBoss(void)
         fileEnd = gBossFiles[data->bossNumber].fileEnd;
         fileSize = fileEnd - fileStart;
         dma_write((u8*)fileStart, &gBossVAddr, fileSize); //load boss file from RAM
-        SpawnBoss(i, data->x, data->y, data->z, &gBoss);
+        SpawnBoss(i, data->x, data->z, data->yrot, &gBoss);
         gBossLoaded = i + 1;
       }
       return;
@@ -98,7 +98,7 @@ s32 IsNearBoss(void) {
     if (gBossLoaded != 0) {
         dx = gBoss.battleData.transform.pos.x - gPlayerState.brian.transform.pos.x;
         dz = gBoss.battleData.transform.pos.z - gPlayerState.brian.transform.pos.z;
-        if (sqrtf(dx * dx + dz * dz) < gBossTalkRadii[gBossLoaded]) {
+        if (sqrtf(dx * dx + dz * dz) < gBossTalkRadii[gBossLoaded - 1]) {
             boss = gBossLoaded;
         }
     }
@@ -123,7 +123,7 @@ void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     m->stats = &e->battleData.statsBuf;
     e->monBaseData = base;
     e->currHP = base->maxHP;
-    e->currMP = base->maxHP;
+    e->currMP = base->maxHP;   /* from maxHP: maxMP is 0 in every record */
     e->actionID = 0;
     e->flags = 0;
     e->movementBoundSize = sqrtf((u32)base->agi) * 3.846 + 17.838;
@@ -145,7 +145,7 @@ void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     m->transform.shadowYRot = gBossFloorPoll.sn_y;
     m->transform.shadowZRot = gBossFloorPoll.sn_z;
     m->transform.actorFlags = 1;
-    m->transform.unk60 = 0;
+    m->transform.stateFlags = 0;
     if (base == &gMammonBaseData) {
         m->transform.actorFlags |= 4;
     }
