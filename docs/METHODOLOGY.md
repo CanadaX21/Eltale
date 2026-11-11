@@ -28,7 +28,7 @@ markers to read them all:
 | Marker in `src/` | What it marks |
 |---|---|
 | `MATCHING_HACK_IDO` | four unused locals (`pad`) that fill a stack slot the original's frame has (`AfterCreditsLoop`, `PollModelInstance`, `ScanControllerPak`, `UpdateStatusVisuals`). They are compiled only when the macro is defined, as it is by default in `include/common.h`; building with `-DNO_MATCHING_HACKS` leaves them out, and the ROM then differs, as expected. |
-| `RULE-EXCEPTION` | mostly one local that holds two values in turn where the original's frame shows a single variable (rule R30); a few calls through unprototyped declarations whose callers pass other arguments than the definition takes (R25: two comments cite it as R5); two casts for signedness (R19); and one quirk of the original kept as shipped (R36). The rule numbers are those of the decomp-code-rules catalogue in [Game-Decompilation-Skill-For-Claude](https://github.com/lemiur/Game-Decompilation-Skill-For-Claude). |
+| `RULE-EXCEPTION` | mostly one local that holds two values in turn where the original's frame shows a single variable (rule R30); a few calls through unprototyped declarations whose callers pass other arguments than the definition takes (R25); two casts for signedness (R19); and one quirk of the original kept as shipped (R36). The rule numbers are those of the decomp-code-rules catalogue in [Game-Decompilation-Skill-For-Claude](https://github.com/lemiur/Game-Decompilation-Skill-For-Claude). |
 | `always passes`, `always true here`, `the original leaves this branch empty`, `fieldMode`, `nothing reads`, `never read`, `guess:` | eight statements whose form the compiled code requires: two tests that always pass, a test the original repeats, an empty `else`, a constant held in a named local, a clamp whose result is not read (as the Quest 64 version of the function has it), an initial value that is never read, and a dead assignment without which the compiler picks another register (its comment says it is a guess). |
 | `kept for the declaration count` | two unused type declarations. IDO lays out a unit's uninitialised variables according to how many declarations precede them, so removing these would move data. |
 
@@ -42,7 +42,7 @@ names and matches came from other people's work.
 
 ## What the figures cover
 
-The ROM's executable code is the main code segment, ROM offsets `0x1000` to `0x4C580`, 308,608 bytes:
+The figures cover the CPU code at the start of the main image, ROM offsets `0x1000` to `0x4C580`, 308,608 bytes:
 
 | Part | ROM offsets | Bytes | Form in this repository |
 |---|---|---|---|
@@ -54,7 +54,13 @@ The 248 bytes are the zero words IDO's assembler puts after a unit's last functi
 of 16 bytes; they are part of each compiled object, so they count in the units' size but in no function's size. The
 game's data (about 16.4 MB: models, textures, maps, audio, tables) is extracted from your ROM as binary files, except
 about 30 KB of initialised data (tables, strings and sound-effect scripts) that sits in C beside the code that uses
-it. `tools/verify.py` measures all of these from a build.
+it. `tools/verify.py` measures the code figures from a build.
+
+Code elsewhere in the ROM is outside these figures: the RSP microcode that follows the CPU code (from `0x4C580`), and
+the blocks the game loads at run time that hold code, among them the title, intro and credits overlays and the
+Controller Pak menu module, which the C calls into. The build copies them from your ROM as binary data, like the rest
+of the game's data; their code is neither disassembled nor decompiled, and no code figure counts it
+([ROM_MAP.md](ROM_MAP.md#code-outside-the-c)).
 
 ## What a byte match proves, and what it does not
 
@@ -69,8 +75,8 @@ not because it is known to be the original; the exceptions above are the cases w
 
 ## Known limits
 
-- The SDK library code (27.1% of the executable code) and the boot entry are assembly, regenerated from your ROM; they
-  are not decompiled.
+- The SDK library code (27.1% of the CPU code above) and the boot entry are assembly, regenerated from your ROM; they
+  are not decompiled. The code elsewhere in the ROM (the RSP microcode, the overlays) is not even disassembled.
 - The build needs x86-64 Linux (or WSL 2) and the exact toolchain pinned by `tools/setup.sh` and `requirements.txt`.
   Other compiler builds, header versions or splat versions may not reproduce the ROM.
 - The development tool's per-function scorer kept two functions open, `FadeScreenIn` and `FadeScreenOut` in

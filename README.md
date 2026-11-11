@@ -7,6 +7,10 @@ rebuilds the original Japanese ROM byte for byte.
 **Eltale Monsters has a 100% byte-matched reconstruction of all 530 tracked compiled C functions, producing a
 byte-identical Japanese ROM. SDK library assembly remains outside the tracked C matching scope.**
 
+**Contents:** [Status](#status) · [Quick start](#quick-start) · [Building](#building) ·
+[Verify it yourself](#verify-it-yourself) · [Exploring the code](#exploring-the-code) ·
+[Repository layout](#repository-layout) · [Documentation](#documentation) · [Credits](#credits) · [Legal](#legal)
+
 It builds on Mallos31's decompilation of Eltale Monsters, [EM](https://github.com/Mallos31/EM) (the ROM split, the
 build and the first matches), and on the Quest 64 decompilations ([Mallos31/Quest](https://github.com/Mallos31/Quest),
 [Rainchus/Quest64-Decomp](https://github.com/Rainchus/Quest64-Decomp) and its fork by EltaleLibrarian), whose matched C
@@ -29,19 +33,39 @@ everything else from it. This is not a PC port.
 | Tracked compiled C functions byte-matched | **530 of 530** (100%) |
 | Their code | 224,616 of 224,616 bytes |
 | Built ROM | byte-identical to the original (SHA-1 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) |
-| Kept as assembly, outside the C figures | the hand-written boot entry (80 bytes) and the SDK library code (libultra, its audio library and the gu math routines): 83,664 bytes in 121 segments, **27.1%** of the ROM's 308,608 bytes of executable code |
+| Kept as assembly, outside the C figures | the hand-written boot entry (80 bytes) and the SDK library code (libultra, its audio library and the gu math routines): 83,664 bytes in 121 segments, **27.1%** of the 308,608 bytes of CPU code in the main image (ROM 0x1000-0x4C580) |
 
 "Tracked compiled C functions" means every function in the 40 C translation units in `src/`: the game's own code and
 six libultra modules that are written in C here as well. The SDK library code kept as assembly is disassembled from
 your ROM during the build; it has not been decompiled. The 40 C units take 224,864 bytes of the ROM: the 530 functions
 plus 248 bytes of zero padding that the compiler's assembler adds at the ends of 33 of them. `tools/verify.py`
-recomputes every figure in this table from your own build.
+recomputes every figure in this table from your own build. Code elsewhere in the ROM is copied from your ROM as binary
+data and counted by none of these figures: the RSP microcode, and blocks that the game loads at run time, among them
+the title, intro and credits overlays and the Controller Pak menu module
+([docs/ROM_MAP.md](docs/ROM_MAP.md#code-outside-the-c)).
 
 A byte match proves that the original compiler turns this C into the original machine code. It does not prove that
 this is the text the original authors wrote: names, formatting and the choice between equivalent forms are
 reconstructions. [docs/METHODOLOGY.md](docs/METHODOLOGY.md) describes the matching standard, the documented exceptions
-and the limits. [CHANGELOG.md](CHANGELOG.md) lists what changed since the first publication: names, types and data
-structures, with the compiled code unchanged.
+and the limits. [CHANGELOG.md](CHANGELOG.md) lists what changed since the first publication; the compiled code has
+not changed.
+
+## Quick start
+
+On x86-64 Linux or WSL 2 (under WSL, in the Linux file system, not under `/mnt/c`), with the packages in
+[step 1](#1-install-the-build-dependencies) installed:
+
+```
+git clone --recursive https://github.com/CanadaX21/Eltale.git
+cd Eltale
+cp /path/to/your/rom.z64 baserom.jp.z64    # the original Japanese ROM (SHA-1 in step 3)
+tools/setup.sh
+./configure
+ninja                                       # prints: build/eltail.jp.z64: OK
+python3 tools/verify.py
+```
+
+[Building](#building) explains each step.
 
 ## Building
 
@@ -137,6 +161,17 @@ To see that the ROM really is built from this C, change one constant in a functi
 in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Then `git checkout src/game/hud.c` and
 `ninja` again: OK.
 
+## Exploring the code
+
+| To find | Start at |
+|---|---|
+| Where the game starts | the boot entry at ROM 0x1000 (assembly), `boot` and `idle` in `src/game/boot.c`, then `mainproc` in `src/game/main.c`: the start-up, then a loop that runs one game mode at a time (`gGameMode`): `FieldLoop` for play, `TitleLoop`, `IntroLoop`, `SaveModeLoop`, `CreditsLoop`, `EndingLoop`, `AfterCreditsLoop` |
+| The game's types, structures and constants | `include/quest_types.h` |
+| A function or a variable by name or address | `symbol_addrs.txt` (names and addresses for splat and the linker); `undefined_syms.jp.txt` (data the C uses that the split does not name, defined by address) |
+| A file by what it holds | [Source file names](#source-file-names), below |
+| What is where in the ROM, and which function loads it | [docs/ROM_MAP.md](docs/ROM_MAP.md), with `eltail.jp.yaml` for every segment |
+| Why some code is written the way it is | the comments at the code, and the documented exceptions in [docs/METHODOLOGY.md](docs/METHODOLOGY.md) |
+
 ## Repository layout
 
 | Path | Contents |
@@ -151,6 +186,7 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 | `first_diff.py`, `tools/make_expected.py` | find the first difference from the last matching build |
 | `tools/objdiff_gen.py`, `tools/trim_padding.py` | per-function comparison with [objdiff](https://github.com/encounter/objdiff) (`objdiff.json`, written by `./configure`) |
 | `tools/splat`, `tools/asm-processor` | submodules: [splat](https://github.com/ethteck/splat) and [asm-processor](https://github.com/simonlindholm/asm-processor) at pinned commits |
+| `docs/` | the methodology and the ROM map ([Documentation](#documentation)) |
 
 ### Source file names
 
@@ -180,6 +216,15 @@ Quest 64 and Eltale decomps name files by their ROM offset (splat's default); th
 | `game/encounter.c` | 0x1FA00 | | `libultra/pimgr.c` | 0x37C20 |
 | `game/model.c` | 0x20DA0 | | `libultra/createmesgqueue.c` | 0x37E10 |
 | `game/hud.c` | 0x216E0 | | `libultra/visetevent.c` | 0x37E40 |
+
+## Documentation
+
+| File | What it covers |
+|---|---|
+| [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | what counts as a match, the documented exceptions, what the figures cover, and what a byte match does not prove |
+| [docs/ROM_MAP.md](docs/ROM_MAP.md) | the ROM block by block: what each block holds, the function that loads it and the RAM it goes to, the pointer tables, the C types that describe the data, and the open questions |
+| [CHANGELOG.md](CHANGELOG.md) | what changed since the first publication |
+| [CREDITS.md](CREDITS.md) | the work this builds on, and where names and matches came from |
 
 ## Credits
 

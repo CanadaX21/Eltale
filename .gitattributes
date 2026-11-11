@@ -1,3 +1,5 @@
 * text=auto eol=lf
 # the SDK headers are byte-exact copies, checked against tools/checksums/sdk-2.0I.sha256: never convert them
 include/2.0I/** -text
+# the language bar: macro.inc holds assembler macros (detected as PHP otherwise)
+include/macro.inc linguist-language=Assembly

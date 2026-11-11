@@ -3,6 +3,21 @@
 What changed in this repository, newest first. Every state listed builds the byte-identical Japanese ROM (SHA-1
 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) from the C, with all 530 tracked compiled C functions byte-matched.
 
+## Documentation
+
+No change to the source or the build.
+
+- **A ROM map**, [docs/ROM_MAP.md](docs/ROM_MAP.md): every block of the ROM with what it holds, the function that loads
+  it and the RAM it goes to; the pointer tables that index the data; the C types that describe it; the code outside
+  the C; and the open questions.
+- **The README** has a quick start, a guide to where to start reading the code, and an index of the documentation.
+- **The figures' scope**, stated precisely: they cover the CPU code at ROM 0x1000-0x4C580. Code elsewhere in the ROM
+  (the RSP microcode, the overlays and other blocks loaded at run time) is copied from your ROM as binary data and
+  counted by none of them.
+- [docs/METHODOLOGY.md](docs/METHODOLOGY.md): the comments on the R25 exceptions cite R25 (it said two cited R5), and
+  `tools/verify.py` measures the code figures (it said all of them).
+- `.gitattributes`: `include/macro.inc` counts as assembly in GitHub's language statistics.
+
 ## Names, types and data structures
 
 The compiled code is unchanged: these are names, types, a symbol's address and comments, and the ROM still builds
