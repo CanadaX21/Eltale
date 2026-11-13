@@ -1,10 +1,10 @@
 #include "common.h"
+#include "game/shadow.h"
+#include "game/math.h"
 extern Gfx* gDisplayListHead;
 extern s16 gFogFar;
 extern s16 gFogNear;
 extern s32 gMatrixHead;
-void MatrixFromDirection(MtxF* mtx, f32 x, f32 y, f32 z);
-void ScaleMatrix(MtxF* m, f32 x, f32 y, f32 z);
 extern s32 gShadowCount;
 extern ShadowRec gShadows[];
 

@@ -1,4 +1,37 @@
 #include "common.h"
+#include "game/main.h"
+#include "game/audio.h"
+#include "game/boss.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/controller.h"
+#include "game/dma.h"
+#include "game/dust.h"
+#include "game/effects.h"
+#include "game/encounter.h"
+#include "game/ending.h"
+#include "game/ending_text.h"
+#include "game/enemy.h"
+#include "game/hud.h"
+#include "game/intro.h"
+#include "game/lighting.h"
+#include "game/map.h"
+#include "game/map_objects.h"
+#include "game/message.h"
+#include "game/model.h"
+#include "game/overlay.h"
+#include "game/player.h"
+#include "game/save_menu.h"
+#include "game/screen_fade.h"
+#include "game/shadow.h"
+#include "game/signs.h"
+#include "game/sound.h"
+#include "game/spells.h"
+#include "game/spirits.h"
+#include "game/start_menu.h"
+#include "game/text.h"
+#include "game/title.h"
+#include "sched/nnsched.h"
 extern s8 gRespawnOnExit;
 extern PendingWarp gPendingWarp;
 extern u64 gspF3DEXDataStart[];
@@ -6,7 +39,6 @@ extern u8 gGfxFifoBuffer[];
 extern u64 gRspDramStack[];           /* the RSP's DRAM stack */
 extern u64 gRspYieldBuffer[];           /* its yield buffer */
 extern s32 gNextMap;               /* next map */
-void InitFrameTask(GfxFrame* frame);
 /* the main thread (mainproc; Quest func_80000C50, Quest64-Decomp's mainproc) */
 extern s32 gGameState;   /* game state flags */
 extern OSMesgQueue gSiMesgQueue;       /* the SI queue */
@@ -22,35 +54,7 @@ extern u8 sfx_tbl_ROM_START[];
 extern u8 pak_menu_module_ROM_START[];                /* the code loaded at 0x80100000 */
 extern u8 pak_menu_module_ROM_END[];
 extern u8 D_80100000[];
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);             /* DMA from ROM */
-void InitAudio(void);
-void InitMusicPlayer(u8* ctlStart, u8* ctlEnd, u8* seqStart, u8* seqEnd, u8* tblStart);
-void InitSoundEffects(u8* ctlStart, u8* ctlEnd, u8* tblStart);
-void nnScCreateScheduler(NNSched* sc, u8 numFields);                        /* nnScCreateScheduler */
-void nnScStartScheduler(NNSched* sc);                                      /* nnScStartScheduler */
-void nnScAddClient(NNSched* sc, NNScClient* c, OSMesgQueue* msgQ);   /* nnScAddClient */
-OSMesgQueue* nnScGetGfxMQ(NNSched* sc);                              /* nnScGetGfxMQ */
-void StartAudioThread(void* sched);
-s32 InitControllers(void);
-void loadTextTextureAndPal(void);
 void func_801009EC(OSMesgQueue* siQueue, OSMesgQueue* retraceQueue);                /* in the code at 0x80100000 */
-void InitGraphics(void);
-void ResetStoryFlags(void);
-void ResetMapObjectFlags(void);
-void ResetSpiritsFound(void);
-void InitBrian(void);
-void Inventory_Init(void);
-void ResetTimeOfDay(void);
-void InitializeSoundData(void);
-void InitNewGame(void);
-void InitStartMenu(void);
-void FieldLoop(void);
-void EndingLoop(void);
-void AfterCreditsLoop(void);
-void SaveModeLoop(void);
-void TitleLoop(void);
-void IntroLoop(void);
-void CreditsLoop(void);
 
 extern u8 instrument_ctl_ROM_END[];              /* the end of the instrument bank (its table starts at the same address) */
 extern u8 sequence_bank_ROM_END[];
@@ -276,31 +280,7 @@ extern s8 D_8006CC80;
 extern u16 gDepthBuffer[];             /* the depth buffer */
 extern Gfx D_1000010[];
 extern Mtx D_2000000[];
-s32 func_8020C11C(void);                           /* the title overlay */
-s32 func_8020C16C(void);                           /* the intro overlay */
 s32 func_8020C15C(void);                           /* the ending overlay */
-void EnterSaveMode(s32 returnMode);
-void UpdateCamera(FrameDynamic* dyn);
-void UpdateFrameLights(void);
-void StepLightAnim(s32 model);
-void DrawSky(Mtx* mtx);
-void DrawMapFrame(mkst* mtx);
-void DrawBrian(Mtx* mtx);
-void DrawNPCs(Mtx* mtx);
-void DrawMapObjects(Mtx* mtxList);
-void DrawMapBillboards(mkst* mtx);
-void DrawEnemies(Mtx* mtx);
-void DrawBoss(Mtx* mtxList);
-void UpdateSpiritSparkles(void);
-void DrawShadows(mkst* mtx);
-void DrawDust(mkst* mtx);
-void UpdateEffects(mkst* mtx);
-void DrawScreenFade(mkst* mtx);
-void DrawDialogueBox(void);
-void DrawHUD(mkst* mtx);
-void ItemMenu(void);
-void DrawCreditImages(void);
-void StartMenu(mkst* dyn);
 void BuildFrame(GfxFrame* frame) {
     s32 len;                         /* also the ending overlay's result */
     FrameDynamic* dyn = &frame->dyn;
@@ -368,7 +348,7 @@ void BuildFrame(GfxFrame* frame) {
     } else if (gGameMode == MODE_PAUSED) {
         StartMenu(&dyn->mtx);
     } else if (gGameMode == MODE_TITLE) {
-        switch (func_8020C11C()) {
+        switch (TitleScreen_Update()) {
             case 0:
                 switch (D_8007A1CC & 0xF0) {
                     case 0x10:
@@ -393,7 +373,7 @@ void BuildFrame(GfxFrame* frame) {
                 break;
         }
     } else if (gGameMode == MODE_SPLASH) {
-        switch (func_8020C16C()) {
+        switch (Intro_Update()) {
             case 0:
                 D_8006CC80 = 0;
                 gGameMode = MODE_TITLE;
@@ -432,31 +412,10 @@ extern s32 gTimeOfDay;               /* time of day */
 extern LightAnim gLightAnims[];       /* light records (lighting.c) */
 extern u16 gScreenFadeFlags;   /* screen fade flags (screen_fade.c) */
 extern s32 gEnvTimersAdded;
-extern u8 event_blob_a_ROM_START[];                /* the mode 6 code, loaded at 0x801C0000 */
+extern u8 event_blob_a_ROM_START[];                /* the ending's data, not code (mode 6; loaded at 0x801C0000): its text, NPC records, timed text pages and the 7 EndingScene records at D_801C14E4 */
 extern u8 event_blob_b_ROM_START[];
 extern u8 gEventBlob[];
-void ReadController(s32 channel);     /* read the controller */
-void WaitForScheduler(s16 type);        /* wait for the scheduler */
-void UpdateSound(void);            /* sound update (sound.c) */
-void LoadEndingScene(s32 scene);
-void InitDayPalette(void);
-s32 AllocLightAnim(void);
-void BuildColourRamp(void);   /* build the RGBA ramp (screen_fade.c) */
-void FadeScreenIn(void);
-void ResetShadows(void);
-s32 StepEndingText(void);
-void FadeSceneMusic(u32 index);
-void UpdateTimeOfDay(void);
-void UpdateLavaPalette(void);
-void StopLoopingSounds(void);
-void FadeScreenOut(void);
-void StopMusicSlot(s32 slot);
-s32 GetMusicSlotState(s32 slot);
 extern u8 gSoundVolume;
-void ResetEndingScenes(void);            /* the scene player (ending.c) */
-void StartScene(void);
-void StepEndingScene(void);
-void EndEndingScene(void);
 /* the field / battle loop (FieldLoop) */
 extern s32 gCurrentSubmap;               /* current submap */
 extern u16 gSubmapFlags;               /* the submap's flags (bit 0: random battles and monsters here (FieldLoop, ResetEnemies; SetupNPCs only without it)) */
@@ -468,40 +427,6 @@ extern s32 gMessageWindowsOpen;               /* message windows opened (message
 u64 gLastFrameTime;                      /* osGetTime() when the last frame went out */
 u64 gFrameTime;                      /* osGetTime() this frame */
 u64 gFrameDeltaMicros;                      /* the microseconds in between */
-void RespawnAtSavePoint(void);
-void ResetMessageWindows(s32 unused);
-void LoadMap(void);
-void SpawnMapObjects(void);
-void SetupMapSpirits(void);
-void LoadRoomSigns(void);
-void MapCursorToWorld(void);
-void SpawnBrian(void);
-void SetupNPCs(void);
-void ResetEnemies(void);
-void LoadMapBoss(void);
-void InitRoomCamera(void);
-void InitEncounters(void);
-void ResetSpells(void);
-void ResetEffects(void);
-void ResetDust(void);
-void ResetHUD(void);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
-void FindMapBGM(s32 map, s32 room, u16 fade);
-void RollRandomEncounter(void);
-void BattleStartCamera(void);
-void StepBattleRound(void);
-void UpdateEnemies(void);
-void UpdateBrian(void);
-void UpdateNPCs(void);
-void UpdateSpells(void);
-void UpdateDoorAnimations(void);
-s32 CheckDoorTriggers(f32 x, f32 z, f32 yrot);   /* walked into a door (collision.c) */
-void ClampCameraToTarget(void);
-void StartBrianArrival(void);
-void PlaySound(u8 delay, s8 id, u8 level);
-void SetTimeOfDay(s32 time);
-void LoadSequence(s32 slot, s32 seq);
-s32 StartSequence(s32 slot);
 void FieldLoop(void) {
     OSMesg msg;
     GfxFrame* frame;
@@ -810,11 +735,7 @@ void AfterCreditsLoop(void) {
     }
     gGameState |= 0x20000;
 }
-void LoadOvl_TitleScreen(void);
 void func_8020C0D0(void);            /* the loaded overlay's entry */
-void BuildFrame(GfxFrame* frame); /* build the frame's display list */
-void RequestMusic(s8 song);         /* music request (sound.c) */
-void SetBGMVolume(void);
 void SaveModeLoop(void) {
     GfxFrame* frame;
     s16 fieldMode = 2;                  /* the field mode a respawn sets; read only there */
@@ -876,7 +797,6 @@ void TitleLoop(void) {
     }
     WaitForScheduler(2);
 }
-void LoadOvl_Splash_and_Intro(void);
 void IntroLoop(void) {
     GfxFrame* frame;
 
@@ -902,8 +822,6 @@ void IntroLoop(void) {
     UpdateSound();
     WaitForScheduler(2);
 }
-void LoadOvl_Ending(void);
-void UpdateBGMDelay(s8 song, u16 fade);
 void CreditsLoop(void) {
     GfxFrame* frame;
 
@@ -938,7 +856,6 @@ void WaitForScheduler(s16 type) {
     } while (*msg != type);
 }
 extern u8 gFadeRamp[256][4];
-void StartScreenFade(s32 frames, u16 flags, void* ramp);
 extern u8 gFadeRampBlack16[16][4];
 extern u8 gFadeRampWhite16[16][4];
 extern u8 gFadeRampBlack32[32][4];

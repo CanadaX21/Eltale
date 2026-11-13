@@ -1,13 +1,13 @@
 #include "common.h"
-void MatrixFromDirection(MtxF* mtx, f32 x, f32 y, f32 z);
+#include "game/math.h"
 extern MtxF gScratchMtxF;
-extern float sinf(float angle);
-extern float cosf(float angle);
+/* This file's six doubles (+-pi/2 twice, pi twice) stay in assembly (the splat config's rodata piece at ROM 0x70170):
+ * Atan2 reads two of them from memory and converts them at run time, which no literal reproduces (IDO folds the
+ * conversion of a constant), and IDO puts a const double object in .data, not .rodata. So the code names them. */
 extern f64 D_8006F588;
 extern f64 D_8006F580;
 extern f64 D_8006F590;
 extern f64 D_8006F598;
-float sqrtf(float value);
 
 u8 gBitMasks[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 }; /* bit n of a flag byte (story and map object flags) */
 u32 gRandomSeed = 0x9B0;   /* the random seed (Quest D_8004D748) */

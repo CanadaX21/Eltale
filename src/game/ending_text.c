@@ -1,4 +1,13 @@
 #include "common.h"
+#include "game/ending_text.h"
+#include "game/audio.h"
+#include "game/camera.h"
+#include "game/enemy.h"
+#include "game/map.h"
+#include "game/math.h"
+#include "game/message.h"
+#include "game/player.h"
+#include "game/sound.h"
 
 typedef struct {
     u8* text;                       /* 0x4B0 bytes for gTextBuffer */
@@ -25,7 +34,6 @@ typedef struct {
     s16 unk3E;              /* music; FadeSceneMusic fades it out when it changes between neighbours */
 } EndingScene;             /* 0x40; 7 of them at D_801C14E4 (LoadEndingScene loads one) */
 extern EndingScene D_801C14E4[7];
-s32 StartMusicFadeOut(u32 frames);
 extern s32 gGameState;               /* game state flags */
 extern s32 gModeCountdown;
 extern u16 gTransitionStyle;
@@ -49,15 +57,6 @@ extern s32 gNpcCount;
 extern s32 gEnemyCount;
 extern Camera gCamera;     /* the camera */
 extern f32 gViewConeHalf;               /* half the view cone, in degrees */
-void ResetMessageWindows(s32 unused);
-void LoadMap(void);            /* the map loader */
-void SpawnBrian(void);
-void LoadNPCArea(s32 area);
-void SpawnNPCs(NpcRecord* rec, s32 count);
-void InitRoomCamera(void);
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);   /* rotation matrix */
-void TransformVecByCols(MtxF* mf, f32 x, f32 y, f32 z, f32* ox, f32* oy, f32* oz);
-void RequestMusic(s8 song);         /* music request (sound.c) */
 
 void LoadEndingScene(s32 index) {
     EndingScene* entry = &D_801C14E4[index];
@@ -100,8 +99,6 @@ void LoadEndingScene(s32 index) {
     gViewConeHalf = entry->unk1C;
     RequestMusic(entry->unk3E);
 }
-void CopyEndingSpeakerName(u8* text, u8* name);
-s32 OpenMessageWindow(s32 type);
 s32 StepEndingText(void) {
     s32 ret = 0;
 

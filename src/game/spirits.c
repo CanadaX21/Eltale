@@ -1,4 +1,8 @@
 #include "common.h"
+#include "game/spirits.h"
+#include "game/collision.h"
+#include "game/dust.h"
+#include "game/math.h"
 /* split from map_objects.c: the original was separate files (each IDO object pads its .rodata to 16;
    the zero words before this file's first literal mark the boundary). Declarations copied from map_objects.c. */
 /* ---- spirits.c's .bss (0x800859B0-0x80085AB0), in address order. All four are first declared
@@ -9,35 +13,10 @@ s32 gSpiritCount;                         /* spirits on this submap */
 Spirit gSubmapSpirits[8];                   /* this submap's spirits (SetupMapSpirits) */
 CollisionPollingResult gSpiritFloorPoll;      /* the floor poll for a spirit's height */
 u8 gSpiritsFound[0x10];                    /* spirits found: one bit per spirit flag (IsSpiritFound / SetSpiritFound) */
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
-void PlaySound(u8 delay, s8 id, u8 level);
 extern u8 gBitMasks[];
-extern u8 gObjectsOpened[];
 extern SubmapSpirits gSubmapSpiritTable[43];
 extern s32 gCurrentMap;   /* current map */
 extern s32 gCurrentSubmap;   /* current submap */
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
-u8 IsSpiritFound(u16 flag);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
-extern MapObjTable gMapObjectTable[];
-extern s32 gMapObjectCount;
-extern MapObject gMapObjects[];
-extern CollisionPollingResult gMapObjectPoll;
-u8 IsMapObjectOpened(u16 id);
-extern u8* gItemNamePtrs[];
-extern u8 gPickupMessageHead[];
-extern u8 gPickupMessageTail[];
-extern u8 gTextBuffer[];
-extern u8 gSpeakerName[];
-extern u8 D_D37700[];
-extern PlayerState gPlayerState;
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
-extern AnimEntry gMapObjectAnims[];
-void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, s32 mtxList);
-void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);
-extern Coordinates2D gMapObjectOffset;
-void SetMapObjectOpened(u16 id);
 void ResetSpiritsFound(void) {
 
     s32 i;
@@ -119,12 +98,8 @@ Spirit* CheckSpiritPickup(ActorTransform* brian) {
     return found;
 }
 extern Gfx* gDisplayListHead;
-f32 sinf(f32 angle);       /* sinf */
 extern u8 gSparkleFrames[][0x100];       /* the sparkle frames, 0x100 bytes each */
 extern u8 gSparkleDisplayList[];              /* the sparkle display list */
-Dust* SpawnDust(Dust* dust);     /* spawn a dust puff from a template (dust.c); returns the new puff */
-u32 getRandomNumber(u32 range);
-void DrawSpiritSparkle(SpiritSparkle* sparkle);
 /* ---- spirits.c's .data (0x8004E650-0x8004E6A0): the unreferenced words, then
    UpdateSpiritSparkles's template (a function-local static) and the env colours after it. ---- */
 s32 D_8004E650[2] = { 0, 0 };        /* unreferenced */
@@ -176,12 +151,6 @@ void DrawSpiritSparkle(SpiritSparkle* sparkle) {
     sparkle->z += sparkle->velZ + wobble;
     gDPSetEnvColor(gDisplayListHead++, colour[0], colour[1], colour[2], colour[3]);
 }
-extern SignObject gSigns[38];
-extern s32 gRoomSignCount;              /* entries in gRoomSigns */
-extern SignSlot gRoomSigns[];
-extern Coordinates2D gSignOffset;
-f32 sqrtf(f32 x);           /* sqrtf */
-f32 Atan2(f32 dx, f32 dz);
 u8 IsSpiritFound(u16 flag) {
     return gSpiritsFound[flag >> 3] & gBitMasks[flag & 7];
 }

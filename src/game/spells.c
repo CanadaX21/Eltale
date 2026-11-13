@@ -1,5 +1,18 @@
 #include "common.h"
-u32 getRandomNumber(u32 range);
+#include "game/spells.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/effects.h"
+#include "game/hud.h"
+#include "game/lighting.h"
+#include "game/math.h"
+#include "game/screen_fade.h"
+#include "game/sound.h"
+/* RULE-EXCEPTION R25: this file includes neither player.h nor enemy.h. It calls DamageBrian, DamageEnemy and
+ * GetEnemyIndex with no declaration in scope, as the original evidently did: SpellEffect_InstantKill passes
+ * DamageBrian a fourth argument its prototype refuses, and with DamageEnemy's prototype (u16 parameters)
+ * SpellEffect_Damage compiles differently. The other player and enemy functions it calls are declared
+ * in this file. */
 extern u16 gHitMaskBits[];
 extern u16 gBattleState;
 extern s32 gEnemyCount;
@@ -13,11 +26,8 @@ extern s32 gExitRoom;
 extern s32 gExitEntrance;
 extern EnemyAction gEnemies[];   /* enemy table, 6 x 0x130 (Quest D_8007C998) */
 extern EnemyAction* gLastAutoHitEnemy;    /* last enemy hit by an auto-hit spell (Quest D_800871DC) */
-s32 TestSpellHitMask(s32 slot, MonsterBattleData* hit);
 extern CollisionPollingResult gGroundSample;   /* the spells' ground sample (Quest D_800871E0) */
-extern f64 D_8006F308;     /* 0.3: projectile fall acceleration (Quest D_800714A8) */
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
-void StartCameraShake(s32 kind);
+/* declared here, not in effects.h: its definition returns ProjSlot*, a type only effects.c defines */
 void* AllocProjectileSlot(s32 anim, s32 model, s32 texture, s32 colour, s32 flags, f32 x, f32 y, f32 z, f32 angle,
                     f32 scaleX, f32 scaleY, f32 scaleZ);
 extern Submap* gSubmapHeader;
@@ -26,11 +36,9 @@ extern s32 gArrivalFlags;
 extern PlayerState gPlayerState;
 extern s32 gGameState;
 extern s32 gModeCountdown;
-void Setup_MISS_Icon(MonsterBattleData* actor);
-MonsterBattleData* SpellCollision0();
-float sqrtf(float value);
+MonsterBattleData* SpellCollision0();   /* RULE-EXCEPTION R25: unprototyped; defined below with two parameters
+                                         * (K&R), and SpellCollision2 calls it with none */
 extern Coordinates2D gSpellOffset;
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
 typedef struct {
     char unk0[0x28];
     f32 vx;
@@ -113,8 +121,6 @@ extern s32 gSpellLightState;
 extern s32 gSpellLightTimer;
 extern s32 gMapLightAnim;
 extern s32 gSpellEndLights[];
-void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags);
-void SetSpellHitMask(s32 slot, MonsterBattleData* hit);
 s32 RollSpellAccuracy(SpellSlot* spell, MonsterBattleData* hit);
 s32 RollStatus(SpellSlot* spell, MonsterBattleData* caster, s32 effect);
 void RollStatusDuration(SpellSlot* spell, MonsterBattleData* hit, s32 effect);
@@ -122,11 +128,6 @@ void SpawnSpellTrail(SpellSlot* spell, MonsterBattleData* target);
 void StartSpellHitVisual(SpellSlot* spell, MonsterBattleData* hit);
 void ShowEnemyMiss(MonsterBattleData* actor);
 void StartBrianDodge();   /* RULE-EXCEPTION R25: unprototyped; this caller passes the caster, the definition in player.c takes nothing */
-void SetLightAnimLights(s32 n, s32 mode, s32 count, s32* keys);
-f32 Atan2(f32 dx, f32 dz);
-void QueueSparkleBurst(s32 kind, s32 frames, f32 x, f32 y, f32 z, f32 size);
-void SpawnSparkleBurst(s32 colour, f32 x, f32 y, f32 z, f32 size);
-void PlaySound(u8 delay, s8 id, u8 level);
 
 void ResetSpells(void) {
     s32 i;
@@ -816,8 +817,6 @@ s32 SpellCollision2(SpellSlot* spell) {
     return hit;
 }
 extern u8 gCritFade[];
-u16 CalcSpellPower(SpellDef* def, MonsterBattleData* caster);
-void StartScreenFade(s32 frames, u16 flags, void* ramp);
 void SpellEffect_Damage(SpellSlot* spell, MonsterBattleData* hit) {
     u16 power;
     u16 crit;

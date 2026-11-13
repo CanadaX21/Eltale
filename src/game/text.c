@@ -1,7 +1,8 @@
 #include "common.h"
+#include "game/text.h"
+#include "game/dma.h"
 extern u8 text_palettes_ROM_START[];
 extern u16 gTextPalettes[];   /* four palettes of 16 RGBA5551 colours */
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
 extern u8 font_sheet_ROM_START[];
 extern FontStrip gFontSheet[];
 

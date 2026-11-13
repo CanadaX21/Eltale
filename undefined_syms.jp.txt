@@ -1,13 +1,8 @@
-D_8008A184 = 0x8008A184;
 
 
 
-gspF3DEXTextStart = 0x8004BA50; /* the graphics microcode text (the boot code ends at the same address) */
-gspF3DEXDataStart = 0x80070260; /* its data */
-gMapDustGfx = 0x80060A38; /* the map dust display list (gMapDustTemplate points at it) */
-gDustTexture2 = 0x80060AB8; /* the second dust texture (gDustEmitterTemplate) */
-gDustGfx2 = 0x80060BF8; /* its display list */
-gFlameFrameTables = 0x8005E5F0; /* the flame kinds' texture frame tables, [kind - 0x11] (DrawFlames; splat names the folded address D_8005E5AC) */
+gspF3DEXTextStart = _4C580_bin + 0xD0; /* the graphics microcode text (the boot code ends at the same address); 0x8004BA50 as built */
+gspF3DEXDataStart = main_VRAM + (main_tail_ROM_START - main_ROM_START) + 0x910; /* the F3DEX microcode data, 0x910 into main_tail, which the boot copies to RAM right after main's data (0x80070260 as built) */
 gPuffTexture = 0x800C3650; /* effects block: puff texture (effects.c data points at it) */
 gPuffGfx = 0x800C3790; /* effects block: puff display list (effects.c data points at it) */
 gFadingPuffGfx = 0x800C37E0; /* effects block: fading puff display list (effects.c data points at it) */
@@ -24,24 +19,375 @@ D_800CB268 = 0x800CB268; /* effects block: gProjPalettes image (effects.c data p
 D_800CB468 = 0x800CB468; /* effects block: gProjPalettes image (effects.c data points at it) */
 D_8007A9E0 = gBrianStats + 0x10; /* inside gBrianStats (player.c) */
 D_8007AA04 = gBrianStats + 0x34; /* inside gBrianStats (player.c) */
-gSparkleDisplayList = 0x8004E208; /* the spirit sparkle display list (spirits.c's template points at it) */
+gSparkleDisplayList = _4EAD0_bin + 0x338; /* the spirit sparkle display list (spirits.c's template points at it); 0x8004E208 as built */
 gMammonBaseData = 0x803AB9A8; /* Mammon's base data, boss 7 of gBossBaseData (= D_803AB9A8); SpawnBoss's second test names it so */
 gBossTalkRadii = 0x803AB490; /* the bosses' talk radii, [gBossLoaded - 1] (IsNearBoss; splat names the folded address D_803AB48C) */
 gLavaPalette = 0x80124E00; /* a palette map 0x1D loads (UpdateLavaPalette) */
-D_80068EB0 = 0x80068EB0;
-D_8006A8F0 = 0x8006A8F0;
-D_8006B4D8 = 0x8006B4D8;
-D_80069A98 = 0x80069A98;
-D_800690B8 = 0x800690B8;
-D_800695A8 = 0x800695A8;
-D_8006AAF8 = 0x8006AAF8;
-D_8006AFE8 = 0x8006AFE8;
-D_8006B6E0 = 0x8006B6E0;
-D_8006BBD0 = 0x8006BBD0;
-D_80069CA0 = 0x80069CA0;
-D_8006A2C8 = 0x8006A2C8;
-D_80067090 = 0x80067090;
-D_80067898 = 0x80067898;
-D_800680A0 = 0x800680A0;
-D_800688A8 = 0x800688A8;
-osViModeTable = 0x8006CD50; /* the SDK's VI mode table, in the SDK data block (main.c) */
+D_80068EB0 = _622F0_bin + 0x77C0; /* 0x80068EB0 as built */
+D_8006A8F0 = _622F0_bin + 0x9200; /* 0x8006A8F0 as built */
+D_8006B4D8 = _622F0_bin + 0x9DE8; /* 0x8006B4D8 as built */
+D_80069A98 = _622F0_bin + 0x83A8; /* 0x80069A98 as built */
+D_800690B8 = _622F0_bin + 0x79C8; /* 0x800690B8 as built */
+D_800695A8 = _622F0_bin + 0x7EB8; /* 0x800695A8 as built */
+D_8006AAF8 = _622F0_bin + 0x9408; /* 0x8006AAF8 as built */
+D_8006AFE8 = _622F0_bin + 0x98F8; /* 0x8006AFE8 as built */
+D_8006B6E0 = _622F0_bin + 0x9FF0; /* 0x8006B6E0 as built */
+D_8006BBD0 = _622F0_bin + 0xA4E0; /* 0x8006BBD0 as built */
+D_80069CA0 = _622F0_bin + 0x85B0; /* 0x80069CA0 as built */
+D_8006A2C8 = _622F0_bin + 0x8BD8; /* 0x8006A2C8 as built */
+D_80067090 = _622F0_bin + 0x59A0; /* 0x80067090 as built */
+D_80067898 = _622F0_bin + 0x61A8; /* 0x80067898 as built */
+D_800680A0 = _622F0_bin + 0x69B0; /* 0x800680A0 as built */
+D_800688A8 = _622F0_bin + 0x71B8; /* 0x800688A8 as built */
+gMenuSheetPixels = _622F0_bin + 0x9B0; /* the menu sprite sheet's pixels (CI8), 0xA50 into the binary piece after start_menu.c's .data (0x800620A0 in the original): gMenuDigitTextures points into it (start_menu.c) */
+osViModeTable = _6D950_bin + 0x0; /* the SDK's VI mode table, in the SDK data block (main.c); 0x8006CD50 as built */
+/* Names inside main's binary pieces, defined from the piece so they follow a layout change */
+rspbootTextStart = _4C580_bin + 0x0; /* 0x8004B980 as built: in main's binary piece at ROM 0x4C580 */
+rspbootTextEnd = _4C580_bin + 0xD0; /* 0x8004BA50 as built: in main's binary piece at ROM 0x4C580 */
+aspMainTextStart = _4C7B0_bin + 0x12D0; /* 0x8004CE80 as built: in main's binary piece at ROM 0x4C7B0 */
+gGameState = _4C7B0_bin + 0x20F0; /* 0x8004DCA0 as built: in main's binary piece at ROM 0x4C7B0 */
+gDisplayListLength = _4C7B0_bin + 0x20F4; /* 0x8004DCA4 as built: in main's binary piece at ROM 0x4C7B0 */
+gSaveChoiceYes = _4E910_bin + 0x0; /* 0x8004DD10 as built: in main's binary piece at ROM 0x4E910 */
+gSaveChoiceNo = _4E910_bin + 0x8; /* 0x8004DD18 as built: in main's binary piece at ROM 0x4E910 */
+gBossHpBonus = _4E940_bin + 0x10; /* 0x8004DD50 as built: in main's binary piece at ROM 0x4E910 */
+gBossMpBonus = _4E940_bin + 0x20; /* 0x8004DD60 as built: in main's binary piece at ROM 0x4E910 */
+gDayPalettePeriods = _4EAD0_bin + 0x0; /* 0x8004DED0 as built: in main's binary piece at ROM 0x4EAD0 */
+D_8004DEF4 = _4EAD0_bin + 0x24; /* 0x8004DEF4 as built: in main's binary piece at ROM 0x4EAD0 */
+gPickupMessageHead = _4EAD0_bin + 0x30; /* 0x8004DF00 as built: in main's binary piece at ROM 0x4EAD0 */
+gPickupMessageTail = _4EAD0_bin + 0x38; /* 0x8004DF08 as built: in main's binary piece at ROM 0x4EAD0 */
+gMapObjectTable = _4EAD0_bin + 0x4C; /* 0x8004DF1C as built: in main's binary piece at ROM 0x4EAD0 */
+gSubmapSpiritTable = _4EAD0_bin + 0xF0; /* 0x8004DFC0 as built: in main's binary piece at ROM 0x4EAD0 */
+gSparkleFrames = _4EE50_bin + 0x8; /* 0x8004E258 as built: in main's binary piece at ROM 0x4EAD0 */
+gSigns = _4F2A0_bin + 0x0; /* 0x8004E6A0 as built: in main's binary piece at ROM 0x4F2A0 */
+D_8004E6A4 = _4F2A0_bin + 0x4; /* 0x8004E6A4 as built: in main's binary piece at ROM 0x4F2A0 */
+D_8004E6C0 = _4F2A0_bin + 0x20; /* 0x8004E6C0 as built: in main's binary piece at ROM 0x4F2A0 */
+D_8004E6C4 = _4F2A0_bin + 0x24; /* 0x8004E6C4 as built: in main's binary piece at ROM 0x4F2A0 */
+D_8004E6E0 = _4F2A0_bin + 0x40; /* 0x8004E6E0 as built: in main's binary piece at ROM 0x4F2A0 */
+gSpellSpawnRadii = _4F940_bin + 0x14; /* 0x8004ED54 as built: in main's binary piece at ROM 0x4F890 */
+gSpellHomingStrength = _4F940_bin + 0x28; /* 0x8004ED68 as built: in main's binary piece at ROM 0x4F890 */
+gSpellSpeeds = _4F940_bin + 0x3C; /* 0x8004ED7C as built: in main's binary piece at ROM 0x4F890 */
+gElementPowerOrder = _4F940_bin + 0x50; /* 0x8004ED90 as built: in main's binary piece at ROM 0x4F890 */
+gAccuracyResults = _4F940_bin + 0x64; /* 0x8004EDA4 as built: in main's binary piece at ROM 0x4F890 */
+gStatusChances = _4F940_bin + 0x70; /* 0x8004EDB0 as built: in main's binary piece at ROM 0x4F890 */
+gStatusDurationOther = _4F940_bin + 0x7C; /* 0x8004EDBC as built: in main's binary piece at ROM 0x4F890 */
+gStatusDurationSelf = _4F940_bin + 0xAC; /* 0x8004EDEC as built: in main's binary piece at ROM 0x4F890 */
+gDustDefaultGfx = _4FC60_bin + 0x0; /* 0x8004F060 as built: in main's binary piece at ROM 0x4FC60 */
+gTexMaskSides = _4FC60_bin + 0x40; /* 0x8004F0A0 as built: in main's binary piece at ROM 0x4FC60 */
+gBattleCameraMapAdjust = _4FC60_bin + 0x50; /* 0x8004F0B0 as built: in main's binary piece at ROM 0x4FC60 */
+gBossBattleRadii = _4FC60_bin + 0x23C; /* 0x8004F29C as built: in main's binary piece at ROM 0x4FC60 */
+gUnlearnedSpellName = _4FC60_bin + 0x264; /* 0x8004F2C4 as built: in main's binary piece at ROM 0x4FC60 */
+gElementColours = _4FC60_bin + 0x26C; /* 0x8004F2CC as built: in main's binary piece at ROM 0x4FC60 */
+gStatusIconBits = _4FC60_bin + 0x27C; /* 0x8004F2DC as built: in main's binary piece at ROM 0x4FC60 */
+gStatusFxBits = _4FC60_bin + 0x28C; /* 0x8004F2EC as built: in main's binary piece at ROM 0x4FC60 */
+gSpiritGlowBits = _4FC60_bin + 0x294; /* 0x8004F2F4 as built: in main's binary piece at ROM 0x4FC60 */
+gSpellCrossFlashPos = _4FC60_bin + 0x2A4; /* 0x8004F304 as built: in main's binary piece at ROM 0x4FC60 */
+gSpiritGainFlashPos = _4FC60_bin + 0x2C4; /* 0x8004F324 as built: in main's binary piece at ROM 0x4FC60 */
+gSpiritMaxBits = _4FC60_bin + 0x2E4; /* 0x8004F344 as built: in main's binary piece at ROM 0x4FC60 */
+gSpellLabelColours = _4FC60_bin + 0x438; /* 0x8004F498 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F4C0 = _500C0_bin + 0x0; /* 0x8004F4C0 as built: in main's binary piece at ROM 0x4FC60 */
+gScreenFadeGfx = _500C0_bin + 0x50; /* 0x8004F510 as built: in main's binary piece at ROM 0x4FC60 */
+gScreenFadeSetupGfx = _50140_bin + 0x10; /* 0x8004F550 as built: in main's binary piece at ROM 0x4FC60 */
+gFadeRampBlack16 = _50140_bin + 0x60; /* 0x8004F5A0 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F5B4 = _50140_bin + 0x74; /* 0x8004F5B4 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F5DC = _50140_bin + 0x9C; /* 0x8004F5DC as built: in main's binary piece at ROM 0x4FC60 */
+gFadeRampWhite16 = _50140_bin + 0xA0; /* 0x8004F5E0 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F61C = _50140_bin + 0xDC; /* 0x8004F61C as built: in main's binary piece at ROM 0x4FC60 */
+gFadeRampBlack32 = _50140_bin + 0xE0; /* 0x8004F620 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F69C = _50140_bin + 0x15C; /* 0x8004F69C as built: in main's binary piece at ROM 0x4FC60 */
+gFadeRampWhite32 = _50140_bin + 0x180; /* 0x8004F6C0 as built: in main's binary piece at ROM 0x4FC60 */
+D_8004F73C = _50140_bin + 0x1FC; /* 0x8004F73C as built: in main's binary piece at ROM 0x4FC60 */
+gCritFade = _50140_bin + 0x220; /* 0x8004F760 as built: in main's binary piece at ROM 0x4FC60 */
+D_8005685A = gEnemySpellEffects + 0x142; /* 0x8005685A as built: inside gEnemySpellEffects (sound.c); nothing built reads it */
+D_80061650 = _62250_bin + 0x0; /* 0x80061650 as built: in main's binary piece at ROM 0x62250 */
+D_80061660 = _62250_bin + 0x10; /* 0x80061660 as built: in main's binary piece at ROM 0x62250 */
+D_80061668 = _62250_bin + 0x18; /* 0x80061668 as built: in main's binary piece at ROM 0x62250 */
+gChoiceBoxSize = _62250_bin + 0x58; /* 0x800616A8 as built: in main's binary piece at ROM 0x62250 */
+gMessageSpeed = _62250_bin + 0x60; /* 0x800616B0 as built: in main's binary piece at ROM 0x62250 */
+D_800616B4 = _62250_bin + 0x64; /* 0x800616B4 as built: in main's binary piece at ROM 0x62250 */
+gQuillLift = _62250_bin + 0x68; /* 0x800616B8 as built: in main's binary piece at ROM 0x62250 */
+gQuillWidth = _62250_bin + 0x70; /* 0x800616C0 as built: in main's binary piece at ROM 0x62250 */
+gQuillShift = _62250_bin + 0x78; /* 0x800616C8 as built: in main's binary piece at ROM 0x62250 */
+gFontMetrics = _622F0_bin + 0x70; /* 0x80061760 as built: in main's binary piece at ROM 0x62250 */
+gMenuRenderDL = _622F0_bin + 0x80; /* 0x80061770 as built: in main's binary piece at ROM 0x62250 */
+gSaveNoteName = _622F0_bin + 0x120; /* 0x80061810 as built: in main's binary piece at ROM 0x62250 */
+gNewNoteExtName = _622F0_bin + 0x150; /* 0x80061840 as built: in main's binary piece at ROM 0x62250 */
+gSaveNoteExtName = _622F0_bin + 0x154; /* 0x80061844 as built: in main's binary piece at ROM 0x62250 */
+gQuillPalette = _622F0_bin + 0x160; /* 0x80061850 as built: in main's binary piece at ROM 0x62250 */
+gMenuSheetPalette = _622F0_bin + 0x7A8; /* 0x80061E98 as built: in main's binary piece at ROM 0x62250 */
+gBackgroundPalette = _622F0_bin + 0x5798; /* 0x80066E88 as built: in main's binary piece at ROM 0x62250 */
+gYesNoHandPositions = _6D600_bin + 0xC4; /* 0x8006CAC4 as built: in main's binary piece at ROM 0x62250 */
+D_8006CC80 = _6D870_bin + 0x10; /* 0x8006CC80 as built: in main's binary piece at ROM 0x62250 */
+gCreditImageGfx = _6D870_bin + 0x20; /* 0x8006CC90 as built: in main's binary piece at ROM 0x62250 */
+__osPiDevMgr = _6D920_bin + 0x0; /* 0x8006CD20 as built: in main's binary piece at ROM 0x6D920 */
+D_8006CD28 = _6D920_bin + 0x8; /* 0x8006CD28 as built: in main's binary piece at ROM 0x6D920 */
+D_8006CDF0 = _6D950_bin + 0xA0; /* 0x8006CDF0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006D6B0 = _6D950_bin + 0x960; /* 0x8006D6B0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006DED0 = _6D950_bin + 0x1180; /* 0x8006DED0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006DEEC = _6D950_bin + 0x119C; /* 0x8006DEEC as built: in main's binary piece at ROM 0x6D920 */
+D_8006DEF0 = _6D950_bin + 0x11A0; /* 0x8006DEF0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E6EE = _6D950_bin + 0x199E; /* 0x8006E6EE as built: in main's binary piece at ROM 0x6D920 */
+D_8006E6F0 = _6D950_bin + 0x19A0; /* 0x8006E6F0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E700 = _6D950_bin + 0x19B0; /* 0x8006E700 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E710 = _6D950_bin + 0x19C0; /* 0x8006E710 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E720 = _6D950_bin + 0x19D0; /* 0x8006E720 as built: in main's binary piece at ROM 0x6D920 */
+__osRunningThread = _6F360_bin + 0x0; /* 0x8006E760 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E764 = _6F360_bin + 0x4; /* 0x8006E764 as built: in main's binary piece at ROM 0x6D920 */
+__osPiAccessQueueEnabled = _6F360_bin + 0x10; /* 0x8006E770 as built: in main's binary piece at ROM 0x6D920 */
+vi = _6F360_bin + 0x20; /* 0x8006E780 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E800 = _6F400_bin + 0x0; /* 0x8006E800 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E824 = _6F400_bin + 0x24; /* 0x8006E824 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E850 = _6F400_bin + 0x50; /* 0x8006E850 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E8B8 = _6F400_bin + 0xB8; /* 0x8006E8B8 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E940 = _6F400_bin + 0x140; /* 0x8006E940 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E968 = _6F400_bin + 0x168; /* 0x8006E968 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E990 = _6F400_bin + 0x190; /* 0x8006E990 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E9B8 = _6F400_bin + 0x1B8; /* 0x8006E9B8 as built: in main's binary piece at ROM 0x6D920 */
+D_8006E9E0 = _6F400_bin + 0x1E0; /* 0x8006E9E0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EADE = _6F400_bin + 0x2DE; /* 0x8006EADE as built: in main's binary piece at ROM 0x6D920 */
+D_8006EAE0 = _6F400_bin + 0x2E0; /* 0x8006EAE0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EB20 = _6F400_bin + 0x320; /* 0x8006EB20 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EB30 = _6F400_bin + 0x330; /* 0x8006EB30 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EB40 = _6F400_bin + 0x340; /* 0x8006EB40 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EB44 = _6F400_bin + 0x344; /* 0x8006EB44 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EB50 = _6F400_bin + 0x350; /* 0x8006EB50 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EBA0 = _6F400_bin + 0x3A0; /* 0x8006EBA0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EBF0 = _6F400_bin + 0x3F0; /* 0x8006EBF0 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EC40 = _6F400_bin + 0x440; /* 0x8006EC40 as built: in main's binary piece at ROM 0x6D920 */
+D_8006EC54 = _6F400_bin + 0x454; /* 0x8006EC54 as built: in main's binary piece at ROM 0x6D920 */
+gSegment1Gfx = ALIGN(main_BSS_END, 16); /* segment 1's buffer, right after main's .bss, aligned for its DMA (0x80095AF0 as built; InitGraphics loads segment1_gfx there) */
+/* The boot entry (asm/entry.s) clears main's .bss from gBootStack, where main_tail's copy ends, 8 bytes a step until
+   the count reaches zero: the size is a multiple of 8 (0x24DD0 as built). The upper half is a symbol of its own
+   because the entry builds the size with lui and ori. */
+main_bss_clear_size = ALIGN(main_BSS_END, 8) - gBootStack;
+main_bss_clear_size_hi = main_bss_clear_size >> 16;
+/* Main's RAM limit: segment 1 is loaded right after main's .bss and must end at or before the spell bank, which is
+   loaded at the fixed gEffectsBlock (0x800C0000). As built it ends at 0x800995C0, so main's code, data and .bss
+   together may grow by 0x26A40 bytes; nothing else is loaded in that room. */
+ASSERT(gSegment1Gfx + (segment1_gfx_ROM_END - segment1_gfx_ROM_START) <= gEffectsBlock,
+       "main has outgrown its RAM: segment 1 would be loaded over the spell bank (gEffectsBlock)");
+D_8004E1C8 = _4EAD0_bin + 0x2F8; /* 0x8004E1C8 as built: a vertex array a display list in a binary piece points at */
+D_8004F4D0 = _500C0_bin + 0x10; /* 0x8004F4D0 as built: a vertex array a display list in a binary piece points at */
+/* Names inside main's binary pieces, defined from the piece so they follow a layout change */
+D_8006CC74 = _6D870_bin + 0x4; /* 0x8006CC74 as built: in main's binary piece at ROM 0x62250 */
+D_8006CC78 = _6D870_bin + 0x8; /* 0x8006CC78 as built: in main's binary piece at ROM 0x62250 */
+D_8006CC7C = _6D870_bin + 0xC; /* 0x8006CC7C as built: in main's binary piece at ROM 0x62250 */
+/* Places the pointer tables in the binary piece after start_menu.c's .data point at, defined from the piece */
+D_80061A50 = _622F0_bin + 0x360; /* 0x80061A50 as built: a place a pointer table in the same piece points at */
+D_80061B50 = _622F0_bin + 0x460; /* 0x80061B50 as built: a place a pointer table in the same piece points at */
+D_80061D58 = _622F0_bin + 0x668; /* 0x80061D58 as built: a place a pointer table in the same piece points at */
+D_80061DE8 = _622F0_bin + 0x6F8; /* 0x80061DE8 as built: a place a pointer table in the same piece points at */
+D_80061DF8 = _622F0_bin + 0x708; /* 0x80061DF8 as built: a place a pointer table in the same piece points at */
+D_8006C0C0 = _622F0_bin + 0xA9D0; /* 0x8006C0C0 as built: a place a pointer table in the same piece points at */
+D_8006C0EC = _622F0_bin + 0xA9FC; /* 0x8006C0EC as built: a place a pointer table in the same piece points at */
+D_8006C10C = _622F0_bin + 0xAA1C; /* 0x8006C10C as built: a place a pointer table in the same piece points at */
+D_8006C128 = _622F0_bin + 0xAA38; /* 0x8006C128 as built: a place a pointer table in the same piece points at */
+D_8006C144 = _622F0_bin + 0xAA54; /* 0x8006C144 as built: a place a pointer table in the same piece points at */
+D_8006C16C = _622F0_bin + 0xAA7C; /* 0x8006C16C as built: a place a pointer table in the same piece points at */
+D_8006C174 = _622F0_bin + 0xAA84; /* 0x8006C174 as built: a place a pointer table in the same piece points at */
+D_8006C180 = _622F0_bin + 0xAA90; /* 0x8006C180 as built: a place a pointer table in the same piece points at */
+D_8006C188 = _622F0_bin + 0xAA98; /* 0x8006C188 as built: a place a pointer table in the same piece points at */
+D_8006C190 = _622F0_bin + 0xAAA0; /* 0x8006C190 as built: a place a pointer table in the same piece points at */
+D_8006C1BC = _622F0_bin + 0xAACC; /* 0x8006C1BC as built: a place a pointer table in the same piece points at */
+D_8006C1E0 = _622F0_bin + 0xAAF0; /* 0x8006C1E0 as built: a place a pointer table in the same piece points at */
+D_8006C258 = _622F0_bin + 0xAB68; /* 0x8006C258 as built: a place a pointer table in the same piece points at */
+D_8006C280 = _622F0_bin + 0xAB90; /* 0x8006C280 as built: a place a pointer table in the same piece points at */
+D_8006C2CC = _622F0_bin + 0xABDC; /* 0x8006C2CC as built: a place a pointer table in the same piece points at */
+D_8006C370 = _622F0_bin + 0xAC80; /* 0x8006C370 as built: a place a pointer table in the same piece points at */
+D_8006C390 = _622F0_bin + 0xACA0; /* 0x8006C390 as built: a place a pointer table in the same piece points at */
+D_8006C3B8 = _622F0_bin + 0xACC8; /* 0x8006C3B8 as built: a place a pointer table in the same piece points at */
+D_8006C408 = _622F0_bin + 0xAD18; /* 0x8006C408 as built: a place a pointer table in the same piece points at */
+D_8006C458 = _622F0_bin + 0xAD68; /* 0x8006C458 as built: a place a pointer table in the same piece points at */
+D_8006C4C4 = _622F0_bin + 0xADD4; /* 0x8006C4C4 as built: a place a pointer table in the same piece points at */
+D_8006C4C8 = _622F0_bin + 0xADD8; /* 0x8006C4C8 as built: a place a pointer table in the same piece points at */
+D_8006C50C = _622F0_bin + 0xAE1C; /* 0x8006C50C as built: a place a pointer table in the same piece points at */
+D_8006C560 = _622F0_bin + 0xAE70; /* 0x8006C560 as built: a place a pointer table in the same piece points at */
+D_8006C564 = _622F0_bin + 0xAE74; /* 0x8006C564 as built: a place a pointer table in the same piece points at */
+D_8006C5F8 = _622F0_bin + 0xAF08; /* 0x8006C5F8 as built: a place a pointer table in the same piece points at */
+D_8006C63C = _622F0_bin + 0xAF4C; /* 0x8006C63C as built: a place a pointer table in the same piece points at */
+D_8006C658 = _622F0_bin + 0xAF68; /* 0x8006C658 as built: a place a pointer table in the same piece points at */
+D_8006C678 = _622F0_bin + 0xAF88; /* 0x8006C678 as built: a place a pointer table in the same piece points at */
+D_8006C6CC = _622F0_bin + 0xAFDC; /* 0x8006C6CC as built: a place a pointer table in the same piece points at */
+D_8006C858 = _622F0_bin + 0xB168; /* 0x8006C858 as built: a place a pointer table in the same piece points at */
+D_8006C880 = _622F0_bin + 0xB190; /* 0x8006C880 as built: a place a pointer table in the same piece points at */
+D_8006CAD4 = _6D600_bin + 0xD4; /* 0x8006CAD4 as built: a place a pointer table in the same piece points at */
+D_8006CAE8 = _6D600_bin + 0xE8; /* 0x8006CAE8 as built: a place a pointer table in the same piece points at */
+D_8006CAF8 = _6D600_bin + 0xF8; /* 0x8006CAF8 as built: a place a pointer table in the same piece points at */
+D_8006CB10 = _6D600_bin + 0x110; /* 0x8006CB10 as built: a place a pointer table in the same piece points at */
+D_8006CB2C = _6D600_bin + 0x12C; /* 0x8006CB2C as built: a place a pointer table in the same piece points at */
+D_8006CB40 = _6D600_bin + 0x140; /* 0x8006CB40 as built: a place a pointer table in the same piece points at */
+D_8006CB54 = _6D600_bin + 0x154; /* 0x8006CB54 as built: a place a pointer table in the same piece points at */
+D_8006CB68 = _6D600_bin + 0x168; /* 0x8006CB68 as built: a place a pointer table in the same piece points at */
+D_8006CB88 = _6D600_bin + 0x188; /* 0x8006CB88 as built: a place a pointer table in the same piece points at */
+D_8006CB9C = _6D600_bin + 0x19C; /* 0x8006CB9C as built: a place a pointer table in the same piece points at */
+D_8006CBAC = _6D600_bin + 0x1AC; /* 0x8006CBAC as built: a place a pointer table in the same piece points at */
+D_8006CBC0 = _6D600_bin + 0x1C0; /* 0x8006CBC0 as built: a place a pointer table in the same piece points at */
+D_8006CBD8 = _6D600_bin + 0x1D8; /* 0x8006CBD8 as built: a place a pointer table in the same piece points at */
+D_8006CBEC = _6D600_bin + 0x1EC; /* 0x8006CBEC as built: a place a pointer table in the same piece points at */
+D_8006CBFC = _6D600_bin + 0x1FC; /* 0x8006CBFC as built: a place a pointer table in the same piece points at */
+D_8006CC08 = _6D600_bin + 0x208; /* 0x8006CC08 as built: a place a pointer table in the same piece points at */
+D_8006CC18 = _6D600_bin + 0x218; /* 0x8006CC18 as built: a place a pointer table in the same piece points at */
+/* A ROM offset inside a segment after main, defined from the segment so it follows a change in the ROM's layout */
+D_D37700 = dialogue_bank_ROM_START + 0x9410; /* the dialogue bank's sign messages: LoadSignText reads a sign's name and message at this + the sign record's offsets; 0xD37700 as built */
+/* boss_guilty: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gGuiltyTex_00 = boss_guilty_tex_00_rgba16_rgba16__png;
+gGuiltyTex_01 = boss_guilty_tex_01_rgba16_rgba16__png;
+gGuiltyTex_02 = boss_guilty_tex_02_rgba16_rgba16__png;
+gGuiltyTex_03 = boss_guilty_tex_03_rgba16_rgba16__png;
+gGuiltyTex_04 = boss_guilty_tex_04_rgba16_rgba16__png;
+gGuiltyTex_05 = boss_guilty_tex_05_rgba16_rgba16__png;
+gGuiltyTex_06 = boss_guilty_tex_06_rgba16_rgba16__png;
+gGuiltyTex_07 = boss_guilty_tex_07_rgba16_rgba16__png;
+gGuiltyTex_08 = boss_guilty_tex_08_rgba16_rgba16__png;
+gGuiltyTex_09 = boss_guilty_tex_09_rgba16_rgba16__png;
+ASSERT(boss_guilty_VRAM + (boss_guilty_ROM_END - boss_guilty_ROM_START) <= gDepthBuffer,
+       "boss_guilty has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_solvaring: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gSolvaringTex_00 = boss_solvaring_tex_00_rgba16_rgba16__png;
+gSolvaringTex_01 = boss_solvaring_tex_01_rgba16_rgba16__png;
+gSolvaringTex_02 = boss_solvaring_tex_02_rgba16_rgba16__png;
+gSolvaringTex_03 = boss_solvaring_tex_03_rgba16_rgba16__png;
+gSolvaringTex_04 = boss_solvaring_tex_04_rgba16_rgba16__png;
+gSolvaringTex_05 = boss_solvaring_tex_05_rgba16_rgba16__png;
+gSolvaringTex_06 = boss_solvaring_tex_06_rgba16_rgba16__png;
+gSolvaringTex_07 = boss_solvaring_tex_07_rgba16_rgba16__png;
+gSolvaringTex_08 = boss_solvaring_tex_08_rgba16_rgba16__png;
+gSolvaringTex_09 = boss_solvaring_tex_09_rgba16_rgba16__png;
+gSolvaringTex_10 = boss_solvaring_tex_10_rgba16_rgba16__png;
+gSolvaringTex_11 = boss_solvaring_tex_11_rgba16_rgba16__png;
+gSolvaringTex_12 = boss_solvaring_tex_12_rgba16_rgba16__png;
+gSolvaringTex_13 = boss_solvaring_tex_13_rgba16_rgba16__png;
+gSolvaringTex_14 = boss_solvaring_tex_14_rgba16_rgba16__png;
+gSolvaringTex_15 = boss_solvaring_tex_15_rgba16_rgba16__png;
+gSolvaringTex_16 = boss_solvaring_tex_16_rgba16_rgba16__png;
+ASSERT(boss_solvaring_VRAM + (boss_solvaring_ROM_END - boss_solvaring_ROM_START) <= gDepthBuffer,
+       "boss_solvaring has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_zelse: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gZelseTex_00 = boss_zelse_tex_00_rgba16_rgba16__png;
+gZelseTex_01 = boss_zelse_tex_01_rgba16_rgba16__png;
+gZelseTex_02 = boss_zelse_tex_02_rgba16_rgba16__png;
+gZelseTex_03 = boss_zelse_tex_03_rgba16_rgba16__png;
+gZelseTex_04 = boss_zelse_tex_04_rgba16_rgba16__png;
+gZelseTex_05 = boss_zelse_tex_05_rgba16_rgba16__png;
+gZelseTex_06 = boss_zelse_tex_06_rgba16_rgba16__png;
+gZelseTex_07 = boss_zelse_tex_07_rgba16_rgba16__png;
+gZelseTex_08 = boss_zelse_tex_08_rgba16_rgba16__png;
+gZelseTex_09 = boss_zelse_tex_09_rgba16_rgba16__png;
+ASSERT(boss_zelse_VRAM + (boss_zelse_ROM_END - boss_zelse_ROM_START) <= gDepthBuffer,
+       "boss_zelse has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_nepty: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gNeptyTex_00 = boss_nepty_tex_00_rgba16_rgba16__png;
+gNeptyTex_01 = boss_nepty_tex_01_rgba16_rgba16__png;
+gNeptyTex_02 = boss_nepty_tex_02_rgba16_rgba16__png;
+gNeptyTex_03 = boss_nepty_tex_03_rgba16_rgba16__png;
+gNeptyTex_04 = boss_nepty_tex_04_rgba16_rgba16__png;
+gNeptyTex_05 = boss_nepty_tex_05_rgba16_rgba16__png;
+gNeptyTex_06 = boss_nepty_tex_06_rgba16_rgba16__png;
+gNeptyTex_07 = boss_nepty_tex_07_rgba16_rgba16__png;
+gNeptyTex_08 = boss_nepty_tex_08_rgba16_rgba16__png;
+gNeptyTex_09 = boss_nepty_tex_09_rgba16_rgba16__png;
+gNeptyTex_10 = boss_nepty_tex_10_rgba16_rgba16__png;
+gNeptyTex_11 = boss_nepty_tex_11_rgba16_rgba16__png;
+gNeptyTex_12 = boss_nepty_tex_12_rgba16_rgba16__png;
+ASSERT(boss_nepty_VRAM + (boss_nepty_ROM_END - boss_nepty_ROM_START) <= gDepthBuffer,
+       "boss_nepty has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_shilf: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gShilfTex_00 = boss_shilf_tex_00_rgba16_rgba16__png;
+gShilfTex_01 = boss_shilf_tex_01_rgba16_rgba16__png;
+gShilfTex_02 = boss_shilf_tex_02_rgba16_rgba16__png;
+gShilfTex_03 = boss_shilf_tex_03_rgba16_rgba16__png;
+gShilfTex_04 = boss_shilf_tex_04_rgba16_rgba16__png;
+gShilfTex_05 = boss_shilf_tex_05_rgba16_rgba16__png;
+gShilfTex_06 = boss_shilf_tex_06_rgba16_rgba16__png;
+gShilfTex_07 = boss_shilf_tex_07_rgba16_rgba16__png;
+ASSERT(boss_shilf_VRAM + (boss_shilf_ROM_END - boss_shilf_ROM_START) <= gDepthBuffer,
+       "boss_shilf has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_fargo: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gFargoTex_00 = boss_fargo_tex_00_rgba16_rgba16__png;
+gFargoTex_01 = boss_fargo_tex_01_rgba16_rgba16__png;
+gFargoTex_02 = boss_fargo_tex_02_rgba16_rgba16__png;
+gFargoTex_03 = boss_fargo_tex_03_rgba16_rgba16__png;
+gFargoTex_04 = boss_fargo_tex_04_rgba16_rgba16__png;
+gFargoTex_05 = boss_fargo_tex_05_rgba16_rgba16__png;
+gFargoTex_06 = boss_fargo_tex_06_rgba16_rgba16__png;
+gFargoTex_07 = boss_fargo_tex_07_rgba16_rgba16__png;
+gFargoTex_08 = boss_fargo_tex_08_rgba16_rgba16__png;
+gFargoTex_09 = boss_fargo_tex_09_rgba16_rgba16__png;
+gFargoTex_10 = boss_fargo_tex_10_rgba16_rgba16__png;
+gFargoTex_11 = boss_fargo_tex_11_rgba16_rgba16__png;
+gFargoTex_12 = boss_fargo_tex_12_rgba16_rgba16__png;
+gFargoTex_13 = boss_fargo_tex_13_rgba16_rgba16__png;
+gFargoTex_14 = boss_fargo_tex_14_rgba16_rgba16__png;
+gFargoTex_15 = boss_fargo_tex_15_rgba16_rgba16__png;
+ASSERT(boss_fargo_VRAM + (boss_fargo_ROM_END - boss_fargo_ROM_START) <= gDepthBuffer,
+       "boss_fargo has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_beigis: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gBeigisTex_00 = boss_beigis_tex_00_rgba16_rgba16__png;
+gBeigisTex_01 = boss_beigis_tex_01_rgba16_rgba16__png;
+gBeigisTex_02 = boss_beigis_tex_02_rgba16_rgba16__png;
+gBeigisTex_03 = boss_beigis_tex_03_rgba16_rgba16__png;
+gBeigisTex_04 = boss_beigis_tex_04_rgba16_rgba16__png;
+gBeigisTex_05 = boss_beigis_tex_05_rgba16_rgba16__png;
+gBeigisTex_06 = boss_beigis_tex_06_rgba16_rgba16__png;
+gBeigisTex_07 = boss_beigis_tex_07_rgba16_rgba16__png;
+gBeigisTex_08 = boss_beigis_tex_08_rgba16_rgba16__png;
+ASSERT(boss_beigis_VRAM + (boss_beigis_ROM_END - boss_beigis_ROM_START) <= gDepthBuffer,
+       "boss_beigis has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* boss_mammon: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
+   buffer, the first RAM above the boss buffer the game uses */
+gMammonTex_00 = boss_mammon_tex_00_rgba16_rgba16__png;
+gMammonTex_01 = boss_mammon_tex_01_rgba16_rgba16__png;
+gMammonTex_02 = boss_mammon_tex_02_rgba16_rgba16__png;
+gMammonTex_03 = boss_mammon_tex_03_rgba16_rgba16__png;
+gMammonTex_04 = boss_mammon_tex_04_rgba16_rgba16__png;
+gMammonTex_05 = boss_mammon_tex_05_rgba16_rgba16__png;
+gMammonTex_06 = boss_mammon_tex_06_rgba16_rgba16__png;
+gMammonTex_07 = boss_mammon_tex_07_rgba16_rgba16__png;
+gMammonTex_08 = boss_mammon_tex_08_rgba16_rgba16__png;
+gMammonTex_09 = boss_mammon_tex_09_rgba16_rgba16__png;
+gMammonTex_10 = boss_mammon_tex_10_rgba16_rgba16__png;
+gMammonTex_11 = boss_mammon_tex_11_rgba16_rgba16__png;
+ASSERT(boss_mammon_VRAM + (boss_mammon_ROM_END - boss_mammon_ROM_START) <= gDepthBuffer,
+       "boss_mammon has outgrown the boss buffer: it would overwrite the depth buffer (gDepthBuffer)");
+/* the title overlay's art piece (ROM 0xDAEA30-0xDC6250): names into it, defined from its start so they follow a layout change */
+D_8020F510_DAEA30 = title_overlay_art_bin + 0x0; /* 0x8020F510 as built */
+D_8020F710_DAEC30 = title_overlay_art_bin + 0x200; /* 0x8020F710 as built */
+D_8020FE10_DAF330 = title_overlay_art_bin + 0x900; /* 0x8020FE10 as built */
+D_80210010_DAF530 = title_overlay_art_bin + 0xB00; /* 0x80210010 as built */
+D_802105F8_DAFB18 = title_overlay_art_bin + 0x10E8; /* 0x802105F8 as built */
+D_80210B00_DB0020 = title_overlay_art_bin + 0x15F0; /* 0x80210B00 as built */
+D_80210D00_DB0220 = title_overlay_art_bin + 0x17F0; /* 0x80210D00 as built */
+D_80210D20_DB0240 = title_overlay_art_bin + 0x1810; /* 0x80210D20 as built */
+D_80211148_DB0668 = title_overlay_art_bin + 0x1C38; /* 0x80211148 as built */
+D_802111A8_DB06C8 = title_overlay_art_bin + 0x1C98; /* 0x802111A8 as built */
+D_802113A8_DB08C8 = title_overlay_art_bin + 0x1E98; /* 0x802113A8 as built */
+D_80211428_DB0948 = title_overlay_art_bin + 0x1F18; /* 0x80211428 as built */
+D_80211464_DB0984 = title_overlay_art_bin + 0x1F54; /* 0x80211464 as built */
+D_802114E0_DB0A00 = title_overlay_art_bin + 0x1FD0; /* 0x802114E0 as built */
+D_8021150C_DB0A2C = title_overlay_art_bin + 0x1FFC; /* 0x8021150C as built */
+D_80211540_DB0A60 = title_overlay_art_bin + 0x2030; /* 0x80211540 as built */
+D_80211548_DB0A68 = title_overlay_art_bin + 0x2038; /* 0x80211548 as built */
+D_80211550_DB0A70 = title_overlay_art_bin + 0x2040; /* 0x80211550 as built */
+D_80211750_DB0C70 = title_overlay_art_bin + 0x2240; /* 0x80211750 as built */
+D_802150F0_DB4610 = title_overlay_art_bin + 0x5BE0; /* 0x802150F0 as built */
+D_802152F0_DB4810 = title_overlay_art_bin + 0x5DE0; /* 0x802152F0 as built */
+D_80226AF8_DC6018 = title_overlay_art_bin + 0x175E8; /* 0x80226AF8 as built */
+D_80226D00_DC6220 = title_overlay_art_bin + 0x177F0; /* 0x80226D00 as built */
+D_80226D18_DC6238 = title_overlay_art_bin + 0x17808; /* 0x80226D18 as built */
+func_8020C0D0 = title_overlay_VRAM; /* the overlay slot, 0x8020C0D0: the title, intro and ending overlays and the NPC areas' held objects load there, and main calls the loaded mode overlay's first function as its entry (main's name; splat no longer defines it once the title's first function has its own) */
+/* the title overlay, image and .bss, while it runs (game mode 3): main forms no fixed address between its end and
+   the depth buffer except the field's NPC actor (0x802A0000) and boss buffer (0x802A7BC0), unused on the title
+   screen; BuildFrame uses the depth buffer every frame */
+ASSERT(title_overlay_BSS_END <= gDepthBuffer,
+       "the title overlay has outgrown its room: it would overwrite the depth buffer (gDepthBuffer)");
+/* the splash and intro overlay, image and .bss, while it runs (game mode 4): main forms no fixed address between
+   its end and the depth buffer except the field's NPC actor (0x802A0000) and boss buffer (0x802A7BC0), unused in
+   the splash and intro; BuildFrame uses the depth buffer every frame */
+ASSERT(intro_overlay_BSS_END <= gDepthBuffer,
+       "the intro overlay has outgrown its room: it would overwrite the depth buffer (gDepthBuffer)");

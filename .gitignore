@@ -3,7 +3,11 @@
 *.n64
 *.v64
 baserom*
-asm/
+# asm/ is what splat writes from your ROM, except the hand-kept boot entry, asm/entry.s, which is part of the source:
+# without it splat writes the original entry back, whose .bss clear has the ROM's fixed size (a modified build whose
+# .bss grows would then not clear all of it)
+asm/*
+!asm/entry.s
 assets/
 build/
 expected/

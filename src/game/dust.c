@@ -1,5 +1,7 @@
 /*Same as 1BCD0.c in Quest64*/
 #include "common.h"
+#include "game/dust.h"
+#include "game/math.h"
 
 
 extern s32 gDustCount;
@@ -7,7 +9,6 @@ extern Dust gDust[0x100];
 extern Gfx* gDisplayListHead;
 extern u8 gTexMaskSides[7]; /* texture side lengths 2, 4 .. 128: a side of up to gTexMaskSides[i] texels gets mask i + 1 */
 
-void LoadDustTexture(u8 fmt, u8* texture, s32 width, s32 height, u8 cms, u8 cmt);
 
 //#pragma GLOBAL_ASM("asm/nonmatchings/game/dust/ResetDust.s")
 void ResetDust(void) {
@@ -46,11 +47,6 @@ extern s32 gMatrixHead;
 extern Mtx D_2000000[];
 extern Camera gCamera;
 extern Gfx gDustDefaultGfx[];
-void MatrixFromDirection(MtxF* mtx, f32 x, f32 y, f32 z);
-void ScaleMatrix(MtxF* m, f32 x, f32 y, f32 z);
-void BuildLookAtMatrix(MtxF *mtx, f32 x, f32 y, f32 z, f32 atX, f32 atY, f32 atZ);
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);
-void guMtxCatF(f32 a[4][4], f32 b[4][4], f32 out[4][4]);
 void DrawDust(mkst* dyn) {
     s32 n;
     u8* tex;

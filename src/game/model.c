@@ -1,14 +1,12 @@
 #include "common.h"
+#include "game/model.h"
+#include "game/math.h"
+#include "game/spline.h"
 typedef struct {
     char unk0[8];
     Vec3f unk8;                     /* a point ApplyPivotOffset moves a matrix's origin by */
 } unk20A28s;
 extern s32 gPartPositionCount;
-void ApplyPivotOffset(MtxF* mtx, ModelPart* part);
-void SampleSpline(ModelPart* part, ModelKey* key, s32 frame);
-void BuildActorMatrix(MtxF* mf, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
-void DrawModelPart(MtxF* mf, Vec3f scale, s32 flags, s32 part, s32 frame, s32 frames, AnimEntry* anim,
-                   ModelPart* parts, Mtx* mtxBuf);   /* draw one part and its children (recursive) */
 
 void SetAnimation(ActorTransform* actor, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags) {
     if (nextAnim != -1) {
@@ -115,10 +113,6 @@ extern Vec3f gPartPositions[];           /* recorded part positions */
 extern s32 gMatrixHead;               /* matrices used this frame */
 extern Gfx* gDisplayListHead;
 extern Mtx D_2000000[];              /* segment 2: the matrix buffer */
-void BuildSRTMatrix(MtxF* mf, f32 x, f32 y, f32 z, f32 a, f32 b, f32 c, f32 sx, f32 sy, f32 sz);
-void MatrixMultiply(MtxF* a, MtxF* b, MtxF* out);
-void BuildLookAtMatrix(MtxF *mtx, f32 x, f32 y, f32 z, f32 atX, f32 atY, f32 atZ);
-void ScaleMatrix(MtxF* m, f32 x, f32 y, f32 z);
 void DrawModelPart(MtxF* parent, Vec3f scale, s32 flags, s32 index, s32 frame, s32 frames, AnimEntry* anim,
                    ModelPart* parts, Mtx* mtxBuf) {
     s32* dlistFrames;

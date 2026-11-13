@@ -1,5 +1,5 @@
 #include "common.h"
-extern s32 osPfsFreeBlocks(OSPfs *, s32 *);
+#include "game/controller.h"
 extern OSPfs gPfs[];
 typedef struct {
     u8 name[4];
@@ -7,15 +7,9 @@ typedef struct {
 extern PfsExtName gSaveNoteExtName;       /* the save note's extension template */
 extern u8 gSaveNoteName[];             /* the save note's name */
 extern PakNoteExts gPakNotes[];
-extern s32 osPfsReadWriteFile(OSPfs *, s32, u8, int, int, u8 *);
-extern s32		osContSetCh(u8);
 extern OSMesgQueue gSiMesgQueue;
-s32 func_8003D6B0();
-s32 func_8003D554();
-s32 CompareBytes(u8* a, u8* b, s32 n);
-extern s32		osContStartReadData(OSMesgQueue *);
+s32 osGbpakInit(OSMesgQueue *mq, OSPfs *pfs, int channel);
 extern OSContPad gContPads[4];
-extern void		osContGetReadData(OSContPad *);
 extern u16 gButtonsHeld;
 extern u16 gButtonsPrevInv;
 extern s8 gStickX;
@@ -116,10 +110,10 @@ s32 ScanControllerPak(s32 channel) {
     ret = osPfsInitPak(&gSiMesgQueue, pfs, channel);
     if (ret != 0) {
         if (ret == PFS_ERR_ID_FATAL) {
-            if (func_8003D554(&gSiMesgQueue, pfs, channel) == 0) {
+            if (osMotorInit(&gSiMesgQueue, pfs, channel) == 0) {
                 return 1;
             }
-            if (func_8003D6B0(&gSiMesgQueue, pfs, channel) == 0) {
+            if (osGbpakInit(&gSiMesgQueue, pfs, channel) == 0) {
                 return 1;
             }
             ret = PFS_ERR_ID_FATAL;
@@ -234,19 +228,17 @@ s32 WritePakNote(s32 channel, s32 file, s32 offset, s32 size, u8* data) {
     }
     return osPfsReadWriteFile(&gPfs[channel], file, 1, offset, size, data);
 }
-s32 func_8003D554();
-s32 func_8003ED60(OSPfs* pfs);
 s32 RepairPak(s32 file, s32 err) {
     s32 ret;
     s32 channel;
 
     channel = gControllerChannel;
     if (err == PFS_ERR_ID_FATAL) {
-        if (func_8003D554(&gSiMesgQueue, &gPfs[channel], channel) != 0) {
-            if (func_8003D6B0(&gSiMesgQueue, &gPfs[channel], channel) != 0) {
+        if (osMotorInit(&gSiMesgQueue, &gPfs[channel], channel) != 0) {
+            if (osGbpakInit(&gSiMesgQueue, &gPfs[channel], channel) != 0) {
                 ret = osPfsInitPak(&gSiMesgQueue, &gPfs[channel], channel);
                 if (ret != PFS_ERR_DEVICE && ret != PFS_ERR_NOPACK && ret != PFS_ERR_NEW_PACK) {
-                    ret = func_8003ED60(&gPfs[channel]);
+                    ret = osPfsRepairId(&gPfs[channel]);
                 }
             } else {
                 ret = PFS_ERR_CONTRFAIL;
@@ -294,18 +286,15 @@ s32 CompareBytes(u8* a, u8* b, s32 n) {
     } while (n--);
     return n;
 }
-void func_8003EDC0();
-void func_80036124(void) {
-    func_8003EDC0();
+void func_80036124(OSPfs* pfs, s32* max_files, s32* files_used) {
+    osPfsNumFiles(pfs, max_files, files_used);
 }
-void func_8003EEE0();   /* osContStartQuery (Quest's twin); called below without its argument, so not under its SDK name */
-void func_80036144(void) {
-    func_8003EEE0();
+void func_80036144(OSMesgQueue* mq) {
+    osContStartQuery(mq);
 }
-void func_8003EF64();   /* osContGetQuery (Quest's twin); likewise */
-void func_80036164(void) {
-    func_8003EF64();
+void func_80036164(OSContStatus* data) {
+    osContGetQuery(data);
 }
-void func_80036184(void) {
-    func_8003D6B0();
+void func_80036184(OSMesgQueue* mq, OSPfs* pfs, int channel) {
+    osGbpakInit(mq, pfs, channel);
 }

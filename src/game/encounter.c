@@ -1,5 +1,15 @@
 /*same as 1D160.c from Quest64*/
 #include "common.h"
+#include "game/encounter.h"
+#include "game/boss.h"
+#include "game/camera.h"
+#include "game/effects.h"
+#include "game/enemy.h"
+#include "game/hud.h"
+#include "game/math.h"
+#include "game/player.h"
+#include "game/sound.h"
+#include "game/spells.h"
 
 
 extern sMapData* gMapHeader;
@@ -10,9 +20,6 @@ typedef struct {
     s16 x;
     s16 z;
 } EncounterCircle; /* names from vbhayden's Quest 64 scratches */
-u32 getRandomNumber(u32 range);
-extern f32 D_8006F528; /* 8100.0f: encounter circle max distance squared (90) */
-extern f32 D_8006F52C; /* 2500.0f: encounter circle min distance squared (50) */
 extern f32 gEncounterWalkDistance;               /* distance walked toward the next encounter roll */
 extern u16 gEncounterChance;               /* encounter chance out of 2000, +50 per 50 units walked */
 extern s16 gBattleIntroStep;          /* the battle intro camera's step: 0 looks at gBattleIntroEnemy first, 1 the view behind Brian */
@@ -27,22 +34,13 @@ extern f32 gBattleCenterZ;
 extern f32 gBattleRadius;
 extern u16 gBattleCircleRing;
 extern u16 gTurnOrder[];   /* turn order: enemy indices */
-void RequestMusic(s8 bgm);
-void SetupBrianForBattle(void);
-void Init_MISS_Icon(void);
-s32 SpawnBattleRing(u16 type, f32 x, f32 y, f32 z, f32 radius);
-EncounterZone* FindEncounterZone(f32 x, f32 z, EncounterZoneList* zones);
 EncounterCircle* IsInEncounterCircle(f32 brian_x, f32 brian_z);
-void CreateEncounter(f32 spawn_x, f32 spawn_z, f32 rotation_angle, u16* encounter_table);
 extern s32 gEnemyCount;              /* enemy count (Quest D_8007C990) */
 extern EnemyAction gEnemies[];    /* enemy table (Quest D_8007C998) */
 extern MonsterBattleData* gEnemyGroupHeads[];
 extern s32 gEnemyGroupCount;
 extern Coordinates2D gBattleCameraOffset;
 extern u16 gTurnCount;
-void SpawnEnemy(s32 enemy_type, f32 x, f32 z, f32 angle, MonsterBattleData* data, EnemyAction* enemy);
-void SortTurnOrder(void);
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
 
 /* encounter packs (names from vbhayden's Quest 64 scratches) */
 typedef struct {
@@ -89,7 +87,6 @@ void InitEncounters(void) {
 
 extern f32 gBrianStepDistance;               /* distance Brian walked this frame */
 extern PlayerState gPlayerState;
-f32 Atan2(f32 x, f32 z);     /* atan2 */
 void RollRandomEncounter(void) {
     f32 x;
     f32 z;
@@ -153,8 +150,6 @@ extern u8** gFieldEnemyNames;           /* the field's gEnemyNames, kept while a
 extern s32 gBattleBoss;
 extern AnimEntry* gBossAnimTables[];
 extern u8* gBossNames[];                /* the bosses' names, by monsterID */
-void SpawnBoss(s32 arg0, f32 x, f32 z, f32 angle, EnemyAction* enemy);
-void StopBossEffectScript(void);
 void StartScriptedBattle(void) {
     s32 music;
 
@@ -206,16 +201,6 @@ extern s32 gCameraSetupIndex;
 extern s32 gCurrentMap;
 extern f32 gTurnCenterX;               /* the turn\'s movement circle centre x */
 extern f32 gTurnCenterZ;
-void SetStoryFlag(u16 flag);
-void OnBossDefeated(s32 boss);
-u8 RollItemDrop(void);              /* the item an enemy drops */
-void StartGroundRing(s32 index, f32 x, f32 y, f32 z);
-void ClearEnemies(void);
-void StartAfterBattleCamera(s32 index);
-void FindMapBGM(s32 map, s32 room, u16 fade);
-void UpdateBGMDelay(s8 song, u16 fade);
-void FlagTurnEnemy(void);
-void LoadCameraSetup(s32 index);
 extern Camera gCamera;
 extern CameraTransition gCameraTransition;
 extern f32 gBattleCameraYawOffset;
@@ -377,7 +362,6 @@ void StepBattleRound(void) {
     gTurnRing = SpawnBattleRing((gBattleState & 2) ? 1 : 2, gTurnCenterX, actor->transform.pos.y, gTurnCenterZ,
                                size * 1.04);
 }
-void CountDownStatuses(MonsterBattleData* actor);
 void EndBattleTurn(MonsterBattleData* actor) {
     u32 left;
     EnemyAction* enemy;

@@ -1,6 +1,11 @@
 /*same as 191F0.c from Quest64*/
 #include "common.h"
-s32 count_digits(s32 arg0, u8* arg1, u16 arg2);
+#include "game/effects.h"
+#include "game/collision.h"
+#include "game/dma.h"
+#include "game/dust.h"
+#include "game/math.h"
+#include "game/model.h"
 
 typedef struct {
     s32 timer;                      /* counts down; a puff on odd frames */
@@ -18,15 +23,10 @@ typedef struct {
 } EnvTimer;
 
 extern Dust gFadingPuffTemplate;              /* the fading puff template */
-Dust* SpawnDust(Dust* dust);     /* spawn a dust puff from a template (dust.c); returns the new puff */
 extern Dust gRunDustTemplate;              /* the dust puff template (player.c's running dust uses it too) */
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* point);   /* rotate a 2D point */
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);   /* rotation matrix */
 extern s32 gCurrentFrame;
 extern Camera gCamera;   /* camera data (Quest D_80086DC0) */
 extern Gfx gDigitRenderSetup[];             /* digit render setup */
-f32 Atan2(f32 dx, f32 dz);
-u32 getRandomNumber(u32 range);
 
 /* projectile slots (0x58 each, 32 of them at gProjSlots; Quest UnkProjectileX34Struct at D_800875A8) */
 
@@ -115,22 +115,6 @@ typedef struct {
 } GroundRing;
 
 /* the effect lists' reset (ResetEffects) and update (UpdateEffects) calls */
-void ResetDustEmitters(void);
-void ResetPuffTimers(void);
-void ResetSparkleBursts(void);
-void ResetStaffHitEffects(void);
-void ResetGlows(void);
-void ResetDamageNumbers(void);
-void ResetProjectiles(void);
-void ResetGroundRings(void);
-void SpawnRunningDust(void);
-void UpdatePuffTimers(void);
-void UpdateSparkleBursts(void);
-void DrawStaffHitEffects(mkst* dyn);
-void DrawGlows(mkst* dyn);
-void DrawGroundRings(mkst* dyn);
-void DrawProjectiles(mkst* dyn);
-void DrawDamageNumbers(void);
 
 /* ---- effects.c's .bss (0x800863F0-0x80087E30), in address order. IDO 5.3 lays a variable
    out by its FIRST declaration, and those first declared among the file's first 32 declarations (typedefs and
@@ -403,9 +387,6 @@ u8 gLevelUpPuffAlphas[48] = {
     0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0, 0xD0,
     0xD0, 0xC0, 0xB0, 0xA0, 0x90, 0x80, 0x70, 0x60, 0x50, 0x40, 0x30, 0x20, 0x10, 0x00, 0x00, 0x00,
 };
-void UpdateFramedPuff(Dust* dust);
-void UpdateSparkle(Dust* dust);
-void UpdateBurstSparkle(Dust* dust);
 void SpawnSparkle(f32 x, f32 y, f32 z) {
     static Dust gSparkleTemplate = {                  /* the sparkle template (SpawnSparkle) */
         0xC, 0, 0, UpdateFramedPuff, 4, 0x20, 0x20, 0, 0, { 0 }, gSparkleTexture, gSparkleGfx,
@@ -470,9 +451,7 @@ void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage) {
     }
     num->stackIndex = stacked - 1;
 }
-s32 WorldToScreen(f32 x, f32 y, f32 z, s32* sx, s32* sy);   /* world to screen; 0 = off screen */
 extern u16 gDigitSheet[];             /* the digit sheet: 128 x 10, RGBA16 */
-s16 sins(u16 angle);        /* sins */
 void DrawDamageNumbers(void) {
     static u8 gDigitColours[4][4] = {              /* digit colours */
         { 0xFF, 0xFF, 0xFF, 0xFF }, { 0xC8, 0xFF, 0xC8, 0xFF }, { 0xC8, 0xC8, 0xFF, 0xFF }, { 0xFF, 0x7F, 0x7F, 0xFF },
@@ -704,9 +683,6 @@ void ResetStaffHitEffects(void) {
         gStaffHitSlots[i].timer = 0;
     }
 }
-void MatrixFromDirection(MtxF* mf, f32 x, f32 y, f32 z);
-void ScaleMatrix(MtxF* mf, f32 x, f32 y, f32 z);
-f32 sqrtf(f32 x);
 extern Mtx D_2000000[];
 extern Gfx gStaffHitSetupGfx[];
 extern Gfx gStaffHitGfx[];
@@ -810,7 +786,6 @@ void ResetGroundRings(void) {
     }
 }
 extern PlayerState gPlayerState;
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
 s32 SpawnBattleRing(u16 type, f32 x, f32 y, f32 z, f32 radius) {
     static u16 sRingDurations[4] = { 0x14, 0xC, 0xC, 0 };   /* per ring type */
     f32 angle;
@@ -883,13 +858,9 @@ void StartGroundRing(s32 index, f32 x, f32 y, f32 z) {
     slot->z = z;
 }
 
-f32 sinf(f32 x);            /* sinf */
-f32 sqrtf(f32 x);            /* sqrtf */
 extern Gfx gRingRenderSetup[];             /* ring render setup */
 extern u8 gRingTexture[];              /* ring texture, I8 8 x 8 */
 extern Gfx gRingSegmentGfx[];             /* one ring segment */
-void MatrixFromDirection(MtxF* mtx, f32 x, f32 y, f32 z);
-void ScaleMatrix(MtxF* m, f32 x, f32 y, f32 z);
 void DrawGroundRings(mkst* dyn) {
     static u8 gRingColours[3][4] = {              /* ring colours */
         { 0xC8, 0xC8, 0x00, 0x00 }, { 0xC8, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0xC8, 0x00 },
@@ -1037,9 +1008,6 @@ ProjSlot* AllocProjectileSlot(s32 anim, s32 model, s32 texture, s32 colour, s32 
     return slot;
 }
 extern s32 gPartPositionCount;
-void BuildActorMatrix(MtxF* mf, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
-void DrawModelPart(MtxF* mf, Vec3f scale, s32 flags, s32 part, s32 frame, s32 frames, AnimEntry* anim,
-                   ModelPart* parts, Mtx* mtxBuf);   /* draw one part and its children (model.c) */
 extern Gfx gProjRenderSetup[];                /* the projectiles' render setup */
 void DrawProjectileModel(ProjSlot* slot, Mtx* mtxBuf);
 void SetProjectileTexture(ProjSlot* slot);
@@ -1222,7 +1190,6 @@ void SetProjectileTexture(ProjSlot* slot) {
 extern Vec3f gBrianFloorPos;             /* Brian's point on the floor (his shadow, the glows) */
 extern Gfx gGlowRenderSetup[];             /* glow render setup */
 extern Gfx gGlowGfx[];             /* the glow */
-void BuildLookAtMatrix(MtxF *mtx, f32 x, f32 y, f32 z, f32 atX, f32 atY, f32 atZ);
 void ResetGlows(void) {
     s32 i;
 

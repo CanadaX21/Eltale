@@ -1,5 +1,4 @@
 #include "common.h"
-extern s32 __osThreadTail;
 extern OSThread *__osRunQueue;
 extern void __osEnqueueThread(OSThread **, OSThread *);
 extern OSThread *__osPopThread(OSThread **);

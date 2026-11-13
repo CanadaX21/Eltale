@@ -1,14 +1,11 @@
 #include "common.h"
-extern void		*osViGetCurrentFramebuffer(void);
-extern void            nnScEventHandler(NNSched *sc);
-extern void            nnScExecuteAudio(NNSched *sc);
-extern void            nnScExecuteGraphics(NNSched *sc);
-extern OSIntMask	osSetIntMask(OSIntMask);
-extern u64 nnScStack[];
-extern u64 nnScAudioStack[];
-extern u64 nnScGraphicsStack[];
-extern u16 gRetraceCount;
-extern void		osViSetEvent(OSMesgQueue *, OSMesg, u32);
+#include "sched/nnsched.h"
+
+/* The scheduler's state, in this order in .bss: a stack for each of its three threads, and the retrace count. */
+u64 nnScStack[NN_SC_STACKSIZE / sizeof(u64)];          /* the scheduler thread's stack */
+u64 nnScAudioStack[NN_SC_STACKSIZE / sizeof(u64)];     /* the audio thread's stack */
+u64 nnScGraphicsStack[NN_SC_STACKSIZE / sizeof(u64)];  /* the graphics thread's stack */
+u16 gRetraceCount;   /* retraces since the last frame: the event handler counts them, main.c waits on it */
 
 void nnScCreateScheduler(NNSched * sc, u8 numFields) {
     
@@ -34,11 +31,11 @@ void nnScCreateScheduler(NNSched * sc, u8 numFields) {
 }
 void nnScStartScheduler(NNSched* sc) {
 
-    osCreateThread(&sc->schedulerThread, 0x13, (void (*)(void*)) nnScEventHandler, sc, nnScStack + NN_SC_STACKSIZE / sizeof(u64), NN_SC_PRI);
+    osCreateThread(&sc->schedulerThread, 0x13, (void (*)(void*)) nnScEventHandler, sc, STACK_TOP(nnScStack), NN_SC_PRI);
     osStartThread(&sc->schedulerThread);
-    osCreateThread(&sc->audioThread, 0x12, (void (*)(void*)) nnScExecuteAudio, sc, nnScAudioStack + NN_SC_STACKSIZE / sizeof(u64), NN_SC_AUDIO_PRI);
+    osCreateThread(&sc->audioThread, 0x12, (void (*)(void*)) nnScExecuteAudio, sc, STACK_TOP(nnScAudioStack), NN_SC_AUDIO_PRI);
     osStartThread(&sc->audioThread);
-    osCreateThread(&sc->graphicsThread, 0x11, (void (*)(void*)) nnScExecuteGraphics, sc, nnScGraphicsStack + NN_SC_STACKSIZE / sizeof(u64), NN_SC_GRAPHICS_PRI);
+    osCreateThread(&sc->graphicsThread, 0x11, (void (*)(void*)) nnScExecuteGraphics, sc, STACK_TOP(nnScGraphicsStack), NN_SC_GRAPHICS_PRI);
     osStartThread(&sc->graphicsThread);
 }
 OSMesgQueue* nnScGetAudioMQ(NNSched* sc) {
@@ -47,7 +44,6 @@ OSMesgQueue* nnScGetAudioMQ(NNSched* sc) {
 OSMesgQueue* nnScGetGfxMQ(NNSched* sc) {
     return &sc->graphicsRequestMQ;
 }
-extern void nnScEventBroadcast(NNSched *sc, NNScMsg *msg);
 void nnScEventHandler(NNSched* sc) {
     OSMesg msg = (OSMesg)0;
 
@@ -102,11 +98,6 @@ void nnScEventBroadcast(NNSched *sc, NNScMsg *msg)
     osSendMesg(client->msgQ, (OSMesg *)msg, OS_MESG_NOBLOCK);
   }
 }
-extern void osWritebackDCacheAll(void);
-extern void osSpTaskYield(void);
-extern OSYieldResult osSpTaskYielded(OSTask *);
-extern void osSpTaskLoad(OSTask *);
-extern void osSpTaskStartGo(OSTask *);
 void nnScExecuteAudio(NNSched *sc)
 {
   OSMesg msg = (OSMesg)0;
@@ -146,8 +137,6 @@ void nnScExecuteAudio(NNSched *sc)
     osSendMesg(task->msgQ, task->msg, OS_MESG_BLOCK);
   }
 }
-extern void osViSwapBuffer(void *);
-void nnScWaitTaskReady(NNSched* sc, NNScTask* task);
 void nnScExecuteGraphics(NNSched *sc)
 {
   OSMesg msg = (OSMesg)0;

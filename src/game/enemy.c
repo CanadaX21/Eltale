@@ -1,50 +1,42 @@
 #include "common.h"
+#include "game/enemy.h"
+#include "game/boss.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/dma.h"
+#include "game/effects.h"
+#include "game/encounter.h"
+#include "game/hud.h"
+#include "game/math.h"
+#include "game/message.h"
+#include "game/model.h"
+#include "game/player.h"
+#include "game/screen_fade.h"
+#include "game/shadow.h"
+#include "game/sound.h"
+#include "game/spells.h"
 extern BossFxEntry* gBossEffectScripts[];    /* the boss effect scripts, by a boss action's low tag byte */
-void GetRootMotionOffset(MonsterBattleData* actor, Coordinates2D* offset);
-void MoveEnemy(s32, f32, f32, MonsterBattleData*, EnemyAction*);
-void StartNPCText(Npc* npc, s32 textOffset);   /* a map object starts its text */
-void ClearStatusEffects(MonsterBattleData *actor);
-void SpawnEnemyLandingBurst(MonsterBattleData* actor);   /* the enemy's landing burst */
-extern u8 gMonsterFileBuffer[]; // area monster file buffer (Quest gMonsterFileBuffer)
+extern u8 gMonsterFileBuffer[]; // the area's loaded file: the monster set's in a monster area (LoadMonsterSet), the NPC blob in an NPC area (LoadNPCArea) (Quest gMonsterFileBuffer)
 extern void (*gEnemyActionHandlers[])(MonsterBattleData*, EnemyAction*, AnimEntry*); // enemy action handlers (Quest D_8004C290)
 extern u16 gBattleState; // battle state flags (0x100 = boss battle)
-void UpdateBossEffectScript(void); // boss spell animation update (Quest func_8000B300)
 extern s32 gBattleExp;
 extern s32 gBattleStone;
 extern Submap* gSubmapHeader;
 extern sMapData* gMapHeader;        /* the current map's header */
 extern u16 gSubmapFlags;   /* the submap's flags (bit 0: random battles and monsters here (FieldLoop, ResetEnemies; SetupNPCs only without it)) */
 extern MonsterSet gMonsterSets[];
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
-void Setup_MISS_Icon(MonsterBattleData* actor);
-void PlaySound(u8 delay, s8 id, u8 level);
 extern u16 gTurnIndex;
-u32 getRandomNumber(u32 range);
 /* enemy AI (names from vbhayden's Quest 64 scratches; the per-enemy state is EnemyAction, the options EnemyAIOption) */
 extern u16 gMonsterCardTimer;
 extern PlayerState gPlayerState;    /* Brian (Quest D_8007BAB8) */
 extern u8 dialogue_bank_ROM_START[];
-float sqrtf(float value);
-EnemyAIOption* PickEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor);
-void CommitEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor, EnemyAIOption* option);
-void TurnActorToward(MonsterBattleData* actor, f32 x, f32 z);
-void EndBattleTurn(MonsterBattleData* actor);
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
-void SnapSpellCamera(s32 duration, MonsterBattleData* caster);
-f32 Atan2(f32 dx, f32 dz);
-void StartBossEffectScript(s32 id, EnemyAction* enemy);
 
-void MoveActorWithCollision(f32 dx, f32 dz, ActorTransform* actor);   /* move an actor with collision */
 extern u16 gFieldMode;
 extern u8 gEndingNpcText[];
-void LoadNPCArea(s32 area);
-void SpawnNPCs(NpcRecord* rec, s32 count);
-void StartEndingText(s32 index, u8* text);
 /* other units' variables, declared here so enemy.c's .bss block below starts past the file's 32nd declaration */
 extern Gfx* gDisplayListHead;
-extern RomRange gNpcBlobs[];       /* each area's monster file in ROM */
-extern u8 npc_held_objects_ROM_START[];               /* the battle overlay's code in ROM */
+extern RomRange gNpcBlobs[];       /* each area's NPC blob in ROM: its NPCs' models and names (LoadNPCArea loads it into gMonsterFileBuffer) */
+extern u8 npc_held_objects_ROM_START[];               /* display lists and textures, not code: loaded into the overlay area with every NPC area; the NPC blobs' models take textures from it */
 extern u8 npc_held_objects_ROM_END[];
 extern u8 shannon_actor_ROM_START[];               /* loaded to 0x802A0000 */
 extern u8 shannon_actor_ROM_END[];
@@ -65,7 +57,7 @@ extern u8 gSaveChoiceNo[];
    hold. Declaring any of these variables above it moves them. Names inside these blocks that other code reads by
    name (D_8007AC70, D_8007B930) are link names in undefined_syms.jp.txt. The D_ names
    marked unreferenced are space no code addresses. ---- */
-RomRange* gAreaMonsterFile;                   /* the current area's monster file */
+RomRange* gAreaNpcBlob;                   /* the current area's NPC blob (its gNpcBlobs entry) */
 u16 gWalkingObjectCount;                         /* map objects walking, at most 3 */
 Coordinates2D gNpcStep;               /* a walking object's step */
 s32 D_8007AB80[2];                      /* unreferenced */
@@ -93,7 +85,6 @@ s32 D_8007C07C;                         /* unreferenced */
 CollisionPollingResult gEnemyFloorPoll;      /* an enemy's spawn floor poll */
 s32 D_8007C09C;                         /* unreferenced */
 s32 D_8007C0A0[4];                      /* unreferenced */
-s32 OpenMessageWindow(s32 type);
 void SetupNPCs(void) {
     sMapList* list;
 
@@ -180,9 +171,6 @@ void UpdateNPCs(void) {
         }
     }
 }
-void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, s32 mtxList);
-void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);   /* the shadow */
 void DrawNPCs(Mtx* mtx) {
     Npc* obj;
     ActorTransform** list;
@@ -218,14 +206,13 @@ void LoadNPCArea(s32 area) {
     u8* start;
     u8* end;
 
-    gAreaMonsterFile = &gNpcBlobs[area];
+    gAreaNpcBlob = &gNpcBlobs[area];
     dma_write(npc_held_objects_ROM_START, func_8020C0D0, npc_held_objects_ROM_END - npc_held_objects_ROM_START);
     dma_write(shannon_actor_ROM_START, gShannonActorData, shannon_actor_ROM_END - shannon_actor_ROM_START);
-    start = gAreaMonsterFile->start;
-    end = gAreaMonsterFile->end;
+    start = gAreaNpcBlob->start;
+    end = gAreaNpcBlob->end;
     dma_write(start, gMonsterFileBuffer, end - start);
 }
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
 void SpawnNPCs(NpcRecord* rec, s32 count) {
     Npc* obj = gNpcs;
     CollisionPollingResult floor;
@@ -261,7 +248,6 @@ void SpawnNPCs(NpcRecord* rec, s32 count) {
         }
     }
 }
-void PushNPCOutOfBrian(f32* dx, f32* dz, ActorTransform* actor);
 void MoveActorWithCollision(f32 dx, f32 dz, ActorTransform* actor) {
     PushNPCOutOfBrian(&dx, &dz, actor);
     actor->xspeed = dx;
@@ -360,9 +346,6 @@ void PushNPCOutOfBrian(f32* dx, f32* dz, ActorTransform* actor) {
         }
     }
 }
-u32 CountItem(u8 itemID);
-void AddItemToInventory(u8 itemID);
-u32 IsStoryFlagSet(u32 flag);
 void StartNPCTalk(s32 index) {
     f32 turn;
     s32 taken;
@@ -481,7 +464,6 @@ void StartEndingText(s32 index, u8* text) {
         gSpeakerName[0] = 0xFF;
     }
 }
-void LoadMonsterSet(void);
 void ResetEnemies(void) {
     EnemyAction* enemy;
     s32 i;
@@ -791,13 +773,6 @@ void EnemyKnockback(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
         actor->transform.stateFlags &= ~(ACTOR_BUSY | ACTOR_NO_MELEE_HIT);
     }
 }
-s32 EnemyAgilityCheck(MonsterBattleData* actor);
-u16 CalcEnemyMeleeDamage(EnemyAction* enemy);
-u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker);   /* hurt Brian; returns the damage */
-void StartBrianDodge(void);            /* Brian dodges */
-void SpawnStaffHitEffect(f32 x, f32 y, f32 z);   /* hit sparks */
-void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage);   /* damage / heal digits */
-void UpdateStatusVisuals(MonsterBattleData* actor, u16 statusBits, u16 kind, s16 duration);
 void EnemyFaceBrian(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* anims) {
     TurnActorToward(actor, gPlayerState.brian.transform.pos.x, gPlayerState.brian.transform.pos.z);
     GetRootMotionOffset(actor, &gEnemyStep);
@@ -900,7 +875,6 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
             break;
     }
 }
-void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags);   /* cast a spell */
 void EnemyCastAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* anims) {
     EnemyAIOption* option;
 
@@ -1102,7 +1076,6 @@ extern f32 gBattleCenterZ;               /* and z */
 extern f32 gTurnCenterX;               /* the turn\'s movement circle centre x */
 extern f32 gTurnCenterZ;               /* and z */
 extern f32 gBattleRadius;               /* the battle circle's radius */
-void PushEnemyOut(f32* dx, f32* dz, MonsterBattleData* actor);
 void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) {
     f32 dist;
     f32 ddx;
@@ -1158,7 +1131,6 @@ void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) 
     m->transform.shadowZRot = gEnemyFloorPoll.sn_z;
     m->transform.floorFlags = gEnemyFloorPoll.flags;
 }
-void ApplyRootMotion(ActorTransform* actor, AnimEntry* anim, f32 scale);
 void GetRootMotionOffset(MonsterBattleData* actor, Coordinates2D* offset) {
     AnimEntry* anims = gMonsterAnims[actor->transform.modelID];
 
@@ -1259,7 +1231,6 @@ s32 EnemyAgilityCheck(MonsterBattleData *actor)
   return getRandomNumber(100) < chance;
 }
 extern u8 gCritFade[];             /* the critical hit cue (spells.c plays it too) */
-void StartScreenFade(s32 frames, u16 flags, void* ramp);
 u16 CalcEnemyMeleeDamage(EnemyAction* enemy) {
     u16 damage = enemy->battleData.statsBuf.atk;
 
@@ -1368,16 +1339,14 @@ s32 GetEnemyIndex(MonsterBattleData* battleData) {
     }
     return i;
 }
-extern SpellAnimDef gEnemySpellEffects[];     /* enemy spell effects */
+extern SpellAnimStage gEnemySpellEffects[];     /* the enemies' effect stages: the boss scripts count them flat; stages 18-21 with the 8 bytes after them are the landing burst's SpellAnimDef */
 extern EffectSpawnDef gEffectModels[];   /* effect models */
-void*SpawnEffectObject(u16 colour, u16 duration, f32 x, f32 y, f32 z, f32 angle, EffectSpawnDef* model, OddVector* size, ActorTransform* actor);
-void QueueSparkleBurst(s32 kind, s32 frames, f32 x, f32 y, f32 z, f32 size);
 void SpawnEnemyLandingBurst(MonsterBattleData* actor) {
     f32 y;
     EffectSpawnDef* model;
     SpellAnimDef* def;
 
-    def = &gEnemySpellEffects[4];
+    def = (SpellAnimDef*)&gEnemySpellEffects[18];
     ((OddVector*)&gEnemyStep)->x = def->land_size_x;
     ((OddVector*)&gEnemyStep)->y = def->land_size_y;
     ((OddVector*)&gEnemyStep)->scale = actor->transform.collisionScale;
@@ -1400,16 +1369,7 @@ void StartBossEffectScript(s32 id, EnemyAction* enemy) {
     gBossEffectScript.enemy = enemy;
     gBossEffectScript.battleData = &gEnemies[0].battleData;
 }
-void StartCameraShake(s32 kind);
 extern SpellDef* gSpellDefs[];
-typedef struct {
-    s16 model;
-    u16 color;
-    u16 duration;
-    u16 unk6;
-    f32 size_x;
-    f32 size_y;
-} SpellAnimStage;                    /* 0x10: one of a SpellAnimDef's stages; a boss script counts them flat across the table */
 void UpdateBossEffectScript(void) {
     BossFxEntry* fx;
     EnemyAction* boss;
@@ -1440,7 +1400,7 @@ void UpdateBossEffectScript(void) {
                 boss->pushX = gEnemyStep.x;
                 boss->pushZ = gEnemyStep.y;
             } else {
-                stage = &((SpellAnimStage*)gEnemySpellEffects)[fx->stage];
+                stage = &gEnemySpellEffects[fx->stage];
                 model = &gEffectModels[stage->model];
                 gEnemyStep.x = fx->x;
                 gEnemyStep.y = fx->z;

@@ -8,6 +8,9 @@ options:
   find_file_boundaries: True
   header_encoding: ASCII
   platform: n64
+  gfx_ucode: f3dex                  # the boss files' display lists (splat gfx segments): F3DEX 1.23
+  data_string_guesser_level: 0      # .data stays words: boss keyframe floats are not strings
+  generated_c_preamble: "#include \"common.h\"\n#include \"boss_files.h\""
   # undefined_funcs_auto: True
   # undefined_funcs_auto_path: undefined_funcs_auto.txt
   # undefined_syms_auto: True
@@ -35,7 +38,8 @@ segments:
     vram: 0x80000400
     bss_size: 0x261A0
     subsegments:
-      - [0x1000, asm, entry]   # the hand-written boot entry, as the SDK's hand-written routines
+      # Every C unit has a .data, a .rodata and a .bss entry. One marked "empty" has no bytes in the original (it starts where the next entry does): it places the section a modified build may give that unit.
+      - [0x1000, hasm, entry]  # the hand-written boot entry, kept in asm/ (splat writes a hasm file only when it is missing): its .bss clear size comes from the linker
       - [0x1050, c, game/boot]
       - [0x1130, c, sched/nnsched]
       - [0x1870, c, game/main]
@@ -199,23 +203,78 @@ segments:
       - [0x4C3F0, asm]
       - [0x4C580, bin]
       - [0x4C7B0, bin]
+      - [0x4E8B0, .data, game/boot]  # empty
+      - [0x4E8B0, .data, sched/nnsched]  # empty
+      - [0x4E8B0, .data, game/main]  # empty
+      - [0x4E8B0, .data, game/ending_text]  # empty
       - [0x4E8B0, .data, game/player]
       - [0x4E910, bin]
+      - [0x4E920, data]  # pointer window: gEnemyActionHandlers (6 functions), then the first words of gElementMasks
+      - [0x4E940, bin]
+      - [0x4E970, .data, game/enemy]  # empty
+      - [0x4E970, .data, game/boss]  # empty
       - [0x4E970, .data, game/map]
       - [0x4EAD0, bin]
+      - [0x4EE40, data]  # pointer window: gSparkleDisplayList's G_VTX and its vertex pointer
+      - [0x4EE50, bin]
+      - [0x4F250, .data, game/collision]  # empty
+      - [0x4F250, .data, game/lighting]  # empty
+      - [0x4F250, .data, game/shadow]  # empty
+      - [0x4F250, .data, game/map_objects]  # empty
       - [0x4F250, .data, game/spirits]
       - [0x4F2A0, bin]
+      - [0x4F770, .data, game/signs]  # empty
       - [0x4F770, .data, game/camera]
-      - [0x4F890, bin]
+      - [0x4F890, data]  # pointer window: the spell system's handler tables (41 functions), then the first words of gHitMaskBits
+      - [0x4F940, bin]
+      - [0x4FA20, .data, game/spells]  # empty
       - [0x4FA20, .data, game/effects]
       - [0x4FC60, bin]
+      - [0x500A0, data]  # pointer window: gItemCheckHandlers and gItemUseHandlers (8 functions)
+      - [0x500C0, bin]
+      - [0x50130, data]  # pointer window: gScreenFadeGfx's G_TEXTURE and G_VTX with its vertex pointer
+      - [0x50140, bin]
+      - [0x50370, .data, game/dust]  # empty
+      - [0x50370, .data, game/encounter]  # empty
+      - [0x50370, .data, game/model]  # empty
+      - [0x50370, .data, game/hud]  # empty
+      - [0x50370, .data, game/screen_fade]  # empty
+      - [0x50370, .data, game/spline]  # empty
       - [0x50370, .data, game/math]
+      - [0x50380, .data, game/dma]  # empty
       - [0x50380, .data, game/audio]
-      - [0x56740, bin]
-      - [0x621E0, .data, game/start_menu]
+      - [0x56740, .data, game/sound]
+      - [0x618B0, .data, game/start_menu]
       - [0x62250, bin]
+      - [0x622D0, data]  # pointer window: the message window's art table (5 pointers into this piece)
+      - [0x622F0, bin]
+      - [0x6D4F0, data]  # pointer window: gSaveMessageTexts (5 text pointers)
+      - [0x6D510, bin]
+      - [0x6D530, data]  # pointer window: gLoadScreenTexts (50 text pointers)
+      - [0x6D600, bin]
+      - [0x6D820, data]  # pointer window: D_8006CC28 (17 pointers into this piece)
+      - [0x6D870, bin]
+      - [0x6D900, .data, game/save_menu]  # empty
+      - [0x6D900, .data, game/message]  # empty
+      - [0x6D900, .data, game/text]  # empty
+      - [0x6D900, .data, game/controller]  # empty
+      - [0x6D900, .data, game/overlay]  # empty
+      - [0x6D900, .data, game/ending]  # empty
       - [0x6D900, .data, libultra/initialize]
       - [0x6D920, bin]
+      - [0x6D940, data]  # pointer window: __osCurrentHandle (the cartridge and disk handles)
+      - [0x6D950, bin]
+      - [0x6F350, data]  # pointer window: __osThreadTail, __osRunQueue, __osActiveQueue
+      - [0x6F360, bin]
+      - [0x6F3E0, data]  # pointer window: __osViCurr, __osViNext, __osTimerList
+      - [0x6F400, bin]
+      - [0x6F870, .data, libultra/createthread]  # empty
+      - [0x6F870, .data, libultra/startthread]  # empty
+      - [0x6F870, .data, libultra/pimgr]  # empty
+      - [0x6F870, .data, libultra/createmesgqueue]  # empty
+      - [0x6F870, .data, libultra/visetevent]  # empty
+      - [0x6F870, .rodata, game/boot]  # empty
+      - [0x6F870, .rodata, sched/nnsched]  # empty
       - [0x6F870, .rodata, game/main]
       - [0x6F8C0, .rodata, game/ending_text]
       - [0x6F8D0, .rodata, game/player]
@@ -224,6 +283,7 @@ segments:
       - [0x6FC30, .rodata, game/map]
       - [0x6FCA0, .rodata, game/collision]
       - [0x6FCF0, .rodata, game/lighting]
+      - [0x6FD00, .rodata, game/shadow]  # empty
       - [0x6FD00, .rodata, game/map_objects]
       - [0x6FD30, .rodata, game/spirits]
       - [0x6FD50, .rodata, game/signs]
@@ -232,40 +292,111 @@ segments:
       - [0x6FF90, .rodata, game/effects]
       - [0x70080, .rodata, game/dust]
       - [0x700A0, .rodata, game/encounter]
-      - [0x70130, rodata]
+      - [0x70130, .rodata, game/model]  # empty
+      - [0x70130, .rodata, game/hud]  # an unreferenced "%.4f", the compass's and the battle icons' doubles
+      - [0x70170, .rodata, game/screen_fade]  # empty
+      - [0x70170, .rodata, game/spline]  # empty
+      - [0x70170, rodata]  # 27A90's six doubles, kept in assembly (27A90.c says why)
+      - [0x701A0, .rodata, game/math]  # empty
+      - [0x701A0, .rodata, game/dma]  # empty
       - [0x701A0, .rodata, game/audio]
+      - [0x701D0, .rodata, game/sound]  # empty
       - [0x701D0, .rodata, game/start_menu]
       - [0x70210, .rodata, game/save_menu]
       - [0x70490, .rodata, game/message]
+      - [0x70510, .rodata, game/text]  # empty
       - [0x70510, .rodata, game/controller]
+      - [0x70540, .rodata, game/overlay]  # empty
       - [0x70540, .rodata, game/ending]
+      - [0x70550, .rodata, libultra/initialize]  # empty
+      - [0x70550, .rodata, libultra/createthread]  # empty
+      - [0x70550, .rodata, libultra/startthread]  # empty
+      - [0x70550, .rodata, libultra/pimgr]  # empty
+      - [0x70550, .rodata, libultra/createmesgqueue]  # empty
+      - [0x70550, .rodata, libultra/visetevent]  # empty
       - { start: 0x70550, type: bss, vram: 0x8006F950, name: main_bss }
+      - { start: 0x70550, type: .bss, vram: 0x80070D20, name: game/boot }  # the boot stack, the idle and main threads and stacks, the PI queue
+      - { start: 0x70550, type: .bss, vram: 0x80077160, name: sched/nnsched }  # the scheduler's three stacks and its retrace count
       - { start: 0x70550, type: .bss, vram: 0x8007A170, name: game/main }
       - { start: 0x70550, type: bss, vram: 0x8007A8C0, name: main_bss_8007A8C0 }
+      - { start: 0x70550, type: .bss, vram: 0x8007A8F0, name: game/ending_text }  # empty
       - { start: 0x70550, type: .bss, vram: 0x8007A8F0, name: game/player }
       - { start: 0x70550, type: .bss, vram: 0x8007AB70, name: game/enemy }
       - { start: 0x70550, type: .bss, vram: 0x8007C0B0, name: game/boss }
       - { start: 0x70550, type: .bss, vram: 0x8007C280, name: game/map }
       - { start: 0x70550, type: bss, vram: 0x800842F0, name: main_bss_800842F0 }
+      - { start: 0x70550, type: .bss, vram: 0x80084330, name: game/collision }  # empty
       - { start: 0x70550, type: .bss, vram: 0x80084330, name: game/lighting }
       - { start: 0x70550, type: bss, vram: 0x80084B80, name: main_bss_80084B80 }
+      - { start: 0x70550, type: .bss, vram: 0x800859B0, name: game/shadow }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x800859B0, name: game/map_objects }  # empty
       - { start: 0x70550, type: .bss, vram: 0x800859B0, name: game/spirits }
       - { start: 0x70550, type: bss, vram: 0x80085AB0, name: main_bss_80085AB0 }
+      - { start: 0x70550, type: .bss, vram: 0x80085B80, name: game/signs }  # empty
       - { start: 0x70550, type: .bss, vram: 0x80085B80, name: game/camera }
       - { start: 0x70550, type: bss, vram: 0x80085F90, name: main_bss_80085F90 }
+      - { start: 0x70550, type: .bss, vram: 0x800863F0, name: game/spells }  # empty
       - { start: 0x70550, type: .bss, vram: 0x800863F0, name: game/effects }
       - { start: 0x70550, type: bss, vram: 0x80087E30, name: main_bss_80087E30 }
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/dust }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/encounter }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/model }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/hud }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/screen_fade }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/spline }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/math }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/dma }  # empty
       - { start: 0x70550, type: .bss, vram: 0x8008FAE0, name: game/audio }
       - { start: 0x70550, type: .bss, vram: 0x8008FAF0, name: game/sound }
       - { start: 0x70550, type: .bss, vram: 0x8008FB30, name: game/start_menu }
       - { start: 0x70550, type: bss, vram: 0x8008FB70, name: main_bss_8008FB70 }
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/save_menu }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/message }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/text }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/controller }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/overlay }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: game/ending }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/initialize }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/createthread }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/startthread }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/pimgr }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/createmesgqueue }  # empty
+      - { start: 0x70550, type: .bss, vram: 0x80095AF0, name: libultra/visetevent }  # empty
   # the rest of the ROM, block by block
   - name: main_tail  # 0x70550-0x71920: the main segment's tail: libultra .rodata
-    type: bin
+    type: code
     start: 0x70550
+    vram: 0x80095AF0  # where the linker places this ROM piece; the boot copies it to the RAM after main's data (0x8006F950 as built), which this config models as main_bss, and the code reads it there
+    exclusive_ram_id: main_tail
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x70550, bin, main_tail_0]
+      - [0x706A0, data, main_tail_jtbl0]  # the SDK's jump tables: entries name their case labels
+      - [0x708E0, bin, main_tail_1]
+      - [0x708F0, data, main_tail_jtbl1]  # the SDK's jump tables: entries name their case labels
+      - [0x70920, bin, main_tail_2]
+      - [0x70950, data, main_tail_jtbl2]  # the SDK's jump tables: entries name their case labels
+      - [0x709A0, bin, main_tail_3]
+      - [0x709D0, data, main_tail_jtbl3]  # the SDK's jump tables: entries name their case labels
+      - [0x70B00, bin, main_tail_4]
+      - [0x70B20, data, main_tail_jtbl4]  # the SDK's jump tables: entries name their case labels
+      - [0x70DB0, bin, main_tail_5]
+      - [0x70E20, data, main_tail_jtbl5]  # the SDK's jump tables: entries name their case labels
+      - [0x70E40, bin, main_tail_6]
   - name: segment1_gfx  # 0x71920-0x753F0: segment 1: shared display lists + textures
-    type: bin
+    type: code
     start: 0x71920
+    vram: 0x80095AF0
+    exclusive_ram_id: segment1
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x71920, bin, segment1_gfx_0]
+      - [0x72C20, data, segment1_gfx_sky0]  # texture-image pointers into main's .bss
+      - [0x73190, bin, segment1_gfx_1]
+      - [0x73D30, data, segment1_gfx_sky1]  # texture-image pointers into main's .bss
+      - [0x740D0, bin, segment1_gfx_2]
+      - [0x74F50, data, segment1_gfx_sky2]  # texture-image pointers into main's .bss
+      - [0x75300, bin, segment1_gfx_3]
   - name: gameplay_common  # 0x753F0-0x851F0: gameplay common block
     type: bin
     start: 0x753F0
@@ -293,44 +424,183 @@ segments:
     start: 0xEBDE0
   # maps_outdoor: map blobs 0-12
   - name: map_00  # 0xEF280-0x133F20: Melrode
-    type: bin
+    type: code
     start: 0xEF280
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0xEF280, bin, map_00_0]
+      - [0xEFAA0, data, map_00_sky0]  # texture-image pointer into main's .bss
+      - [0xEFAB0, bin, map_00_1]
+      - [0xF0490, data, map_00_sky1]  # texture-image pointer into main's .bss
+      - [0xF04A0, bin, map_00_2]
+      - [0xF0D60, data, map_00_sky2]  # texture-image pointers into main's .bss
+      - [0xF0E40, bin, map_00_3]
+      - [0xF1490, data, map_00_sky3]  # texture-image pointer into main's .bss
+      - [0xF14A0, bin, map_00_4]
+      - [0x100040, data, map_00_sky4]  # texture-image pointer into main's .bss
+      - [0x100050, bin, map_00_5]
+      - [0x1009E0, data, map_00_sky5]  # texture-image pointers into main's .bss
+      - [0x100AC0, bin, map_00_6]
+      - [0x101240, data, map_00_sky6]  # texture-image pointer into main's .bss
+      - [0x101250, bin, map_00_7]
+      - [0x101880, data, map_00_sky7]  # texture-image pointer into main's .bss
+      - [0x101890, bin, map_00_8]
+      - [0x101E20, data, map_00_sky8]  # texture-image pointers into main's .bss
+      - [0x102200, bin, map_00_9]
+      - [0x102A10, data, map_00_sky9]  # texture-image pointer into main's .bss
+      - [0x102A20, bin, map_00_10]
+      - [0x102F10, data, map_00_sky10]  # texture-image pointer into main's .bss
+      - [0x102F20, bin, map_00_11]
   - name: map_01  # 0x133F20-0x165E70: Dondoran
-    type: bin
+    type: code
     start: 0x133F20
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x133F20, bin, map_01_0]
+      - [0x134770, data, map_01_sky0]  # texture-image pointer into main's .bss
+      - [0x134780, bin, map_01_1]
+      - [0x135060, data, map_01_sky1]  # texture-image pointer into main's .bss
+      - [0x135070, bin, map_01_2]
+      - [0x138010, data, map_01_sky2]  # texture-image pointer into main's .bss
+      - [0x138020, bin, map_01_3]
+      - [0x13B1F0, data, map_01_sky3]  # texture-image pointer into main's .bss
+      - [0x13B200, bin, map_01_4]
+      - [0x13C280, data, map_01_sky4]  # texture-image pointer into main's .bss
+      - [0x13C290, bin, map_01_5]
+      - [0x13D6E0, data, map_01_sky5]  # texture-image pointer into main's .bss
+      - [0x13D6F0, bin, map_01_6]
+      - [0x13DE90, data, map_01_sky6]  # texture-image pointer into main's .bss
+      - [0x13DEA0, bin, map_01_7]
   - name: map_02  # 0x165E70-0x19C1D0: Holy Plains
-    type: bin
+    type: code
     start: 0x165E70
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x165E70, bin, map_02_0]
+      - [0x16F7D0, data, map_02_sky0]  # texture-image pointer into main's .bss
+      - [0x16F7E0, bin, map_02_1]
   - name: map_03  # 0x19C1D0-0x1CA8C0: Dondoran Flats
-    type: bin
+    type: code
     start: 0x19C1D0
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x19C1D0, bin, map_03_0]
+      - [0x1A47E0, data, map_03_sky0]  # texture-image pointer into main's .bss
+      - [0x1A47F0, bin, map_03_1]
   - name: map_04  # 0x1CA8C0-0x206D70: Larapool
     type: bin
     start: 0x1CA8C0
   - name: map_05  # 0x206D70-0x251D30: West Carmagh
-    type: bin
+    type: code
     start: 0x206D70
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x206D70, bin, map_05_0]
+      - [0x214B80, data, map_05_sky0]  # texture-image pointers into main's .bss
+      - [0x214C60, bin, map_05_1]
+      - [0x2155C0, data, map_05_sky1]  # texture-image pointer into main's .bss
+      - [0x2155D0, bin, map_05_2]
+      - [0x215DF0, data, map_05_sky2]  # texture-image pointer into main's .bss
+      - [0x215E00, bin, map_05_3]
   - name: map_06  # 0x251D30-0x2768B0: Normoon
-    type: bin
+    type: code
     start: 0x251D30
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x251D30, bin, map_06_0]
+      - [0x2524F0, data, map_06_sky0]  # texture-image pointer into main's .bss
+      - [0x252500, bin, map_06_1]
+      - [0x252DD0, data, map_06_sky1]  # texture-image pointer into main's .bss
+      - [0x252DE0, bin, map_06_2]
+      - [0x253860, data, map_06_sky2]  # texture-image pointer into main's .bss
+      - [0x253870, bin, map_06_3]
+      - [0x257570, data, map_06_sky3]  # texture-image pointer into main's .bss
+      - [0x257580, bin, map_06_4]
   - name: map_07  # 0x2768B0-0x2A8510: East Limelin
-    type: bin
+    type: code
     start: 0x2768B0
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x2768B0, bin, map_07_0]
+      - [0x280420, data, map_07_sky0]  # texture-image pointer into main's .bss
+      - [0x280430, bin, map_07_1]
+      - [0x280D50, data, map_07_sky1]  # texture-image pointer into main's .bss
+      - [0x280D60, bin, map_07_2]
   - name: map_08  # 0x2A8510-0x2F63B0: Limelin
-    type: bin
+    type: code
     start: 0x2A8510
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x2A8510, bin, map_08_0]
+      - [0x2B2760, data, map_08_sky0]  # texture-image pointer into main's .bss
+      - [0x2B2770, bin, map_08_1]
+      - [0x2B36B0, data, map_08_sky1]  # texture-image pointer into main's .bss
+      - [0x2B36C0, bin, map_08_2]
+      - [0x2B7BC0, data, map_08_sky2]  # texture-image pointer into main's .bss
+      - [0x2B7BD0, bin, map_08_3]
+      - [0x2B93B0, data, map_08_sky3]  # texture-image pointer into main's .bss
+      - [0x2B93C0, bin, map_08_4]
+      - [0x2BA310, data, map_08_sky4]  # texture-image pointer into main's .bss
+      - [0x2BA320, bin, map_08_5]
   - name: map_09  # 0x2F63B0-0x3457F0: Dindom Dries
-    type: bin
+    type: code
     start: 0x2F63B0
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x2F63B0, bin, map_09_0]
+      - [0x309160, data, map_09_sky0]  # texture-image pointers into main's .bss
+      - [0x309290, bin, map_09_1]
+      - [0x309A40, data, map_09_sky1]  # texture-image pointer into main's .bss
+      - [0x309A50, bin, map_09_2]
   - name: map_10  # 0x3457F0-0x36B800: Shamwood
     type: bin
     start: 0x3457F0
   - name: map_11  # 0x36B800-0x3C9490: Baragoon Moor
-    type: bin
+    type: code
     start: 0x36B800
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x36B800, bin, map_11_0]
+      - [0x36BC90, data, map_11_sky0]  # texture-image pointers into main's .bss
+      - [0x36BD70, bin, map_11_1]
+      - [0x36C6D0, data, map_11_sky1]  # texture-image pointer into main's .bss
+      - [0x36C6E0, bin, map_11_2]
+      - [0x36CCD0, data, map_11_sky2]  # texture-image pointer into main's .bss
+      - [0x36CCE0, bin, map_11_3]
+      - [0x38B790, data, map_11_sky3]  # texture-image pointers into main's .bss
+      - [0x38B8B0, bin, map_11_4]
+      - [0x38BDE0, data, map_11_sky4]  # texture-image pointers into main's .bss
+      - [0x38BED0, bin, map_11_5]
   - name: map_12  # 0x3C9490-0x3E1090: Isle of Skye (doors to the Pirate Ship 25/0 and Nepty's lair 35/0)
-    type: bin
+    type: code
     start: 0x3C9490
+    vram: 0x8010FE00
+    exclusive_ram_id: map_blob
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0x3C9490, bin, map_12_0]
+      - [0x3CCE40, data, map_12_sky0]  # texture-image pointer into main's .bss
+      - [0x3CCE50, bin, map_12_1]
   - name: field_shared  # 0x3E1090-0x3F1BA0: shared field block for maps 3 / 5 / 7 / 12
     type: bin
     start: 0x3E1090
@@ -455,30 +725,477 @@ segments:
     type: bin
     start: 0xC99EF0
   # boss_files: 8 boss files
-  - name: boss_nepty  # 0xCC2280-0xCCD170: boss 2
-    type: bin
+  - name: boss_nepty  # 0xCC2280-0xCCD170: Nepty, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCC2280
-  - name: boss_solvaring  # 0xCCD170-0xCD9440: boss 0
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_nepty
+    subsegments:
+      - [0xCC2280, data, records]
+      - [0xCC85C0, rgba16, tex_00.rgba16, 24, 32]
+      - [0xCC8BC0, rgba16, tex_01.rgba16, 16, 16]
+      - [0xCC8DC0, rgba16, tex_02.rgba16, 16, 32]
+      - [0xCC91C0, rgba16, tex_03.rgba16, 8, 16]
+      - [0xCC92C0, rgba16, tex_04.rgba16, 24, 32]
+      - [0xCC98C0, rgba16, tex_05.rgba16, 16, 16]
+      - [0xCC9AC0, rgba16, tex_06.rgba16, 16, 16]
+      - [0xCC9CC0, rgba16, tex_07.rgba16, 16, 32]
+      - [0xCCA0C0, rgba16, tex_08.rgba16, 16, 16]
+      - [0xCCA2C0, rgba16, tex_09.rgba16, 16, 32]
+      - [0xCCA6C0, rgba16, tex_10.rgba16, 16, 32]
+      - [0xCCAAC0, rgba16, tex_11.rgba16, 16, 16]
+      - [0xCCACC0, rgba16, tex_12.rgba16, 16, 32]
+      - [0xCCB0C0, vtx, vtx_00]
+      - [0xCCB580, gfx, dl_00]
+      - [0xCCB8D0, vtx, vtx_01]
+      - [0xCCB990, gfx, dl_01]
+      - [0xCCBA60, vtx, vtx_02]
+      - [0xCCBD10, gfx, dl_02]
+      - [0xCCBF20, vtx, vtx_03]
+      - [0xCCC120, gfx, dl_03]
+      - [0xCCC2D0, vtx, vtx_04]
+      - [0xCCC350, gfx, dl_04]
+      - [0xCCC3D0, vtx, vtx_05]
+      - [0xCCC430, gfx, dl_05]
+      - [0xCCC4C0, vtx, vtx_06]
+      - [0xCCC580, gfx, dl_06]
+      - [0xCCC670, vtx, vtx_07]
+      - [0xCCC6F0, gfx, dl_07]
+      - [0xCCC770, vtx, vtx_08]
+      - [0xCCC7D0, gfx, dl_08]
+      - [0xCCC860, vtx, vtx_09]
+      - [0xCCC920, gfx, dl_09]
+      - [0xCCCA10, vtx, vtx_10]
+      - [0xCCCA80, gfx, dl_10]
+      - [0xCCCB20, vtx, vtx_11]
+      - [0xCCCC00, gfx, dl_11]
+      - [0xCCCCE0, vtx, vtx_12]
+      - [0xCCCD50, gfx, dl_12]
+      - [0xCCCDC0, vtx, vtx_13]
+      - [0xCCCE30, gfx, dl_13]
+      - [0xCCCED0, vtx, vtx_14]
+      - [0xCCCFB0, gfx, dl_14]
+      - [0xCCD090, vtx, vtx_15]
+      - [0xCCD100, gfx, dl_15]
+  - name: boss_solvaring  # 0xCCD170-0xCD9440: Solvaring, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCCD170
-  - name: boss_zelse  # 0xCD9440-0xCE30F0: boss 1
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_solvaring
+    subsegments:
+      - [0xCCD170, data, records]
+      - [0xCD42F0, rgba16, tex_00.rgba16, 24, 32]
+      - [0xCD48F0, rgba16, tex_01.rgba16, 16, 16]
+      - [0xCD4AF0, rgba16, tex_02.rgba16, 32, 32]
+      - [0xCD52F0, rgba16, tex_03.rgba16, 24, 32]
+      - [0xCD58F0, rgba16, tex_04.rgba16, 16, 16]
+      - [0xCD5AF0, rgba16, tex_05.rgba16, 8, 8]
+      - [0xCD5B70, rgba16, tex_06.rgba16, 8, 16]
+      - [0xCD5C70, rgba16, tex_07.rgba16, 16, 16]
+      - [0xCD5E70, rgba16, tex_08.rgba16, 16, 16]
+      - [0xCD6070, rgba16, tex_09.rgba16, 16, 16]
+      - [0xCD6270, rgba16, tex_10.rgba16, 16, 32]
+      - [0xCD6670, rgba16, tex_11.rgba16, 8, 32]
+      - [0xCD6870, rgba16, tex_12.rgba16, 8, 8]
+      - [0xCD68F0, rgba16, tex_13.rgba16, 16, 32]
+      - [0xCD6CF0, rgba16, tex_14.rgba16, 16, 16]
+      - [0xCD6EF0, rgba16, tex_15.rgba16, 16, 8]
+      - [0xCD6FF0, rgba16, tex_16.rgba16, 8, 16]
+      - [0xCD70F0, vtx, vtx_00]
+      - [0xCD7400, gfx, dl_00]
+      - [0xCD75D0, vtx, vtx_01]
+      - [0xCD79F0, gfx, dl_01]
+      - [0xCD7C70, vtx, vtx_02]
+      - [0xCD7D90, gfx, dl_02]
+      - [0xCD7EB0, vtx, vtx_03]
+      - [0xCD7F80, gfx, dl_03]
+      - [0xCD8060, vtx, vtx_04]
+      - [0xCD8130, gfx, dl_04]
+      - [0xCD81F0, vtx, vtx_05]
+      - [0xCD8300, gfx, dl_05]
+      - [0xCD8440, vtx, vtx_06]
+      - [0xCD8490, gfx, dl_06]
+      - [0xCD8520, vtx, vtx_07]
+      - [0xCD85F0, gfx, dl_07]
+      - [0xCD86B0, vtx, vtx_08]
+      - [0xCD87C0, gfx, dl_08]
+      - [0xCD8900, vtx, vtx_09]
+      - [0xCD8950, gfx, dl_09]
+      - [0xCD89E0, vtx, vtx_10]
+      - [0xCD8A60, gfx, dl_10]
+      - [0xCD8B00, vtx, vtx_11]
+      - [0xCD8BA0, gfx, dl_11]
+      - [0xCD8C40, vtx, vtx_12]
+      - [0xCD8CC0, gfx, dl_12]
+      - [0xCD8D60, vtx, vtx_13]
+      - [0xCD8DE0, gfx, dl_13]
+      - [0xCD8E80, vtx, vtx_14]
+      - [0xCD8F00, gfx, dl_14]
+      - [0xCD8FA0, vtx, vtx_15]
+      - [0xCD9020, gfx, dl_15]
+      - [0xCD90C0, vtx, vtx_16]
+      - [0xCD92A0, gfx, dl_16]
+  - name: boss_zelse  # 0xCD9440-0xCE30F0: Zelse, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCD9440
-  - name: boss_shilf  # 0xCE30F0-0xCF0720: boss 3
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_zelse
+    subsegments:
+      - [0xCD9440, data, records]
+      - [0xCDF450, rgba16, tex_00.rgba16, 16, 8]
+      - [0xCDF550, rgba16, tex_01.rgba16, 16, 32]
+      - [0xCDF950, rgba16, tex_02.rgba16, 16, 32]
+      - [0xCDFD50, rgba16, tex_03.rgba16, 16, 16]
+      - [0xCDFF50, rgba16, tex_04.rgba16, 16, 16]
+      - [0xCE0150, rgba16, tex_05.rgba16, 8, 16]
+      - [0xCE0250, rgba16, tex_06.rgba16, 16, 24]
+      - [0xCE0550, rgba16, tex_07.rgba16, 16, 32]
+      - [0xCE0950, rgba16, tex_08.rgba16, 32, 32]
+      - [0xCE1150, rgba16, tex_09.rgba16, 16, 16]
+      - [0xCE1350, vtx, vtx_00]
+      - [0xCE1770, gfx, dl_00]
+      - [0xCE1960, vtx, vtx_01]
+      - [0xCE19E0, gfx, dl_01]
+      - [0xCE1A50, vtx, vtx_02]
+      - [0xCE1BB0, gfx, dl_02]
+      - [0xCE1CD0, vtx, vtx_03]
+      - [0xCE1D80, gfx, dl_03]
+      - [0xCE1E10, vtx, vtx_04]
+      - [0xCE1E90, gfx, dl_04]
+      - [0xCE1F50, vtx, vtx_05]
+      - [0xCE2060, gfx, dl_05]
+      - [0xCE2160, vtx, vtx_06]
+      - [0xCE21E0, gfx, dl_06]
+      - [0xCE22A0, vtx, vtx_07]
+      - [0xCE23B0, gfx, dl_07]
+      - [0xCE24B0, vtx, vtx_08]
+      - [0xCE2520, gfx, dl_08]
+      - [0xCE25C0, vtx, vtx_09]
+      - [0xCE2670, gfx, dl_09]
+      - [0xCE2720, vtx, vtx_10]
+      - [0xCE2790, gfx, dl_10]
+      - [0xCE2830, vtx, vtx_11]
+      - [0xCE28A0, gfx, dl_11]
+      - [0xCE2940, vtx, vtx_12]
+      - [0xCE29F0, gfx, dl_12]
+      - [0xCE2AA0, vtx, vtx_13]
+      - [0xCE2B10, gfx, dl_13]
+      - [0xCE2BB0, vtx, vtx_14]
+      - [0xCE2CB0, gfx, dl_14]
+      - [0xCE2DA0, vtx, vtx_15]
+      - [0xCE2E00, gfx, dl_15]
+      - [0xCE2E90, vtx, vtx_16]
+      - [0xCE2FD0, gfx, dl_16]
+  - name: boss_shilf  # 0xCE30F0-0xCF0720: Sylph, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCE30F0
-  - name: boss_fargo  # 0xCF0720-0xCFE3C0: boss 4
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_shilf
+    subsegments:
+      - [0xCE30F0, data, records]
+      - [0xCEC480, rgba16, tex_00.rgba16, 27, 32]
+      - [0xCECB40, rgba16, tex_01.rgba16, 32, 32]
+      - [0xCED340, rgba16, tex_02.rgba16, 16, 64]
+      - [0xCEDB40, rgba16, tex_03.rgba16, 16, 16]
+      - [0xCEDD40, rgba16, tex_04.rgba16, 8, 16]
+      - [0xCEDE40, rgba16, tex_05.rgba16, 16, 16]
+      - [0xCEE040, rgba16, tex_06.rgba16, 16, 16]
+      - [0xCEE240, rgba16, tex_07.rgba16, 8, 16]
+      - [0xCEE340, vtx, vtx_00]
+      - [0xCEE7D0, gfx, dl_00]
+      - [0xCEEA60, vtx, vtx_01]
+      - [0xCEEAE0, gfx, dl_01]
+      - [0xCEEB50, vtx, vtx_02]
+      - [0xCEEC40, gfx, dl_02]
+      - [0xCEED30, vtx, vtx_03]
+      - [0xCEEF90, gfx, dl_03]
+      - [0xCEF0F0, vtx, vtx_04]
+      - [0xCEF2E0, gfx, dl_04]
+      - [0xCEF460, vtx, vtx_05]
+      - [0xCEF4D0, gfx, dl_05]
+      - [0xCEF540, vtx, vtx_06]
+      - [0xCEF640, gfx, dl_06]
+      - [0xCEF740, vtx, vtx_07]
+      - [0xCEF7F0, gfx, dl_07]
+      - [0xCEF8E0, vtx, vtx_08]
+      - [0xCEF950, gfx, dl_08]
+      - [0xCEF9C0, vtx, vtx_09]
+      - [0xCEFAC0, gfx, dl_09]
+      - [0xCEFBC0, vtx, vtx_10]
+      - [0xCEFC70, gfx, dl_10]
+      - [0xCEFD60, vtx, vtx_11]
+      - [0xCEFDF0, gfx, dl_11]
+      - [0xCEFE70, vtx, vtx_12]
+      - [0xCEFED0, gfx, dl_12]
+      - [0xCEFF40, vtx, vtx_13]
+      - [0xCF00B0, gfx, dl_13]
+      - [0xCF01D0, vtx, vtx_14]
+      - [0xCF0290, gfx, dl_14]
+      - [0xCF0350, vtx, vtx_15]
+      - [0xCF03C0, gfx, dl_15]
+      - [0xCF0460, vtx, vtx_16]
+      - [0xCF0490, gfx, dl_16]
+      - [0xCF04E0, vtx, vtx_17]
+      - [0xCF0510, gfx, dl_17]
+      - [0xCF0560, vtx, vtx_18]
+      - [0xCF0590, gfx, dl_18]
+      - [0xCF05E0, vtx, vtx_19]
+      - [0xCF0610, gfx, dl_19]
+      - [0xCF0660, vtx, vtx_20]
+      - [0xCF06A0, gfx, dl_20]
+  - name: boss_fargo  # 0xCF0720-0xCFE3C0: Fargo, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCF0720
-  - name: boss_guilty  # 0xCFE3C0-0xD0DBF0: boss 5
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_fargo
+    subsegments:
+      - [0xCF0720, data, records]
+      - [0xCF7EF0, rgba16, tex_00.rgba16, 24, 8]
+      - [0xCF8070, rgba16, tex_01.rgba16, 16, 24]
+      - [0xCF8370, rgba16, tex_02.rgba16, 16, 16]
+      - [0xCF8570, rgba16, tex_03.rgba16, 8, 8]
+      - [0xCF85F0, rgba16, tex_04.rgba16, 32, 32]
+      - [0xCF8DF0, rgba16, tex_05.rgba16, 8, 8]
+      - [0xCF8E70, rgba16, tex_06.rgba16, 32, 64]
+      - [0xCF9E70, rgba16, tex_07.rgba16, 16, 24]
+      - [0xCFA170, rgba16, tex_08.rgba16, 8, 16]
+      - [0xCFA270, rgba16, tex_09.rgba16, 24, 24]
+      - [0xCFA6F0, rgba16, tex_10.rgba16, 16, 8]
+      - [0xCFA7F0, rgba16, tex_11.rgba16, 16, 16]
+      - [0xCFA9F0, rgba16, tex_12.rgba16, 16, 48]
+      - [0xCFAFF0, rgba16, tex_13.rgba16, 24, 24]
+      - [0xCFB470, rgba16, tex_14.rgba16, 16, 16]
+      - [0xCFB670, rgba16, tex_15.rgba16, 8, 16]
+      - [0xCFB770, vtx, vtx_00]
+      - [0xCFBD50, gfx, dl_00]
+      - [0xCFC0D0, vtx, vtx_01]
+      - [0xCFC200, gfx, dl_01]
+      - [0xCFC320, vtx, vtx_02]
+      - [0xCFC650, gfx, dl_02]
+      - [0xCFC800, vtx, vtx_03]
+      - [0xCFCA00, gfx, dl_03]
+      - [0xCFCB40, vtx, vtx_04]
+      - [0xCFCC30, gfx, dl_04]
+      - [0xCFCD30, vtx, vtx_05]
+      - [0xCFCDD0, gfx, dl_05]
+      - [0xCFCE50, vtx, vtx_06]
+      - [0xCFCEB0, gfx, dl_06]
+      - [0xCFCF40, vtx, vtx_07]
+      - [0xCFCF90, gfx, dl_07]
+      - [0xCFD020, vtx, vtx_08]
+      - [0xCFD110, gfx, dl_08]
+      - [0xCFD210, vtx, vtx_09]
+      - [0xCFD2B0, gfx, dl_09]
+      - [0xCFD330, vtx, vtx_10]
+      - [0xCFD390, gfx, dl_10]
+      - [0xCFD420, vtx, vtx_11]
+      - [0xCFD470, gfx, dl_11]
+      - [0xCFD500, vtx, vtx_12]
+      - [0xCFD5E0, gfx, dl_12]
+      - [0xCFD690, vtx, vtx_13]
+      - [0xCFD840, gfx, dl_13]
+      - [0xCFD990, vtx, vtx_14]
+      - [0xCFD9F0, gfx, dl_14]
+      - [0xCFDA80, vtx, vtx_15]
+      - [0xCFDB90, gfx, dl_15]
+      - [0xCFDC50, vtx, vtx_16]
+      - [0xCFDE00, gfx, dl_16]
+      - [0xCFDF50, vtx, vtx_17]
+      - [0xCFDFB0, gfx, dl_17]
+      - [0xCFE040, vtx, vtx_18]
+      - [0xCFE070, gfx, dl_18]
+      - [0xCFE0F0, vtx, vtx_19]
+      - [0xCFE120, gfx, dl_19]
+      - [0xCFE1A0, vtx, vtx_20]
+      - [0xCFE1D0, gfx, dl_20]
+      - [0xCFE250, vtx, vtx_21]
+      - [0xCFE280, gfx, dl_21]
+      - [0xCFE300, vtx, vtx_22]
+      - [0xCFE340, gfx, dl_22]
+  - name: boss_guilty  # 0xCFE3C0-0xD0DBF0: Guilty, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xCFE3C0
-  - name: boss_mammon  # 0xD0DBF0-0xD21500: boss 7
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_guilty
+    subsegments:
+      - [0xCFE3C0, data, records]
+      - [0xD08380, rgba16, tex_00.rgba16, 16, 8]
+      - [0xD08480, rgba16, tex_01.rgba16, 8, 16]
+      - [0xD08580, rgba16, tex_02.rgba16, 16, 16]
+      - [0xD08780, rgba16, tex_03.rgba16, 16, 32]
+      - [0xD08B80, rgba16, tex_04.rgba16, 16, 16]
+      - [0xD08D80, rgba16, tex_05.rgba16, 16, 16]
+      - [0xD08F80, rgba16, tex_06.rgba16, 32, 32]
+      - [0xD09780, rgba16, tex_07.rgba16, 32, 32]
+      - [0xD09F80, rgba16, tex_08.rgba16, 16, 24]
+      - [0xD0A280, rgba16, tex_09.rgba16, 16, 16]
+      - [0xD0A480, vtx, vtx_00]
+      - [0xD0ABE0, gfx, dl_00]
+      - [0xD0AFC0, vtx, vtx_01]
+      - [0xD0B120, gfx, dl_01]
+      - [0xD0B250, vtx, vtx_02]
+      - [0xD0B2E0, gfx, dl_02]
+      - [0xD0B380, vtx, vtx_03]
+      - [0xD0B5F0, gfx, dl_03]
+      - [0xD0B750, vtx, vtx_04]
+      - [0xD0B8B0, gfx, dl_04]
+      - [0xD0B9A0, vtx, vtx_05]
+      - [0xD0BA50, gfx, dl_05]
+      - [0xD0BB00, vtx, vtx_06]
+      - [0xD0BCC0, gfx, dl_06]
+      - [0xD0BE10, vtx, vtx_07]
+      - [0xD0BE90, gfx, dl_07]
+      - [0xD0BF30, vtx, vtx_08]
+      - [0xD0C130, gfx, dl_08]
+      - [0xD0C2C0, vtx, vtx_09]
+      - [0xD0C5D0, gfx, dl_09]
+      - [0xD0C740, vtx, vtx_10]
+      - [0xD0C7D0, gfx, dl_10]
+      - [0xD0C8A0, vtx, vtx_11]
+      - [0xD0CA70, gfx, dl_11]
+      - [0xD0CBC0, vtx, vtx_12]
+      - [0xD0CC40, gfx, dl_12]
+      - [0xD0CCE0, vtx, vtx_13]
+      - [0xD0CEE0, gfx, dl_13]
+      - [0xD0D070, vtx, vtx_14]
+      - [0xD0D380, gfx, dl_14]
+      - [0xD0D4F0, vtx, vtx_15]
+      - [0xD0D580, gfx, dl_15]
+      - [0xD0D650, vtx, vtx_16]
+      - [0xD0D6E0, gfx, dl_16]
+      - [0xD0D780, vtx, vtx_17]
+      - [0xD0D810, gfx, dl_17]
+      - [0xD0D8B0, vtx, vtx_18]
+      - [0xD0D980, gfx, dl_18]
+      - [0xD0DA50, vtx, vtx_19]
+      - [0xD0DB20, gfx, dl_19]
+  - name: boss_mammon  # 0xD0DBF0-0xD21500: Mammon, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xD0DBF0
-  - name: boss_beigis  # 0xD21500-0xD2E2F0: boss 6
-    type: bin
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_mammon
+    subsegments:
+      - [0xD0DBF0, data, records]
+      - [0xD1B2F0, rgba16, tex_00.rgba16, 32, 32]
+      - [0xD1BAF0, rgba16, tex_01.rgba16, 16, 16]
+      - [0xD1BCF0, rgba16, tex_02.rgba16, 16, 24]
+      - [0xD1BFF0, rgba16, tex_03.rgba16, 8, 16]
+      - [0xD1C0F0, rgba16, tex_04.rgba16, 16, 16]
+      - [0xD1C2F0, rgba16, tex_05.rgba16, 32, 32]
+      - [0xD1CAF0, rgba16, tex_06.rgba16, 16, 16]
+      - [0xD1CCF0, rgba16, tex_07.rgba16, 16, 24]
+      - [0xD1CFF0, rgba16, tex_08.rgba16, 8, 16]
+      - [0xD1D0F0, rgba16, tex_09.rgba16, 16, 32]
+      - [0xD1D4F0, rgba16, tex_10.rgba16, 8, 16]
+      - [0xD1D5F0, rgba16, tex_11.rgba16, 32, 32]
+      - [0xD1DDF0, vtx, vtx_00]
+      - [0xD1E580, gfx, dl_00]
+      - [0xD1E920, vtx, vtx_01]
+      - [0xD1EBA0, gfx, dl_01]
+      - [0xD1ED30, vtx, vtx_02]
+      - [0xD1EDE0, gfx, dl_02]
+      - [0xD1EEA0, vtx, vtx_03]
+      - [0xD1EF00, gfx, dl_03]
+      - [0xD1EF90, vtx, vtx_04]
+      - [0xD1EFE0, gfx, dl_04]
+      - [0xD1F060, vtx, vtx_05]
+      - [0xD1F230, gfx, dl_05]
+      - [0xD1F370, vtx, vtx_06]
+      - [0xD1F3F0, gfx, dl_06]
+      - [0xD1F490, vtx, vtx_07]
+      - [0xD1F580, gfx, dl_07]
+      - [0xD1F650, vtx, vtx_08]
+      - [0xD1F6E0, gfx, dl_08]
+      - [0xD1F790, vtx, vtx_09]
+      - [0xD1F910, gfx, dl_09]
+      - [0xD1FA10, vtx, vtx_10]
+      - [0xD1FA70, gfx, dl_10]
+      - [0xD1FB00, vtx, vtx_11]
+      - [0xD1FCD0, gfx, dl_11]
+      - [0xD1FE10, vtx, vtx_12]
+      - [0xD1FE90, gfx, dl_12]
+      - [0xD1FF30, vtx, vtx_13]
+      - [0xD20020, gfx, dl_13]
+      - [0xD200F0, vtx, vtx_14]
+      - [0xD20180, gfx, dl_14]
+      - [0xD20230, vtx, vtx_15]
+      - [0xD203B0, gfx, dl_15]
+      - [0xD204B0, vtx, vtx_16]
+      - [0xD20510, gfx, dl_16]
+      - [0xD205A0, vtx, vtx_17]
+      - [0xD20670, gfx, dl_17]
+      - [0xD20760, vtx, vtx_18]
+      - [0xD20860, gfx, dl_18]
+      - [0xD20970, vtx, vtx_19]
+      - [0xD20A40, gfx, dl_19]
+      - [0xD20B30, vtx, vtx_20]
+      - [0xD20C30, gfx, dl_20]
+      - [0xD20D40, vtx, vtx_21]
+      - [0xD20E30, gfx, dl_21]
+      - [0xD20F30, vtx, vtx_22]
+      - [0xD21020, gfx, dl_22]
+      - [0xD21120, vtx, vtx_23]
+      - [0xD21210, gfx, dl_23]
+      - [0xD21310, vtx, vtx_24]
+      - [0xD21400, gfx, dl_24]
+  - name: boss_beigis  # 0xD21500-0xD2E2F0: Beigis, built from typed sources (definitions generated from the ROM map's walk)
+    type: code
     start: 0xD21500
+    vram: 0x802A7BC0
+    exclusive_ram_id: boss_file  # the 8 boss files share LoadMapBoss' buffer
+    symbol_name_format: $VRAM_$ROM
+    dir: boss_beigis
+    subsegments:
+      - [0xD21500, data, records]
+      - [0xD2A600, rgba16, tex_00.rgba16, 16, 16]
+      - [0xD2A800, rgba16, tex_01.rgba16, 16, 16]
+      - [0xD2AA00, rgba16, tex_02.rgba16, 24, 32]
+      - [0xD2B000, rgba16, tex_03.rgba16, 16, 16]
+      - [0xD2B200, rgba16, tex_04.rgba16, 16, 16]
+      - [0xD2B400, rgba16, tex_05.rgba16, 16, 16]
+      - [0xD2B600, rgba16, tex_06.rgba16, 32, 32]
+      - [0xD2BE00, rgba16, tex_07.rgba16, 16, 16]
+      - [0xD2C000, rgba16, tex_08.rgba16, 16, 32]
+      - [0xD2C400, vtx, vtx_00]
+      - [0xD2C860, gfx, dl_00]
+      - [0xD2CB00, vtx, vtx_01]
+      - [0xD2CBA0, gfx, dl_01]
+      - [0xD2CC10, vtx, vtx_02]
+      - [0xD2CD30, gfx, dl_02]
+      - [0xD2CE10, vtx, vtx_03]
+      - [0xD2CF20, gfx, dl_03]
+      - [0xD2D000, vtx, vtx_04]
+      - [0xD2D060, gfx, dl_04]
+      - [0xD2D0F0, vtx, vtx_05]
+      - [0xD2D170, gfx, dl_05]
+      - [0xD2D210, vtx, vtx_06]
+      - [0xD2D3A0, gfx, dl_06]
+      - [0xD2D500, vtx, vtx_08]
+      - [0xD2D580, gfx, dl_08]
+      - [0xD2D620, vtx, vtx_09]
+      - [0xD2D7D0, gfx, dl_09]
+      - [0xD2D930, vtx, vtx_10]
+      - [0xD2D9E0, gfx, dl_10]
+      - [0xD2DA90, vtx, vtx_11]
+      - [0xD2DD70, gfx, dl_11]
+      - [0xD2DF50, vtx, vtx_12]
+      - [0xD2E0C0, gfx, dl_12]
+      - [0xD2E1E0, vtx, vtx_13]
+      - [0xD2E250, gfx, dl_13]
   - name: dialogue_bank  # 0xD2E2F0-0xD384B0: dialogue + sign bank
     type: bin
     start: 0xD2E2F0
@@ -592,8 +1309,17 @@ segments:
     type: bin
     start: 0xD490C0
   - name: cutscene_bank  # 0xD74AC0-0xD86170: cutscene bank
-    type: bin
+    type: code
     start: 0xD74AC0
+    vram: 0x8039ADB0
+    exclusive_ram_id: cutscene_bank  # loaded by InitGraphics, not part of the boot image: without its own RAM id
+                                     # splat would count its RAM as main's and rename the overlays' symbols
+    subsegments:
+      - [0xD74AC0, bin, cutscene_bank_0]
+      - [0xD850A0, .data, game/boss_tables]  # gBossFiles and gBossPlacements: the boss files' ROM bounds, where each boss stands
+      - [0xD851A0, bin, cutscene_bank_1]
+      - [0xD856F0, .data, game/boss_anims]  # the boss models' animation tables (gBossAnimTables and a copy), the bosses' names
+      - [0xD85790, bin, cutscene_bank_2]
   - name: sky_palettes  # 0xD86170-0xD86770: sky palettes
     type: bin
     start: 0xD86170
@@ -626,17 +1352,62 @@ segments:
     type: bin
     start: 0xDA0D70
   - name: pak_menu_module  # 0xDA4570-0xDAB5F0: Controller Pak menu module
-    type: bin
+    type: code
     start: 0xDA4570
-  - name: title_overlay  # 0xDAB5F0-0xDC62B0: title overlay
-    type: bin
+    vram: 0x80100000
+    exclusive_ram_id: pak_menu
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0xDA4570, asm, pak_menu_module]  # its code, disassembled from the ROM at build time (not decompiled)
+      - [0xDA6510, bin, pak_menu_module_data]  # its data
+  - name: title_overlay  # 0xDAB5F0-0xDC62B0: title overlay (game mode 3)
+    type: code
     start: 0xDAB5F0
-  - name: intro_overlay  # 0xDC62B0-0xE22690: intro overlay
-    type: bin
+    vram: 0x8020C0D0
+    bss_size: 0x34
+    dir: title_overlay
+    exclusive_ram_id: mode_overlay
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0xDAB5F0, c, title_screen]  # the screen's logic (src/title_overlay/title_screen.c): three source files, each section padded to 16
+      - [0xDAC190, c, title_menu]  # the drawing: TitleScreen_DrawMenu
+      - [0xDAE420, c, title_fade]  # the fade: TitleScreen_UpdateFade, TitleScreen_DrawFade
+      - [0xDAE700, .data, title_screen]
+      - [0xDAE720, .data, title_menu]
+      - [0xDAEA10, .data, title_fade]
+      - [0xDAEA30, bin, art]  # its art: palettes, textures and the menu's encoded text (ROM spans)
+      - [0xDC6250, .rodata, title_screen]  # TitleScreen_Step's jump table
+      - [0xDC6270, .rodata, title_menu]  # TitleScreen_DrawMenu's jump table
+      - [0xDC62B0, .rodata, title_fade]  # empty
+      - { start: 0xDC62B0, type: .bss, vram: 0x80226D90, name: title_screen }
+      - { start: 0xDC62B0, type: .bss, vram: 0x80226DB0, name: title_menu }
+      - { start: 0xDC62B0, type: .bss, vram: 0x80226DC0, name: title_fade }
+  - name: intro_overlay  # 0xDC62B0-0xE22690: splash and intro overlay (game mode 4)
+    type: code
     start: 0xDC62B0
+    vram: 0x8020C0D0
+    bss_size: 0xEBD6
+    dir: intro_overlay
+    exclusive_ram_id: mode_overlay
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0xDC62B0, c, intro]  # the entry, the state machine, the scene player, the 18 functions the ending also holds, the drawing
+      - [0xDC9350, c, intro_screens]  # ten functions the state machine calls (the first file's last function ends with two padding words)
+      - [0xDCC410, .data, intro]  # variables, display lists, the scene tables, the scene images (labelled ROM spans)
+      - [0xE13430, .data, intro_screens]  # the images its functions draw (labelled ROM spans)
+      - [0xE22660, .rodata, intro]  # a debug string and Intro_Update's jump table (splat migrates both into its assembly)
+      - [0xE22690, .rodata, intro_screens]  # empty
+      - { start: 0xE22690, type: .bss, vram: 0x802684B0, name: intro }
+      - { start: 0xE22690, type: .bss, vram: 0x80277080, name: intro_screens }
   - name: credits_overlay  # 0xE22690-0xE420D0: credits overlay
-    type: bin
+    type: code
     start: 0xE22690
+    vram: 0x8020C0D0
+    exclusive_ram_id: mode_overlay
+    symbol_name_format: $VRAM_$ROM
+    subsegments:
+      - [0xE22690, asm, credits_overlay]  # its code, disassembled from the ROM at build time (not decompiled)
+      - [0xE25C50, bin, credits_overlay_data]  # its data
   - name: event_blob_a  # 0xE420D0-0xE43780: event blob A
     type: bin
     start: 0xE420D0

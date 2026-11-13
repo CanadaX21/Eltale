@@ -27,8 +27,8 @@ checked against the C.
 | 0x3E1090-0x3F1BA0 | 68,368 | `field_shared` | shared field block, loaded with maps 3, 5, 7 and 12 (a switch in `LoadMap`); no map table row owns it | `LoadMap` (`src/game/map.c`) | 0x801E0000 |
 | 0x3F1BA0-0x869620 | 4,684,416 | `maps_interiors_dungeons` | map blobs 13-35: the interiors 13-25, then the forests and dungeons 26-35 | `LoadMap` (`src/game/map.c`) | by `gMapTable` row |
 | 0x869620-0x86F6F0 | 24,784 | `brian_model` | Brian's model | `InitBrian` (`src/game/player.c`) | 0x80206000 |
-| 0x86F6F0-0x871D10 | 9,760 | `npc_held_objects` | loaded with every NPC area into the overlay area; its bytes look like texture data, not code (a comment in `src/game/enemy.c` calls it the battle overlay's code). The name is Quest 64's label for its same-size file | `LoadNPCArea` (`src/game/enemy.c`) | 0x8020C0D0 |
-| 0x871D10-0xA70350 | 2,090,560 | `npc_blobs` | 7 NPC model blobs, `npc_blob_0`-`npc_blob_6`, one per NPC area (`gNpcBlobs`): the characters' models (the comments in `src/game/enemy.c` call each one the area's monster file) | `LoadNPCArea` (`src/game/enemy.c`) | 0x8020E6F0 (`gMonsterFileBuffer`) |
+| 0x86F6F0-0x871D10 | 9,760 | `npc_held_objects` | loaded with every NPC area into the overlay area: display lists and textures, not code; the NPC blobs' models take textures from it. The name is Quest 64's label for its same-size file | `LoadNPCArea` (`src/game/enemy.c`) | 0x8020C0D0 |
+| 0x871D10-0xA70350 | 2,090,560 | `npc_blobs` | 7 NPC model blobs, `npc_blob_0`-`npc_blob_6`, one per NPC area (`gNpcBlobs`): the characters' models and their names | `LoadNPCArea` (`src/game/enemy.c`) | 0x8020E6F0 (`gMonsterFileBuffer`) |
 | 0xA70350-0xA77F10 | 31,680 | `shannon_actor` | an actor loaded with every NPC area (`gShannonActorData`); the name is Quest 64's label for its same-size file | `LoadNPCArea` (`src/game/enemy.c`) | 0x802A0000 (`gShannonActorData`) |
 | 0xA77F10-0xCC2280 | 2,401,136 | `monster_sets` | 6 monster sets, `monsters_0`-`monsters_5` (`gMonsterSets`), picked by the submap's area: base data, AI options, names and models | `LoadMonsterSet` (`src/game/enemy.c`) | 0x8020E6F0 (`gMonsterFileBuffer`) |
 | 0xCC2280-0xD2E2F0 | 442,480 | `boss_files` | 8 boss files, one per boss number (`gBossFiles`): each boss's model | `LoadMapBoss` (`src/game/boss.c`) | 0x802A7BC0 (`gBossVAddr`) |
@@ -80,16 +80,17 @@ sky records, its start).
 
 ## Code outside the C
 
-The figures in the README count only the CPU code at 0x1000-0x4C580. Code elsewhere in the ROM is kept as binary
-data, neither disassembled nor decompiled:
+The figures in the README count only the CPU code at 0x1000-0x4C580. Code elsewhere in the ROM:
 
 - **Blocks the game loads at run time.** The title, intro and credits overlays share the overlay area at 0x8020C0D0
   (`LoadOvl_TitleScreen`, `LoadOvl_Splash_and_Intro` and `LoadOvl_Ending` in `src/game/overlay.c` load them), and
-  `src/game/main.c` calls into them through `func_8020C0D0`. The Controller Pak menu module loads to 0x80100000, where
-  `gameplay_common` goes, and `mainproc` calls `func_801009EC` in it. The event blobs and the spell and cutscene banks
-  may hold code as well; nothing in the C calls into them. The splat configuration extracts all of these blocks as
-  binary data (`type: bin`).
-- **In the main image,** the RSP microcode text after the CPU code (from 0x4C580).
+  `src/game/main.c` calls into them through `func_8020C0D0`, the loaded overlay's entry. The title and the intro
+  overlays are C units (`src/title_overlay/`, `src/intro_overlay/`), counted apart from the README's main figures;
+  their functions not yet in C, and the whole credits overlay, are assembly that splat disassembles from your ROM
+  during the build, with every reference by name. The Controller Pak menu module loads to 0x80100000, where
+  `gameplay_common` goes, and `mainproc` calls `func_801009EC` in it: assembly as well. The event blobs and the spell
+  and cutscene banks may hold code too; nothing in the C calls into them, and they are extracted as binary data.
+- **In the main image,** the RSP microcode text after the CPU code (from 0x4C580), binary data.
 - **In `boot`,** the cartridge's IPL3.
 
 ## What the code reads

@@ -1,4 +1,6 @@
 #include "common.h"
+#include "game/audio.h"
+#include "sched/nnsched.h"
 
 /* ---- audio.c's .data (0x8004F780-0x80055B40, ROM 0x50380-0x56740). In address order:
    IDO writes .data in definition order. ---- */
@@ -1859,7 +1861,6 @@ extern AMDMAState dmaState;       /* dmaState */
 extern OSMesgQueue audDMAMessageQ;   /* audDMAMessageQ */
 extern OSIoMesg audDMAIOMesgBuf[];   /* audDMAIOMesgBuf */
 void SwitchMusic();               /* RULE-EXCEPTION R25: unprototyped; ChangeMusicIfIdle calls it with no argument (an unreferenced function: no call or pointer to it in the ROM) */
-void    *alHeapDBAlloc(u8 *file, s32 line, ALHeap *hp, s32 num, s32 size);
 typedef struct {
     ALSeqpConfig config;    /* 0x000 */
     ALCSPlayer player;      /* 0x01C */
@@ -1870,26 +1871,16 @@ typedef struct {
 } MusicSlot;                /* 0x19C */
 extern MusicSlot gMusicSlots[2];     /* the two music slots */
 extern s32 gSoundQueueVolumeScale[];
-void    alCSPNew(ALCSPlayer *seqp, ALSeqpConfig *config);
 extern s32 gSoundQueuePan[];
 extern s32 gSoundQueueRead;
-void LoadSeqFileHeader(u8* seqFile);
-void    alSeqFileNew(ALSeqFile *f, u8 *base);
-void    alCSPSetBank(ALCSPlayer *seqp, ALBank *b);
 extern u32 gSlotVolumeScale[5];
 extern s32 gSlotPan[5];
 extern u32* gSoundScriptPos;
 extern s16* gSoundIds;
 extern ALSndPlayer gSndPlayer;
-void            alSndpSetSound(ALSndPlayer *sndp, ALSndId id);
-void            alSndpStop(ALSndPlayer *sndp);
 extern ALHeap gAudioHeap;
 extern OSThread gAudioThread;           /* the audio thread (StartAudioThread) */
-void AudioThread(NNSched* sc);   /* the audio thread (StartAudioThread starts it) */
-extern void		osInvalDCache(void *, s32);
 extern OSMesgQueue gAudioDmaQueue;
-extern s32		osPiStartDma(OSIoMesg *, s32, s32, u32, void *, u32,
-				     OSMesgQueue *);
 
 void ReadAudioRom(u32 rom, void* dst, s32 size) {
     OSIoMesg msg;
@@ -1982,7 +1973,6 @@ s32 __amDma(s32 addr, s32 len, void* state) {
     return osVirtualToPhysical(foundBuffer) + delta;
 }
 extern AMDMABuffer dmaBuffs[32];  /* dmaBuffs */
-s32 __amDma(s32 addr, s32 len, void* state);  /* __amDma */
 ALDMAproc __amDmaNew(AMDMAState** state) {
     s32 i;
 
@@ -2025,9 +2015,6 @@ void __clearAudioDMA(void) {
 }
 #define NUM_FIELDS 1               /* video fields per audio frame, as in the SDK's audiomgr.h */
 extern s32 gAcmdLen;             /* alAudioFrame's command count */
-void UpdateSoundPlayer(void);
-void nnScAddClient(NNSched* sc, NNScClient* c, OSMesgQueue* msgQ);
-OSMesgQueue* nnScGetAudioMQ(NNSched* sc);
 /* The audio thread: the SDK audio manager's frame loop on the nnsched scheduler. On each retrace it builds one audio
    frame into one of two command lists, runs it as an RSP task and hands the output buffer (one of three) to the AI.
    After PRE-NMI it fades both music players out over 28 frames, then stops making frames. */
@@ -2313,10 +2300,6 @@ extern u32* gSlotScriptLoop1;
 extern u32* gSlotScriptLoop2;
 extern u32* gSlotScriptLoop3;
 extern u32* gSlotScriptLoop4;
-void StepLoopingSound(void);
-void ProcessSoundQueue(void);
-void StepMusicFadeOut(void);
-void StepMusicFadeIn(void);
 void UpdateSoundPlayer(void) {
     for (gLoopingSoundSlot = 0; gLoopingSoundSlot < 5; gLoopingSoundSlot++) {
         if (gLoopingSoundFrames[gLoopingSoundSlot] != 0) {
@@ -2372,7 +2355,6 @@ s32 ChangeMusicIfIdle(void) {
     SwitchMusic();
     return 0;
 }
-s32 LoadMusicSequences(s32 seq);
 void SwitchMusic(s32 bgm) {
     u32 seq;
 

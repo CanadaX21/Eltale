@@ -21,9 +21,11 @@ This is an AI-assisted project. The matching was done by Claude (Anthropic's AI 
 service; I set the rules, made the calls on what counts as a match, and reviewed the work. The people credited did not
 take part in it: the credit is for the work it builds on, not an endorsement.
 
-This repository contains no ROM image, no game assets (graphics, models, maps, music or sound samples) and no
-disassembly. The only game data in it are the tables, strings and sound-effect scripts that the reconstructed C holds as
-initialisers beside the code that uses them (about 30 KB). You need your own copy of the game: the build extracts
+This repository contains no ROM image and no game assets (graphics, models, maps, music or sound samples). The only
+assembly code in it is the boot entry's 20 instructions (`asm/entry.s`), kept by hand because a modified build needs its
+.bss clear to take its size from the linker; every other piece of assembly is disassembled from your ROM when you
+build. The only game data in it are the tables, strings and sound-effect scripts that the reconstructed C holds as
+initialisers beside the code that uses them (about 65 KB). You need your own copy of the game: the build extracts
 everything else from it. This is not a PC port.
 
 ## Status
@@ -34,21 +36,28 @@ everything else from it. This is not a PC port.
 | Their code | 224,616 of 224,616 bytes |
 | Built ROM | byte-identical to the original (SHA-1 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) |
 | Kept as assembly, outside the C figures | the hand-written boot entry (80 bytes) and the SDK library code (libultra, its audio library and the gu math routines): 83,664 bytes in 121 segments, **27.1%** of the 308,608 bytes of CPU code in the main image (ROM 0x1000-0x4C580) |
+| Game code loaded at run time, counted apart | the title screen overlay: 7 of its 8 functions in C (3,704 of 12,552 bytes of function code); the splash and intro overlay: its data, tables and structure in C, its 32 functions still assembly; the credits overlay and the Controller Pak menu module: assembly |
 
-"Tracked compiled C functions" means every function in the 40 C translation units in `src/`: the game's own code and
-six libultra modules that are written in C here as well. The SDK library code kept as assembly is disassembled from
-your ROM during the build; it has not been decompiled. The 40 C units take 224,864 bytes of the ROM: the 530 functions
-plus 248 bytes of zero padding that the compiler's assembler adds at the ends of 33 of them. `tools/verify.py`
-recomputes every figure in this table from your own build. Code elsewhere in the ROM is copied from your ROM as binary
-data and counted by none of these figures: the RSP microcode, and blocks that the game loads at run time, among them
-the title, intro and credits overlays and the Controller Pak menu module
+"Tracked compiled C functions" means every function in the 40 C translation units of the main image (`src/game/`,
+`src/sched/`, `src/libultra/`): the game's own code and six libultra modules that are written in C here as well. The
+SDK library code kept as assembly is disassembled from your ROM during the build; it has not been decompiled. The 40 C
+units take 224,864 bytes of the ROM: the 530 functions plus 248 bytes of zero padding that the compiler's assembler
+adds at the ends of 33 of them. `tools/verify.py` recomputes every figure in this table from your own build. The
+game's code that is loaded at run time is counted by none of the main figures: the title and intro overlays are C
+units (`src/title_overlay/`, `src/intro_overlay/`) whose functions not yet in C are disassembled from your ROM during
+the build, as are the credits overlay and the Controller Pak menu module; the RSP microcode is copied as binary data
 ([docs/ROM_MAP.md](docs/ROM_MAP.md#code-outside-the-c)).
+
+A build whose code or data changes size boots and plays: every reference in the C, in the overlays and in the boss
+model files follows a layout change, the linker places each file's sections, and it refuses a build that outgrows
+main's RAM, the title or intro overlay's room, or a boss file's buffer. This has been tested as far as it was run (test builds in an emulator and on
+Project64); paths not run, among them the scenes after a boss fight, are not validated.
 
 A byte match proves that the original compiler turns this C into the original machine code. It does not prove that
 this is the text the original authors wrote: names, formatting and the choice between equivalent forms are
 reconstructions. [docs/METHODOLOGY.md](docs/METHODOLOGY.md) describes the matching standard, the documented exceptions
-and the limits. [CHANGELOG.md](CHANGELOG.md) lists what changed since the first publication; the compiled code has
-not changed.
+and the limits. [CHANGELOG.md](CHANGELOG.md) lists what changed since the first publication; the built ROM has not
+changed.
 
 ## Quick start
 
@@ -82,7 +91,8 @@ sudo apt-get install git curl ca-certificates python3 python3-venv python3-dev b
 ```
 
 `build-essential` and `python3-dev` are there because pip builds one pinned package (rabbitizer) from source on
-Python 3.12 and later.
+Python 3.12 and later; `build-essential` also gives the C preprocessor (`cpp`) that the build uses to list each C
+file's headers, so that `ninja` recompiles a file after a header it includes changes.
 
 ### 2. Clone the repository
 
@@ -143,8 +153,10 @@ build/eltail.jp.z64: OK
 and keeps a copy of its outputs in `expected/`. If a later build does not match, `sha1sum` reports `FAILED`, and
 `python3 first_diff.py` names the first symbols that differ from that last matching build.
 
-After changing symbols or the splat configuration, run `ninja -t clean`, delete `asm/` and `assets/` (splat does not
-remove the files of an earlier split, and `configure.py` builds whatever it finds there), then `./configure && ninja`.
+After changing symbols or the splat configuration, run `ninja -t clean`, delete `assets/` and everything in `asm/`
+except the hand-kept `asm/entry.s` (`git clean -fdX asm assets` removes exactly the files git ignores there; splat
+does not remove the files of an earlier split, and `configure.py` builds whatever it finds there), then
+`./configure && ninja`.
 
 ## Verify it yourself
 
@@ -152,10 +164,11 @@ remove the files of an earlier split, and `configure.py` builds whatever it find
 python3 tools/verify.py
 ```
 
-checks, from your build alone: that the ROM is byte-identical to yours; that no C file or project header contains
-assembly (no `GLOBAL_ASM` or `INCLUDE_ASM`, no `asm` statement); that the splat configuration keeps assembly only for
-the boot entry and the SDK library code; that the linker filled the C units' address range only from objects compiled
-from `src/`; and that those objects define the 530 functions. It prints the figures in the Status table.
+checks, from your build alone: that the ROM is byte-identical to yours; that no C file of the main image and no project
+header contains assembly (no `GLOBAL_ASM` or `INCLUDE_ASM`, no `asm` statement); that the splat configuration keeps
+assembly in the main image only for the boot entry and the SDK library code; that the linker filled the C units'
+address range only from objects compiled from `src/`; that those objects define the 530 functions; and how many of
+the overlays' functions are compiled from C. It prints the figures in the Status table.
 
 To see that the ROM really is built from this C, change one constant in a function, for example a `* 40` to `* 41`
 in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Then `git checkout src/game/hud.c` and
@@ -167,17 +180,21 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 |---|---|
 | Where the game starts | the boot entry at ROM 0x1000 (assembly), `boot` and `idle` in `src/game/boot.c`, then `mainproc` in `src/game/main.c`: the start-up, then a loop that runs one game mode at a time (`gGameMode`): `FieldLoop` for play, `TitleLoop`, `IntroLoop`, `SaveModeLoop`, `CreditsLoop`, `EndingLoop`, `AfterCreditsLoop` |
 | The game's types, structures and constants | `include/quest_types.h` |
+| A function's declaration | its file's header for a function other files call: `include/game/player.h` declares those of `src/game/player.c` (the scheduler's in `include/sched/nnsched.h`, the overlays' in `include/game/title.h` and `intro.h`); a file includes the headers of the files whose functions it calls, and declares in itself, where needed, a function only it calls. A few calls in the original pass an argument list the function's definition does not take, or compile differently under its prototype, so a few files declare such a function themselves without a prototype, and `src/game/spells.c` calls three of them with no declaration in scope: each says why (`RULE-EXCEPTION R25`). [docs/METHODOLOGY.md](docs/METHODOLOGY.md) lists every kind of declaration kept in the calling file |
 | A function or a variable by name or address | `symbol_addrs.txt` (names and addresses for splat and the linker); `undefined_syms.jp.txt` (data the C uses that the split does not name, defined by address) |
 | A file by what it holds | [Source file names](#source-file-names), below |
 | What is where in the ROM, and which function loads it | [docs/ROM_MAP.md](docs/ROM_MAP.md), with `eltail.jp.yaml` for every segment |
+| What the game needs from the N64's system software (for a port) | [docs/PLATFORM.md](docs/PLATFORM.md) |
 | Why some code is written the way it is | the comments at the code, and the documented exceptions in [docs/METHODOLOGY.md](docs/METHODOLOGY.md) |
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `src/game/`, `src/sched/`, `src/libultra/` | the 40 C translation units: the game's code, the SDK sample scheduler, and the libultra files built as C (file names below) |
-| `include/` | the project's headers (types, structures, globals); in `include/2.0I`, the 19 SDK headers the build reads, unmodified |
+| `src/game/`, `src/sched/`, `src/libultra/` | the main image's 40 C translation units: the game's code, the SDK sample scheduler, and the libultra files built as C; and two data files of the cutscene bank, the boss tables (file names below) |
+| `src/title_overlay/`, `src/intro_overlay/` | the title screen overlay and the splash and intro overlay as C units: a function still in assembly is included from your ROM with a `GLOBAL_ASM` line |
+| `include/` | the project's headers: types and structures (`quest_types.h`, `structs.h`, `scene2d.h`, `boss_files.h`), the functions each file defines (`include/game/`, `include/sched/`), macros (`common.h`); in `include/2.0I`, the 19 SDK headers the build reads, unmodified |
+| `asm/entry.s` | the boot entry, kept by hand (the one assembly source file in the repository) |
 | `eltail.jp.yaml` | the splat configuration: how the ROM is split into code, data and assets |
 | `symbol_addrs.txt`, `undefined_syms.jp.txt` | symbol names and addresses for splat and the linker |
 | `configure`, `configure.py` | check the ROM, run splat, write `build.ninja` |
@@ -186,13 +203,14 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 | `first_diff.py`, `tools/make_expected.py` | find the first difference from the last matching build |
 | `tools/objdiff_gen.py`, `tools/trim_padding.py` | per-function comparison with [objdiff](https://github.com/encounter/objdiff) (`objdiff.json`, written by `./configure`) |
 | `tools/splat`, `tools/asm-processor` | submodules: [splat](https://github.com/ethteck/splat) and [asm-processor](https://github.com/simonlindholm/asm-processor) at pinned commits |
-| `docs/` | the methodology and the ROM map ([Documentation](#documentation)) |
+| `docs/` | the methodology, the ROM map and the platform boundary ([Documentation](#documentation)) |
 
 ### Source file names
 
 The original file names of the game's code are not known: the ROM keeps none. The names in `src/game/` describe
 what each file holds and are this project's own. The scheduler and libultra files carry their known SDK names. Other
-Quest 64 and Eltale decomps name files by their ROM offset (splat's default); this table maps the two.
+Quest 64 and Eltale decomps name files by their ROM offset (splat's default); this table maps the two. The boot
+code's offset name is 1000, although its code starts at 0x1050, after the boot entry.
 
 | File | ROM offset | | File | ROM offset |
 |---|---|---|---|---|
@@ -216,6 +234,10 @@ Quest 64 and Eltale decomps name files by their ROM offset (splat's default); th
 | `game/encounter.c` | 0x1FA00 | | `libultra/pimgr.c` | 0x37C20 |
 | `game/model.c` | 0x20DA0 | | `libultra/createmesgqueue.c` | 0x37E10 |
 | `game/hud.c` | 0x216E0 | | `libultra/visetevent.c` | 0x37E40 |
+| `game/boss_tables.c` | 0xD850A0 (data) | | `title_overlay/title_screen.c` | 0xDAB5F0 |
+| `game/boss_anims.c` | 0xD856F0 (data) | | `title_overlay/title_menu.c` | 0xDAC190 |
+| `intro_overlay/intro.c` | 0xDC62B0 | | `title_overlay/title_fade.c` | 0xDAE420 |
+| `intro_overlay/intro_screens.c` | 0xDC9350 | | | |
 
 ## Documentation
 
@@ -223,6 +245,7 @@ Quest 64 and Eltale decomps name files by their ROM offset (splat's default); th
 |---|---|
 | [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | what counts as a match, the documented exceptions, what the figures cover, and what a byte match does not prove |
 | [docs/ROM_MAP.md](docs/ROM_MAP.md) | the ROM block by block: what each block holds, the function that loads it and the RAM it goes to, the pointer tables, the C types that describe the data, and the open questions |
+| [docs/PLATFORM.md](docs/PLATFORM.md) | where the game's code meets the N64's system software: the library services it uses and from where, what it assumes about the hardware as far as the evidence shows, notes for a port, and how the 329 library functions linked into the game were identified (the grades and their bases, and the evidence for each probable or unresolved one) |
 | [CHANGELOG.md](CHANGELOG.md) | what changed since the first publication |
 | [CREDITS.md](CREDITS.md) | the work this builds on, and where names and matches came from |
 

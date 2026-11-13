@@ -3,6 +3,48 @@
 What changed in this repository, newest first. Every state listed builds the byte-identical Japanese ROM (SHA-1
 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) from the C, with all 530 tracked compiled C functions byte-matched.
 
+## Headers, modified builds, the boss files and the title and intro overlays
+
+The ROM still builds byte-identical; the figures for the main image are unchanged.
+
+- **One header per file.** Every function another file calls is declared once, in the header of the file that
+  defines it (`include/game/<file>.h`, `include/sched/nnsched.h`, `include/game/title.h` and `intro.h` for the
+  overlays), copied from its definition, and each file includes its own header, so the compiler checks those
+  definitions against the declarations their callers use. Before, each C file declared what it called itself (680
+  declarations of 467 functions). Corrected on the way: `DrawModel`'s matrix parameter (six files declared it `s32`)
+  and `UseSpellItem`'s parameter (`MonsterBattleData*`, as the other item handlers take). A few calls in the original
+  pass an argument list the definition does not take, or compile differently under its prototype; the files that
+  make them declare those functions themselves without a prototype (`src/game/spells.c` calls three with no
+  declaration in scope), and say why (`RULE-EXCEPTION R25`). [docs/METHODOLOGY.md](docs/METHODOLOGY.md) lists the
+  other declarations a C file keeps.
+- **Global variables** are still declared by each file that uses them: moving a declaration into a shared header
+  changes the order IDO gives a file's `.bss`, and with it the ROM. [docs/METHODOLOGY.md](docs/METHODOLOGY.md) explains.
+- **Header dependencies**: after you edit a header, `ninja` recompiles every file that includes it
+  (`tools/c_deps.py` lists them; before, only a clean build did).
+- **objdiff**: `objdiff.json` lists every C file in `src/game/`, `src/sched/` and `src/libultra/` (the main image's 40
+  units and the cutscene bank's two data files); one with a long path, `src/libultra/createmesgqueue.c`, was missing.
+  The overlays' C files are built for objdiff but not listed.
+- **The boot code's and the scheduler's state** are defined in `src/game/boot.c` and `src/sched/nnsched.c`, each
+  array with its size, and the threads are started with `STACK_TOP(stack)`: the size is no longer written in the call.
+  The boot stack is named (`gBootStack`).
+- **Constants**: `src/game/hud.c` writes its doubles as values (`-3.141592653589793`, ...); 89 extern declarations
+  their files never used are gone.
+- **Modified builds**: code and data can change size in any C file and the game still boots and plays (every
+  reference follows the layout; the linker checks main's RAM limit and the overlays' room). `asm/entry.s`, the boot
+  entry, is kept by hand so its `.bss` clear takes its size from the linker.
+- **The SDK library inside the main image** is identified: 179 more functions carry their SDK names.
+  [docs/PLATFORM.md](docs/PLATFORM.md) is the platform boundary that came of it: the library services the game uses,
+  at 375 call sites, what the code assumes about the hardware, notes for a port, and how the 329 library functions
+  were identified (verified 284, probable 24, unresolved 21), with the evidence for each probable and unresolved one.
+  The behaviour it describes is read from the code, not observed running.
+- **Main's data tables** (the start menu's textures and tables, the sound effects' scripts) are C.
+- **The 8 boss model files** are built from typed sources: splat writes their animation records, display lists,
+  vertices and textures from your ROM when you build (`include/boss_files.h` names their symbols); the cutscene bank's
+  boss tables are C (`src/game/boss_tables.c`, `src/game/boss_anims.c`).
+- **The title screen overlay** is three C files (`src/title_overlay/`), 7 of its 8 functions in C, and **the splash
+  and intro overlay** two (`src/intro_overlay/`): its data, its scene tables (`include/scene2d.h`) and its structure in
+  C, its 32 functions still assembly from your ROM. Their figures are counted apart from the main image's.
+
 ## Documentation
 
 No change to the source or the build.

@@ -1,39 +1,37 @@
 #include "common.h"
-void BrianBattleMovement(u16 mask, ActorTransform* brian, PlayerState* state);   /* battle circle + collision step */
-void BrianState_Stand(f32 analog_x, f32 analog_y, ActorTransform* brian, PlayerState* state);   /* stand */
-void BrianState_Walk(f32 x, f32 y, ActorTransform* brian, PlayerState* state);   /* walk */
-void BrianState_Run(f32 x, f32 y, ActorTransform* brian, PlayerState* state);   /* run */
-void ApplyFloorEffect(PlayerState* state, ActorTransform* brian);
-void UpdateBrianGrowth(PlayerState* state, ActorTransform* brian);
-s32 RollStaffHit(s32 enemy, MonsterBattleData* actor);   /* staff hit test */
-u16 CalcStaffPower(PlayerState* state);                    /* staff damage */
-void EndBattleTurn(MonsterBattleData* actor);
-s32 AnySpellActive(void);
-void CountBattleAgility(PlayerState* player);
+#include "game/player.h"
+#include "game/audio.h"
+#include "game/boss.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/dma.h"
+#include "game/dust.h"
+#include "game/effects.h"
+#include "game/encounter.h"
+#include "game/enemy.h"
+#include "game/hud.h"
+#include "game/map.h"
+#include "game/map_objects.h"
+#include "game/math.h"
+#include "game/message.h"
+#include "game/model.h"
+#include "game/screen_fade.h"
+#include "game/shadow.h"
+#include "game/signs.h"
+#include "game/sound.h"
+#include "game/spells.h"
+#include "game/spirits.h"
 extern u16 gBattleState;   /* battle state flags */
 extern f32 gTurnCenterX;   /* the turn\'s movement circle centre x */
 extern f32 gTurnCenterZ;   /* and z */
 extern SpellDef* gSpellDefs[];      /* each element's first spell record (spells.c) */
 extern u16 gSpellMpCosts[];            /* MP cost by press count, [1..3] (spells.c) */
 extern u16 gSpellBannerTimer;
-void SnapSpellCamera(s32 duration, MonsterBattleData* caster);
-extern f64 D_8006ED08; /* 0.68: speed decay in BrianState_Slide */
-extern f64 D_8006EDC0; /* 0.025: stick magnitude -> speed in BrianState_Stand */
 extern u16 gTurnDelay;
-float sqrtf(float value);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
-f32 Atan2(f32 x, f32 z);   /* atan2 */
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* vec);
-void FindFreeEffectSlot(ActorTransform* brian);
 extern u16 gFieldMode;
-void FindMapBGM(s32 map, s32 room, u16 fade);
 extern AnimEntry* gBrianAnims[];   /* Brian's animation table per model */
-void ApplyRootMotion(ActorTransform* actor, AnimEntry* anim, f32 scale);
-void LoadBrianAnimation(ActorTransform* brian);
 extern EnemyAction gEnemies[];   /* the enemies in battle */
-void ApplyBrianMovement(ActorTransform* brian, AnimEntry* anims, Coordinates2D* offset);
 extern RomRange gBrianAnimRom[];       /* Brian's animations in ROM */
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
 extern s32 gCurrentMap;
 extern s32 gCurrentSubmap;
 extern PendingWarp gPendingWarp;
@@ -41,21 +39,13 @@ extern u32 gSpiritExpTable[];             /* EXP needed per spirit level */
 extern s32 gNextMap;
 extern RespawnLocation gRespawnLocationTbl[];
 extern s32 gNextSubmap;
-typedef struct {                    /* Brian's starting stats: the first 0x38 bytes of BrianData1 */
-    s32 words[14];
-} BrianStartStats;
-extern BrianStartStats gNewGameStats;  /* his stats at a new game */
+extern BrianData1 gNewGameStats;  /* his stats at a new game */
 extern u16 gSpellCrossFlags;
 extern u8 brian_model_ROM_START[];
 extern u8 brian_model_ROM_END[];
 extern u8 D_80206000[];
 extern s32 gGameState;   /* game state flags */
 extern s32 gMessageWindowsOpen;
-void BuildPickupMessage(s32 itemID);
-s32 OpenMessageWindow(s32 type);
-void AddItemToInventory(u8 itemID);
-void PlaySound(u8 delay, s8 id, u8 level);
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);   /* floor/wall poll */
 
 
 extern s8 gStickX;                /* stick x */
@@ -114,12 +104,11 @@ s32 D_8007AB5C;                         /* unreferenced */
 s32 gActorLightAnim;                      /* the brightened light animator for Brian, NPCs, enemies, effects */
 
 extern ModelTransform* gMapModels;    /* the current map's placed models (doors) */
-void StartDoorAnimation(s32 state, s32 frame, s32 flag, void* position);
 void InitBrian(void) {
     PlayerState* state;
 
     dma_write(brian_model_ROM_START, D_80206000, brian_model_ROM_END - brian_model_ROM_START);
-    *(BrianStartStats*)&gBrianStats = gNewGameStats;
+    gBrianStats = gNewGameStats;
     state = &gPlayerState;
     state->brian.transform.scale = gBrianStats.modelScale;
     state->brian.transform.collisionScale = gBrianStats.radius;
@@ -297,27 +286,6 @@ extern u16 gSpiritGainGlow;               /* the spirit-gain window's glow frame
 extern s32 gMarkerScreenY;                /* the marker's screen y (0xF0 = off screen) */
 extern u8 gFadeRampBlack16[16][4];                   /* screen fade settings (StartScreenFade) */
 extern void (*gBrianStateHandlers[])();            /* Brian's state handlers (defined below) */
-void StartScreenFade(s32 frames, u16 flags, void* ramp);
-void ClearStatusEffects(MonsterBattleData* actor);
-s32 FindStaffTarget(ActorTransform* brian);
-s32 FindTalkTarget(PlayerState* state, ActorTransform* brian);
-Spirit* CheckSpiritPickup(ActorTransform* brian);
-MapObject* FindMapObjectInFront(ActorTransform* brian);
-SignSlot* TryReadSign(ActorTransform* brian);
-s32 IsNearBoss(void);
-void StartBossScene(s32 boss);
-void StartBrianStaffSwing(PlayerState* state, ActorTransform* brian, AnimEntry* anims);
-void StartNPCTalk(s32 index);
-void SetSpiritFound(u16 flag);
-s32 CheckIfInventoryFull(void);
-void OpenMapObject(ActorTransform* obj);
-void StartBrianPickUp(PlayerState* state, ActorTransform* brian, AnimEntry* anims);
-void LoadSignText(SignRef* sign);
-s32 CanBrianAct(PlayerState* state, ActorTransform* brian);
-s32 BrianSpellInput(PlayerState* state);
-void BrianStartCast(PlayerState* state, ActorTransform* brian, AnimEntry* anims);
-u32 CountItem(u8 itemID);
-u32 CountInventory(void);
 void UpdateBrian(void) {
     PlayerState* state;
     ActorTransform* brian;
@@ -477,9 +445,6 @@ extern Gfx* gDisplayListHead;
 extern Gfx D_10000A0[];             /* Brian's render setup */
 extern Vec3f gPartPositions[];           /* recorded part positions (model.c) */
 void StepLightAnim();   /* RULE-EXCEPTION R25: unprototyped; this caller passes a second argument the definition does not take */
-void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, s32 mtxList);
-void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);
 void DrawBrian(Mtx* mtx) {
     s32 flags;
     PlayerState* state;
@@ -555,8 +520,6 @@ void SetupBrianForBattle(void) {
     SetAnimation(&state->brian.transform, 0x12, 1, gBrianIdleAnim, 1, 1);
 }
 extern Dust gRunDustTemplate;              /* the running dust template */
-Dust* SpawnDust(Dust* dust);
-void StartScriptedBattle(void);
 void BrianFieldMovement(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
     f32 x;
     f32 y;
@@ -672,7 +635,6 @@ extern u16 gFadeOutAt;
 extern u16 gXPTable[];             /* XP needed per stat level */
 extern u16 gItemBarSlide;
 extern u16 gHudSlideState;
-void RequestMusic(s8 song);         /* music request (sound.c) */
 void BrianState_KnockedDown(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
     BrianData1* stats;
 
@@ -724,8 +686,6 @@ void BrianState_Defeated(ActorTransform* brian, PlayerState* state, AnimEntry* a
 }
 extern s32 gMessageChoice;
 extern Npc gNpcs[];      /* the map objects */
-void ResumeNpcAfterTalk(s32 index);
-s32 StartMusicFadeOut(u32 frames);      /* start the music fade-out (src/game/audio.c) */
 void BrianState_TalkEnd(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
     brian->zspeed = 0.0f;
     brian->xspeed = 0.0f;
@@ -766,11 +726,6 @@ void BrianState_WalkIn(ActorTransform* brian, PlayerState* state, AnimEntry* ani
     }
 }
 extern u8 gCritFade[];             /* the critical hit cue */
-u16 DamageEnemy(s32 enemy, u16 damage, u16 element, u16 flags, MonsterBattleData* attacker);   /* deal damage */
-void ShowEnemyMiss(MonsterBattleData* actor);
-void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage);
-void UpdateStatusVisuals(MonsterBattleData* actor, u16 statusBits, u16 kind, s16 duration);
-void SpawnStaffHitEffect(f32 x, f32 y, f32 z);   /* staff hit effect */
 void BrianState_StaffSwing(MonsterBattleData* brian, PlayerState* state, AnimEntry* anims) {
     u16 dmg;
     s32 flags;
@@ -842,7 +797,6 @@ void BrianState_StaffSwing(MonsterBattleData* brian, PlayerState* state, AnimEnt
         state->flags |= 0x100;
     }
 }
-void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags);   /* cast the spell */
 void BrianState_Cast(MonsterBattleData* brian, PlayerState* state, AnimEntry* anims) {
     brian->transform.xspeed = brian->transform.zspeed = 0.0f;
     if (state->subTimer != 0) {
@@ -868,13 +822,6 @@ void BrianState_Cast(MonsterBattleData* brian, PlayerState* state, AnimEntry* an
         }
     }
 }
-extern f64 D_8006ED18;  /* pi */
-extern f64 D_8006ED20;  /* 2 pi */
-extern f64 D_8006ED28;  /* -pi */
-extern f64 D_8006ED30;  /* 2 pi */
-extern f64 D_8006ED38;  /* 2 pi */
-extern f64 D_8006ED40;  /* 0.3: turn rate */
-extern f64 D_8006ED48;  /* -pi */
 void BrianState_EnterDoor(ActorTransform* brian, PlayerState* state, AnimEntry* anims) {
     f32 diff;
 
@@ -943,7 +890,6 @@ void BrianState_PickUpItem(ActorTransform* brian, PlayerState* state, AnimEntry*
     }
 }
 extern ItemData gItemData[];
-void UseItem(u8 itemID, MonsterBattleData* brian);
 void BrianState_UseItem(MonsterBattleData* brian, PlayerState* state, AnimEntry* anims) {
     state->timer--;
     if (!state->timer) {
@@ -1242,7 +1188,6 @@ void func_80006A50(void) {
 extern f32 gBattleCenterX;               /* battle arena centre x */
 extern f32 gBattleCenterZ;               /* and z */
 extern f32 gBattleRadius;               /* battle arena radius */
-void PushBrianOutOfEnemies(f32* xspeed, f32* zspeed, ActorTransform* brian);   /* push out of the enemies */
 void BrianBattleMovement(u16 mask, ActorTransform* brian, PlayerState* state) {
     f32 dx;
     f32 dz;
@@ -1413,7 +1358,6 @@ void PushBrianOutOfEnemies(f32* dx, f32* dz, ActorTransform* brian) {
         }
     }
 }
-u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker);   /* hurt Brian; returns the damage */
 void ApplyFloorEffect(PlayerState* state, ActorTransform* brian) {
     f32 dx;
     f32 dz;
@@ -1439,7 +1383,6 @@ void ApplyFloorEffect(PlayerState* state, ActorTransform* brian) {
             break;
     }
 }
-void BrianWalkThroughDoor(PlayerState* state, ActorTransform* brian);
 void StartBrianArrival(void) {
     /* Brian arrives through a door / warp: his state by the entrance kind (gPendingWarp.doorFlags). Through pointer
        locals to the block, like DrawBrian: direct gPlayerState.x accesses keep the block's address in a
@@ -1663,7 +1606,6 @@ void StartBrianStaffSwing(PlayerState* state, ActorTransform* brian, AnimEntry* 
     brian->yrot = Atan2(dx, dz);
     SnapSpellCamera(0x23, (MonsterBattleData*)brian);
 }
-u32 getRandomNumber(u32 range);
 s32 RollStaffHit(s32 enemy, MonsterBattleData* actor) {
     s16 chance;
     s32 agi;
@@ -1708,7 +1650,6 @@ u16 CalcStaffPower(PlayerState* state) {
     }
     return damage;
 }
-void StartCameraShake(s32 kind);
 u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker) {
     PlayerState* state;
     f32 angle;
@@ -1775,7 +1716,6 @@ u16 DamageBrian(u16 power, u16 flags, MonsterBattleData* attacker) {
     return power;
 }
 
-void Setup_MISS_Icon(MonsterBattleData* actor);
 void StartBrianDodge(void) {
     /* An attack missed Brian (Quest twin func_80006F6C): unless he is in state 6 or out of HP, state 3 for the
        length of his dodge animation (entry 7's frames at +0x56), busy and melee-proof, the MISS icon, sound 0x17 */
@@ -1809,10 +1749,6 @@ s32 CanBrianAct(PlayerState* state, ActorTransform* brian) {
     }
     return ret;
 }
-s32 GetSpellAvailability(u32 spell, u16 arg1);
-s32 GetSpellFromPath(u16 presses, u8* path);
-s32 GetSpellAvailability(u32 spell, u16 arg1);
-s32 GetSpellFromPath(u16 presses, u8* path);
 s32 BrianSpellInput(PlayerState* state) {
     s32 dir;
     s32 sound;
@@ -1923,7 +1859,6 @@ void CountBattleAgility(PlayerState* player) {
         }
     }
 }
-void StartLevelUpEffect(s32 stat);        /* level-up effect */
 void UpdateBrianGrowth(PlayerState* state, ActorTransform* brian) {
     u16 need;
     s32 count;

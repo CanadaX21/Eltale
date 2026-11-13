@@ -1,48 +1,19 @@
 #include "common.h"
+#include "game/signs.h"
+#include "game/dma.h"
+#include "game/math.h"
 /* split from spirits.c: the original was separate files (each IDO object pads its .rodata to 16;
    the zero words before this file's first literal mark the boundary). Declarations copied from spirits.c. */
-extern s32 gSpiritCount;
-extern Spirit gSubmapSpirits[];
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
-void PlaySound(u8 delay, s8 id, u8 level);
-extern u8 gSpiritsFound[];
-extern u8 gBitMasks[];
-extern u8 gObjectsOpened[];
-extern SubmapSpirits gSubmapSpiritTable[43];
 extern s32 gCurrentMap;
 extern s32 gCurrentSubmap;
-extern CollisionPollingResult gSpiritFloorPoll;
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
-u8 IsSpiritFound(u16 flag);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
-extern MapObjTable gMapObjectTable[];
-extern s32 gMapObjectCount;
-extern MapObject gMapObjects[];
-extern CollisionPollingResult gMapObjectPoll;
-u8 IsMapObjectOpened(u16 id);
-extern u8* gItemNamePtrs[];
-extern u8 gPickupMessageHead[];
-extern u8 gPickupMessageTail[];
 extern u8 gTextBuffer[];
 extern u8 gSpeakerName[];
 extern u8 D_D37700[];
 extern PlayerState gPlayerState;
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
-extern AnimEntry gMapObjectAnims[];
-void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, s32 mtxList);
-void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);
-extern Coordinates2D gMapObjectOffset;
-void SetMapObjectOpened(u16 id);
-extern u8 gSparkleEnvColors[][4];
-extern Gfx* gDisplayListHead;
-f32 sinf(f32 angle);
 extern SignObject gSigns[38];
 extern s32 gRoomSignCount;
 extern SignSlot gRoomSigns[];
 extern Coordinates2D gSignOffset;
-f32 sqrtf(f32 x);
-f32 Atan2(f32 dx, f32 dz);
 void LoadRoomSigns(void) {
     SignSlot* entry;
     s32 i;

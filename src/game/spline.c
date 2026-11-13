@@ -1,6 +1,6 @@
 #include "common.h"
+#include "game/spline.h"
 
-void HermiteBasis(f32 t, f32* h1, f32* h2, f32* h3, f32* h4);   /* Hermite basis */
 
 void SampleSpline(ModelPart* part, ModelKey* key, s32 frame) {
     f32* p1;

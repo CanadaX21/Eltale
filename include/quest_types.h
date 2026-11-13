@@ -502,14 +502,13 @@ typedef struct TextPalette {
 #define SCREEN_BRIGHTENING 4
 /* ---- from Quest include/nnsched.h ---- */
 #include <ultra64.h>
-#define NN_SC_STACKSIZE    0x2000  
 #define NN_SC_SWAPBUFFER   0x0040  
 #define NN_SC_RETRACE_MSG  1  
 #define NN_SC_DONE_MSG     2  
 #define NN_SC_PRE_NMI_MSG  3  
 #define NN_SC_GTASKEND_MSG 4  
 #define NN_SC_MAX_MESGS    8  
-#define NN_SC_STACKSIZE    0x1000
+#define NN_SC_STACKSIZE    0x1000  /* each scheduler thread's stack (Quest 64's nnsched.h has 0x2000) */
 #define OS_SC_SWAPBUFFER   0x0040  /* as in the SDK sched.h */
 /* gGameMode (Quest64-Decomp's names, the last two are Eltale's) */
 #define MODE_GAMEPLAY      1
@@ -1212,14 +1211,14 @@ typedef struct unkStruct {
 /* 33D0.c */
 typedef struct {
      u8 unk_000[0x56];
-     s16 unk_056;           /* frames Brian stays hurt (StartBrianDodge) */
+     s16 unk_056;           /* frames of state 3, Brian dodging an attack that missed him (StartBrianDodge) */
      u8 unk_058[0xA];
      s16 unk_062;           /* frames of state 5, Brian hit by an enemy (DamageBrian) */
      u8 unk_064[0x76];
      s16 unk_0DA;           /* Brian's timer when a battle starts (SetupBrianForBattle) */
      u8 unk_0DC[0x3A];
      s16 unk_116;           /* frames of state 0xC (StartBrianUseItem) */
-} struct_80053D00;  /* unused (the fields are AnimEntry[n].frames: gBrianAnims is AnimEntry*[]); kept for the declaration count */
+} struct_80053D00;  /* unused: its fields are entries 7, 8, 18 and 23's frames in Brian's AnimEntry table (gBrianAnims is AnimEntry*[]); kept for the declaration count, which sets the .bss order */
 /* 8650.c */
 typedef struct {
     f32 x;
@@ -1327,10 +1326,6 @@ typedef struct {
     unk202e4s3* unk44[4];
 }unk202e4s2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* 97B0.c */
-typedef struct {
-    char unk0[0x68];
-    unk202e4s2* unk68;
-}unk202e4s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* 97B0.c */
 typedef struct {
     u16 frame;          /* fires once the script's frame counter passes this */
@@ -1351,13 +1346,13 @@ typedef struct {
 }BossEffectScript;         /* gBossEffectScript: a boss's effect script player (StartBossEffectScript / UpdateBossEffectScript) */
 /* 97B0.c */
 typedef struct {
-    char unk0[0x90];
-    u16 unk90;
-    char unk92[0x82];
-    u16 unk114;
-    char unk116[0x4];
-    u16 unk11A;
-}unkac84s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
+    s16 model;
+    u16 color;
+    u16 duration;
+    u16 unk6;
+    f32 size_x;
+    f32 size_y;
+} SpellAnimStage;                    /* 0x10: one of a SpellAnimDef's stages; a boss script counts them flat across the table */
 /* 97B0.c */
 typedef struct {
     u8* fileStart;
@@ -1621,7 +1616,7 @@ typedef struct {
 /*0x0C*/ u8 texCmt;
 /*0x0D*/ char unkD[3];
 /*0x10*/ u8* dustTexture;
-/*0x14*/ u8* dustDL;
+/*0x14*/ Gfx* dustDL;
 /*0x18*/ f32 x;
 /*0x1C*/ f32 y;
 /*0x20*/ f32 z;
@@ -1648,6 +1643,10 @@ typedef struct {
     Gfx* setup;             /* drawn once before the first visible prop of this type */
     Gfx* model;             /* drawn for each visible prop */
 } MapPropGfx;               /* per prop type (DrawMapProps) */
+typedef struct {
+    u8* rom;                         /* 0x800 bytes to gSkyPalettes, then 0x4000 to gSkyTexture */
+    Gfx* dl;
+} SkyRecord;                         /* gSkyRecords[], picked by MapLight.unk1C */
 
 /* ---- from collision.c ---- */
 /* ---- from collision.c: a submap's model set (gMapModelData) ---- */

@@ -1,4 +1,12 @@
 #include "common.h"
+#include "game/ending.h"
+#include "game/audio.h"
+#include "game/camera.h"
+#include "game/map.h"
+#include "game/math.h"
+#include "game/message.h"
+#include "game/player.h"
+#include "game/spline.h"
 
 extern s32 gNextScene;               /* the next scene */
 extern s32 gTimeOfDay;
@@ -34,10 +42,6 @@ extern s32 gModeCountdown;
 extern u16 gTransitionStyle;
 extern u16 gFadeOutAt;
 extern Camera gCamera;     /* the camera */
-void SampleSpline(ModelPart* path, ModelKey* key, s32 frame);   /* key: x, y, z, then three angles in degrees */
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);   /* rotation matrix */
-void TransformVecByCols(MtxF* mf, f32 x, f32 y, f32 z, f32* ox, f32* oy, f32* oz);
-void StepCameraPath(ModelPart* path, s32 frame);
 extern s32 gGameState;   /* game state flags (gGameState) */
 extern u16 gGameMode;   /* the game mode (defined in main.c) */
 void ResetEndingScenes(void) {
@@ -62,10 +66,6 @@ extern s32 gMessageWindowsOpen;
 extern s32 gCreditFrame;
 extern CreditImage* gNextCreditImage;     /* the next image to show */
 extern CreditImageSlots gCreditImageSlots[32];
-void ResetMessageWindows(s32 unused);
-void LoadMap(void);
-void SpawnBrian(void);
-void InitRoomCamera(void);
 void StartScene(void) {
     SceneEntry* scene;
     s32 i;
@@ -104,7 +104,6 @@ void StartScene(void) {
         gCreditImageSlots[i].unk0 = 0;
     }
 }
-s32 StartMusicFadeOut(u32 frames);      /* start the music fade-out (src/game/audio.c) */
 void StepEndingScene(void) {
     StepCameraPath(gCameraPath, gCameraPathFrame++);
     if (gCameraPathFrames - gCameraPathFrame == 0x31 && !(gGameState & 0x80)) {

@@ -1,4 +1,7 @@
 #include "common.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/math.h"
 /* camera state, 0x88 (Quest tempstruct1) */
 extern Submap* gSubmapHeader;          /* the current submap */
 /* ---- camera.c's .bss (0x80085B80-0x80085F90), in address order. IDO 5.3 lays out the
@@ -41,39 +44,21 @@ CameraSetup* gCameraSetups;                /* the map's camera setups */
 CameraTransition gCameraTransition;
 f32 gBattleCameraYawOffset;                         /* battle camera yaw offset, +45 deg per press (Quest D_80086EFC) */
 u16 gPerspNorm;
-void LoadCameraSetup(s32 index);
 /* names from vbhayden's Quest 64 scratches */
 extern s32 gNpcsDrawn;             /* NPCs drawn this frame (Quest D_8007BCE8) */
 extern ActorTransform* gNpcsDrawnList[]; /* the drawn NPCs' transforms (Quest D_8007BCF0) */
-float sqrtf(float value);
-extern f64 D_8006F270; /* pi */
-extern f64 D_8006F278; /* pi / 8 */
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
 extern f32 gBattleCenterX;          /* battle centre x (Quest D_8008C59C) */
 extern f32 gBattleCenterZ;          /* battle centre z (Quest D_8008C5A0) */
 extern u16 gButtonsPressed;          /* buttons pressed this frame (Quest D_80092876) */
-f32 Atan2(f32 dx, f32 dz);
-void CameraMode_Field(Camera* cam);
 /* fixed-position camera view of the camera state (Quest RuntimeCameraData, camera mode 1) */
-void func_80015B88(Camera* cam);
-void CameraFollowHeight(Camera* cam, MonsterBattleData* target);
-f32 cosf(f32 angle);   /* cosf */
-f32 sinf(f32 angle);   /* sinf */
 extern u16 gBattleState;               /* battle state (gBattleState) */
 extern s32 gGameState;               /* game state flags */
 extern u16 gButtonsHeld;               /* buttons held */
-void CameraTurnToAngle(Camera* cam, Vec3f* target);
-f32 CameraAboveNpcs(Camera* cam, f32 height);
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
 
 typedef struct {
     s32 map;
     s32 submap;
 } MapRef;
-void CameraMode_Fixed(Camera* cam);
-void AimFixedCamera(Camera* cam);
-void CameraMode_Battle(Camera* cam);
-void CameraMode_AfterBattle(Camera* cam);
 /* the camera setups of a map without its own table (InitRoomCamera) */
 CameraSetup gDefaultCameraSetups[] = {
     { 0, 0.0f, 0.0f, 0.0f, 11.0f, 15.0f, 65.0f, 0.0f, 0.0f, 0.0f, 0.0f, { 25.0f, 15.0f, 2500.0f } },
@@ -101,7 +86,6 @@ extern s32 gCurrentMap;                  /* the current map */
 extern s32 gCurrentSubmap;                  /* and submap */
 extern PendingWarp gPendingWarp;
 extern GfxFrame gFrames[2];       /* the two frames' graphics tasks */
-void guOrtho(Mtx* m, f32 l, f32 r, f32 b, f32 t, f32 n, f32 f, f32 scale);   /* guOrtho */
 
 void InitRoomCamera(void) {
     Camera* cam;
@@ -194,9 +178,6 @@ extern Mtx D_2000000[];                /* segment 2: the frame's matrices */
 extern Mtx D_2000080;
 extern Light D_2008A40;                /* segment 2: FrameDynamic.lookat, its x and y halves */
 extern Light D_2008A50;
-void UpdateCameraBob(Coordinates2D* obj);
-void guPerspectiveF(float mf[4][4], u16* perspNorm, f32 fovy, f32 aspect, f32 near, f32 far, f32 scale);   /* guPerspectiveF */
-void guLookAtReflectF(float mf[4][4], LookAt* l, f32 xEye, f32 yEye, f32 zEye, f32 xAt, f32 yAt, f32 zAt, f32 xUp, f32 yUp, f32 zUp);   /* guLookAtReflectF */
 void UpdateCamera(FrameDynamic* dyn) {
     /* The camera's frame: Brian's camera preset on maps with flag 2, the mode's handler, L cycles the map's camera
        setups, the bob, the projection (gViewConeHalf degrees, 4:3) and view into the frame's matrices, the screen

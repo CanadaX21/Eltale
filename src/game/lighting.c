@@ -1,4 +1,6 @@
 #include "common.h"
+#include "game/lighting.h"
+#include "game/math.h"
 /* split from collision.c: the original was separate files (each IDO object pads its .rodata to 16;
    the zero words before this file's first literal mark the boundary). Declarations copied from collision.c. */
 /* ---- lighting.c's .bss (0x80084330-0x80084B80), in address order. IDO 5.3 lays out the
@@ -40,28 +42,7 @@ s32 gFogColourG;
 s32 gFogColourB;
 FogRange gFogNow;                      /* and fog range */
 extern u16 gLightRecordFlags;   /* bit 0: the sun follows the time of day */
-extern MapModelData* gMapModelData;
-extern NavMeshData* gWallNavmeshActors;
-extern NavMeshData* gWallNavmeshCamera;
-extern s32 gCurrentSubmap;
-s32 PollModelInstance(f32 sample_x, f32 sample_z, u16 face_mask, u16 model_index, CollisionPollingResult* result);
-s32 PushOutOfWalls(f32 actor_x, f32 actor_z, NavMeshData* navmesh, CollisionPollingResult* result);
-extern ModelTransform* gMapModels;
-extern ModelGeometry* gMapGeometry;
-extern f64 D_8006F0A0;
-s32 PollModelFaces(f32 x, f32 z, f32 scale, u16 face_mask, s32 geometry, CollisionPollingResult* result);
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* coordinates);
-extern f32 gCollisionRadius;               /* collision radius */
-s32 PushOutOfWallSegment(f32* x, f32* z, f32 radius, f32 ax, f32 az, f32 bx, f32 bz);
-extern Submap* gSubmapHeader;
 extern u16 gBattleState;
-extern Coordinates2D gDoorOffset;
-s32 CheckDoorKeyItem(MapDoor* door);
-s32 IsAngleWithin22(f32);
-void SetDoorWarp(MapDoor* door);
-extern u8 gInventory[150];
-extern PendingWarp gPendingWarp;
-extern u16* gWarpDoorDest;
 extern DayPeriod gDayPalettePeriods[];   /* the day's palette periods */
 extern u16 gMapFlags;
 extern s32 gFieldFreeze;
@@ -69,9 +50,6 @@ extern s32 D_8008C164;
 extern u16 gSkyPalettes[];             /* the sky palettes, 256 colours each */
 extern u16 gFadingPalette[];             /* the palette being faded */
 extern s32 gGameState;               /* game state flags */
-void UpdateMapLights(s32 time, MapLight* lights);
-void StartPaletteFade(s32 steps, u16* target, u16* palette);
-void StepPaletteFade(s32 left);
 void ResetTimeOfDay(void) {
     s32 i;
 
@@ -86,7 +64,6 @@ void ResetTimeOfDay(void) {
     }
 }
 
-void ResetLightAnims(void);
 void InitDayPalette(void) {
     s32 i;
     s32 last;
@@ -244,8 +221,8 @@ extern s32 gCurrentFrame;               /* which frame is current */
 extern Gfx* gDisplayListHead;
 extern s16 gFogNear;               /* fog near */
 extern s16 gFogFar;               /* fog far */
-void UpdateLightDirections();               /* takes no arguments (lights stays in a0 for SetupLights) */
-void SetupLights(Lights3* lights, s32* colors, s32* dirs);
+void UpdateLightDirections();   /* RULE-EXCEPTION R25: unprototyped; the call below passes lights (left in a0
+                                 * for SetupLights), the definition takes no arguments */
 void UpdateFrameLights(void) {
     Lights3* lights;
 
@@ -262,8 +239,6 @@ void UpdateFrameLights(void) {
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 0xFF);
 }
 extern MtxF gViewMtxF;              /* the view matrix */
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);   /* rotation matrix */
-void TransformVecByRows(MtxF* mf, f32 x, f32 y, f32 z, f32* ox, f32* oy, f32* oz);
 void UpdateLightDirections(void) {
     f32 angle;
     f32 ox;

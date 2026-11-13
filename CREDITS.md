@@ -32,26 +32,26 @@ What each person's work gave the decomp: their decomp.me scratches, repositories
 - names (1): Camera, EnemyAIOption and effect member names: the names kept and extended when three camera views became Camera and the enemy and effect records were named (Quest 64 scratches, as the header comments record)
 - progress (1): LoadMap: the flat region table, the stepped block pointer, and the fake that showed what the last instruction needs (decomp.me DeWpQ (Quest func_8000BD10))
 
-### Rain (Rainchus)
-
-- functions whose notes credit them (10): CommitEnemyAIOption; DrawModelPart; FindNoteExtension; ScanSaveList; SaveToPak; PushSoundQueue; SetupMapSpirits; BrianSpellInput; SpiritGainWindow; DrawScreenFade
-- identification (1): Controller pak routines (0x8003D554, 0x8003D6B0, 0x8003ED60, 0x8003EDC0): osMotorInit, osGbpakInit, osPfsRepairId, osPfsNumFiles recorded as the next naming step (not applied yet: stubs call some of them without arguments, which the SDK prototypes refuse) (Rainchus/EltaleMonsters-Decomp symbol_addrs.txt)
-- lead (1): SaveToPak: a near oracle: same 201 instructions and registers (decomp.me hrLAI (Quest func_8002D8BC))
-- match (1): SaveToPak: the form: the cursor read at every use, the for with no step, the empty else (decomp.me hrLAI (Quest func_8002D8BC))
-- name (2): rspbootTextStart: the RSP boot code's name (the Quest decomps' data names; EltaleMonsters-Decomp/symbol_addrs.txt); gspF3DEXTextStart / rspbootTextEnd: ours follows the ROM's microcode string (F3DEX 1.23); the boot code ends at the same address, so that name stays for the size (Quest gspFast3DTextStart at the same address)
-- names (3): Audio SDK names (alAudioFrame, osAiGetLength, osAiSetNextBuffer, alSndpSetPan / Vol / Pitch / FXMix): the same names for the same seven functions: an independent confirmation of ours (the sndplayer event order reading); their n_alSeqpGetVol / alSeqpSetVol for 0x8003A620 / 0x80039E40 recorded (Rainchus/EltaleMonsters-Decomp symbol_addrs.txt (Eltale addresses)); gGfxFifoBuffer (0x8031C5A0): their gThreadOutStack recorded; ours kept: InitFrameTask sets it as the graphics task's output_buff (the RDP output FIFO, not a stack) (EltaleLibrarian/Quest64-Decomp, Rainchus/Quest64-Decomp (Quest 0x8031B2A0)); MODE_GAMEPLAY .. MODE_CREDITS: the game mode names; MODE_ENDING and MODE_AFTER_CREDITS are ours (Quest64-Decomp (gGameMode values))
-- progress (2): BrianSpellInput: x-- vs x -= 1 compile differently: the cancel branch decrement; SpiritGainWindow: x-- vs x -= 1: the glow countdown
-
 ### Mallos31 (Eltale_Librarian)
 
 - evidence (1): question #2 (pads): their Quest matches of DrawElementsPage's and UpdateStatusVisuals' twins carry the same unused locals (decomp.me onYlT; StqHE)
-- functions whose notes credit them (8): ItemMenu; WorldToScreen; QueueSound; PushSoundQueue; DrawString; ResetSpells; UpdateStatusVisuals; DrawEnvironmentPage
+- functions whose notes credit them (9): ItemMenu; WorldToScreen; QueueSound; PushSoundQueue; DrawString; ResetSpells; UpdateStatusVisuals; DrawEnvironmentPage; LoadMapBoss
 - identification (1): osContStartQuery / osContGetQuery (func_8003EEE0 / func_8003EF64): the comments at their placeholder declarations (the stubs call them without their argument, so no rename) (Mallos31/Quest symbol names (identical twins))
 - lead (1): ItemMenu: read against our draft (ours ahead) (decomp.me hQUaF (Quest func_80021524))
-- match (1): WorldToScreen: the starting forms that the target was read against; the match drops their flag (decomp.me cFdEN; TPP0T (Quest func_8002413C))
+- match (3): WorldToScreen: the starting forms that the target was read against; the match drops their flag (decomp.me cFdEN; TPP0T (Quest func_8002413C)); TitleScreen_UpdateMenu (title overlay): the structure: the button tests as one if-else chain over the menu states (our names and types) (Mallos31/Quest src/ovl_overlay1/DA68F0.c (Quest func_801006D8_DA6FC8)); TitleScreen_DrawFade (title overlay): the form: the switch with its default before the black kinds; the frame count unsigned (our names) (Mallos31/Quest src/ovl_overlay1/DA68F0.c (Quest func_80102F14_DA9804; its source credits Alex with the match))
 - name (3): osTvType: the SDK name for 0x80000300 (the Quest decomps' data names (Quest osTvType)); rspbootTextStart: the RSP boot code's name (the Quest decomps' data names; EltaleMonsters-Decomp/symbol_addrs.txt); gspF3DEXTextStart / rspbootTextEnd: ours follows the ROM's microcode string (F3DEX 1.23); the boot code ends at the same address, so that name stays for the size (Quest gspFast3DTextStart at the same address)
-- names (2): Audio SDK names (Quest twins): alAudioFrame, alSndpSetPitch / Vol / Pan agree; their alSeqpSetVol / n_alSeqpGetVol kept as the community spelling beside ours (alCSPSetVol / GetVol: this project's compact player family and its 2.0I headers) (Mallos31/Quest symbol names); gGfxFifoBuffer (0x8031C5A0): their gThreadOutStack recorded; ours kept: InitFrameTask sets it as the graphics task's output_buff (the RDP output FIFO, not a stack) (EltaleLibrarian/Quest64-Decomp, Rainchus/Quest64-Decomp (Quest 0x8031B2A0))
+- names (3): Audio SDK names (Quest twins): alAudioFrame, alSndpSetPitch / Vol / Pan agree; their alSeqpSetVol / n_alSeqpGetVol kept as the community spelling beside ours (alCSPSetVol / GetVol: this project's compact player family and its 2.0I headers) (Mallos31/Quest symbol names); gGfxFifoBuffer (0x8031C5A0): their gThreadOutStack recorded; ours kept: InitFrameTask sets it as the graphics task's output_buff (the RDP output FIFO, not a stack) (EltaleLibrarian/Quest64-Decomp, Rainchus/Quest64-Decomp (Quest 0x8031B2A0)); main's library functions: Quest 64 names as a second lineage: the second lineage for identities from Quest 64's twins (Mallos31/Quest (names on Quest 64's functions, through the Quest-Eltale function map))
 - progress (2): WorldToScreen: the first visibility test reads the global, the second the near local (decomp.me cFdEN; TPP0T (Quest func_8002413C)); DrawString: the loop over *str, idx before the switch, the metrics pointer in the glyph branch (decomp.me fLEOq (Quest func_80030EA0))
+
+### Rain (Rainchus)
+
+- functions whose notes credit them (10): CommitEnemyAIOption; DrawModelPart; FindNoteExtension; ScanSaveList; SaveToPak; PushSoundQueue; SetupMapSpirits; BrianSpellInput; SpiritGainWindow; DrawScreenFade
+- identification (2): Controller pak routines (0x8003D554, 0x8003D6B0, 0x8003ED60, 0x8003EDC0): osMotorInit, osGbpakInit, osPfsRepairId, osPfsNumFiles recorded as the next naming step (not applied yet: stubs call some of them without arguments, which the SDK prototypes refuse) (Rainchus/EltaleMonsters-Decomp symbol_addrs.txt); main's library functions: Quest 64 twins built from source: Quest 64's twins built from C, one basis of the identification; its file order and compile rules (Rainchus/Quest64-Decomp d964ce0 (a matching decompilation of Quest 64 USA))
+- lead (1): SaveToPak: a near oracle: same 201 instructions and registers (decomp.me hrLAI (Quest func_8002D8BC))
+- match (1): SaveToPak: the form: the cursor read at every use, the for with no step, the empty else (decomp.me hrLAI (Quest func_8002D8BC))
+- name (2): rspbootTextStart: the RSP boot code's name (the Quest decomps' data names; EltaleMonsters-Decomp/symbol_addrs.txt); gspF3DEXTextStart / rspbootTextEnd: ours follows the ROM's microcode string (F3DEX 1.23); the boot code ends at the same address, so that name stays for the size (Quest gspFast3DTextStart at the same address)
+- names (4): Audio SDK names (alAudioFrame, osAiGetLength, osAiSetNextBuffer, alSndpSetPan / Vol / Pitch / FXMix): the same names for the same seven functions: an independent confirmation of ours (the sndplayer event order reading); their n_alSeqpGetVol / alSeqpSetVol for 0x8003A620 / 0x80039E40 recorded (Rainchus/EltaleMonsters-Decomp symbol_addrs.txt (Eltale addresses)); gGfxFifoBuffer (0x8031C5A0): their gThreadOutStack recorded; ours kept: InitFrameTask sets it as the graphics task's output_buff (the RDP output FIFO, not a stack) (EltaleLibrarian/Quest64-Decomp, Rainchus/Quest64-Decomp (Quest 0x8031B2A0)); MODE_GAMEPLAY .. MODE_CREDITS: the game mode names; MODE_ENDING and MODE_AFTER_CREDITS are ours (Quest64-Decomp (gGameMode values)); main's library functions: candidate names: candidates checked against the code, never taken as proof (Rainchus/EltaleMonsters-Decomp symbol_addrs.txt)
+- progress (2): BrianSpellInput: x-- vs x -= 1 compile differently: the cancel branch decrement; SpiritGainWindow: x-- vs x -= 1: the glow countdown
 
 ### LLONSIT (LLONSIT-glitch)
 
@@ -63,6 +63,10 @@ What each person's work gave the decomp: their decomp.me scratches, repositories
 
 - name (1): MonsterBaseData stone (+0x14): the member name (with the battle tally in EnemyKnockback)
 
+### zeldaret (the Ocarina of Time decompilation, zeldaret/oot)
+
+- name (1): STACK_TOP / ARRAY_COUNT (common.h): the macro names and the idiom: a stack array sized at its definition, its top passed to the thread (zeldaret/oot (STACK_TOP and ARRAY_COUNT in its headers; its boot code passes STACK_TOP(stack) to osCreateThread))
+
 ## The community
 
 Thanks also to the wider Quest 64 / Eltale community, whose years of shared research this builds on.
@@ -72,4 +76,5 @@ Thanks also to the wider Quest 64 / Eltale community, whose years of shared rese
 - splat (Ethan Roseman / ethteck, MIT; github.com/ethteck/splat): the ROM splitter. asm-processor (Simon Lindholm, public domain): GLOBAL_ASM inside C. decomp-permuter (Simon Lindholm and contributors, MIT): the permutation search. m2c (Matt Kempster, GPL-3.0; github.com/matt-kempster/m2c): the machine drafts. objdiff (encounter; objdiff-cli 3.8.2 inside decomp.wtf): object diffing. decomp.me: the shared scratch site the community uses. (Licences checked against each project's repository and package metadata.)
 - decomp.wtf (github.com/i12bp8/decomp.wtf, 0.10.6): the local matching service the matching was done in (judge, notes, drafts, the m2c seeds).
 - IDO 5.3 (Silicon Graphics) and the Nintendo 64 SDK (libultra 2.0I headers): the original toolchain.
+- ultralib (decompals and contributors; github.com/decompals/ultralib): the reconstruction of libultra's source, built locally per release with IDO 5.3 as the reference that identified most of the library's functions in main and the release it is closest to (docs/PLATFORM.md). Nothing from it is in this repository.
 - The decompilation skills (github.com/lemiur/Game-Decompilation-Skill-For-Claude).

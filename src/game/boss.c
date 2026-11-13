@@ -1,15 +1,18 @@
 #include "common.h"
+#include "game/boss.h"
+#include "game/camera.h"
+#include "game/collision.h"
+#include "game/dma.h"
+#include "game/message.h"
+#include "game/model.h"
+#include "game/shadow.h"
 extern PlayerState gPlayerState;
-float sqrtf(float value);
 extern f32 gBossTalkRadii[];  /* per boss placement, how near Brian must be for its scene; gBossLoaded is the placement + 1 */
 extern BossPlacement gBossPlacements[];
 extern s32 gCurrentMap;
 extern s32 gCurrentSubmap;
-u32 IsStoryFlagSet(u32 flag);
 extern bossFile gBossFiles[];
 extern void* gBossVAddr;
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
-void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e);
 extern u8 gBitMasks[];
 
 typedef struct {
@@ -67,9 +70,6 @@ void LoadMapBoss(void)
 }
 extern AnimEntry* gBossAnimTables[];      /* the boss models' animation tables */
 extern Gfx* gDisplayListHead;
-void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, s32 mtxList);
-void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);   /* the shadow */
 void DrawBoss(Mtx* mtxList) {
     EnemyAction* boss;
     MonsterBattleData* actor;
@@ -107,8 +107,6 @@ s32 IsNearBoss(void) {
 extern MonsterBaseData gBossBaseData[];    /* the bosses' base data */
 extern MonsterBaseData D_803AB9A8;      /* Mammon's base data (boss 7) */
 extern MonsterBaseData gMammonBaseData; /* Mammon's base data again (= D_803AB9A8): the second test names it so */
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);
-void SetAnimation(ActorTransform *brian, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags);
 void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     MonsterBaseData* base;
     MonsterBattleData* m;
@@ -162,7 +160,6 @@ extern u8* gBossSceneTexts[];             /* boss scene texts (0x4B0 bytes each)
 extern u8 gTextBuffer[];
 extern u8 gSpeakerName[];
 extern CameraValues gBossCameraSetups[][2]; /* per boss: two camera setups */
-void ApplyCameraSetup(CameraValues* setup, MonsterBattleData* target);
 void StartBossScene(s32 boss) {
     s32 i;
     u8* src;
@@ -186,7 +183,6 @@ void StartBossScene(s32 boss) {
     }
     ApplyCameraSetup(gBossCameraSetups[boss], (MonsterBattleData*)&gBossSpawnTransform);
 }
-s32 OpenMessageWindow(s32 type);
 extern u16 gBossHpBonus[];
 extern u16 gBossMpBonus[];
 extern u16 gFieldMode;

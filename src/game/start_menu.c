@@ -1,5 +1,11 @@
 #include "common.h"
-/* The Start menu (InitStartMenu to MapCursorToWorld): its own file after the music functions of sound.c. */
+#include "game/start_menu.h"
+#include "game/dma.h"
+#include "game/save_menu.h"
+#include "game/sound.h"
+#include "game/text.h"
+/* The Start menu (InitStartMenu to MapCursorToWorld): its own file after the music functions of sound.c. Its .data
+   (0x80060CB0-0x80061650) opens with the menu's tables, defined before DrawMapPage, whose static follows them. */
 extern Gfx* gDisplayListHead;
 extern Gfx gMenuRenderDL[];
 extern u16 gGameMode;               /* the game mode (u16 as in main.c) */
@@ -42,15 +48,12 @@ extern BrianData1 gBrianStats;        /* Brian's stats */
 extern u32 gSpiritExpTable[];             /* exp needed per level */
 extern s8 gStickX;                /* stick x */
 extern u16 gButtonsHeld;               /* buttons held */
-void DrawMenuSprite(s32 sprite, s32 x, s32 y, s32 w, s32 h);
 typedef struct {
     void* ram;
     u8* romStart;
     u8* romEnd;
 } MapPageImage;                         /* a Map page image or card: where it loads, its ROM block */
 extern MapPageImage gMapPageImages[];   /* the six region maps, then the four cards */
-void DrawMenuNumber(s32 digits, s32 x, s32 y, u32 value, s32 font);   /* draw a number with the sheet's digits (font = kind of '0') */
-void DrawElementGauge(s32 percent, s32 x);
 extern s32 D_8007A9E0;               /* gBrianStats.exp: a link name, as DrawElementsPage loads this and the level on separate high halves (members share one; a pointer local takes a stack word the frame lacks) */
 extern u8 D_8007AA04;                /* gBrianStats.spiritLevel: the same */
 extern s8 gMapLocationTable[][2];
@@ -60,9 +63,7 @@ typedef struct {
     u8 c[5];
 } DigitText;                          /* a one-glyph text: the glyph code at c[3] */
 u64 __ull_div(u64 a, u64 b);      /* libultra __ull_div */
-void DrawString(s32 x, s32 y, u8* text);
 extern s8 gMusicVolumeSetting;             /* the music volume setting (sound.c) */
-void PlaySound(u8 delay, s8 id, u8 level);  /* sound.c */
 
 /* ---- this file's .bss (0x8008FB30-0x8008FB6F), in address order. IDO 5.3 lays a variable out by its first
    declaration, so nothing above declares these. DrawEnvironmentPage's knob (0x8008FB58) is a static in that
@@ -89,13 +90,6 @@ void CloseStartMenu(void) {
     gMapFreeCursor = 0;
 }
 extern u16 gButtonsPressed;               /* buttons pressed this frame */
-void DrawMenuBackground(void);
-void SaveMenu(void);
-void TurnMenuPage(void);
-void DrawStatusPage(s32 arg0);
-void DrawMapPage(s32 arg0);
-void DrawElementsPage(s32 x);
-void DrawEnvironmentPage(s32 arg0);
 void StartMenu(mkst* dyn) {
     gSPDisplayList(gDisplayListHead++, gMenuRenderDL);
     gDPSetTextureLUT(gDisplayListHead++, G_TT_RGBA16);
@@ -553,8 +547,6 @@ void DrawEnvironmentPage(s32 arg0) {
     }
     gMessageSpeed = 4 - gMessageSpeed;
 }
-void EndMenuDraw(void);
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
 extern s16 gMapPageOrigin[2][6];
 extern f32 gMapCursorX;
 extern f32 gMapCursorY;
@@ -569,6 +561,195 @@ extern s16 gMapCardPositions[][2];
 /* the Start menu .bss after DrawEnvironmentPage's static (0x8008FB58): the map cursor saved by DrawMapPage */
 f32 gMapCursorSavedX;
 f32 gMapCursorSavedY;
+extern u8 map_image_0_ROM_START[], map_image_0_ROM_END[];
+extern u8 map_image_1_ROM_START[], map_image_1_ROM_END[];
+extern u8 map_image_2_ROM_START[], map_image_2_ROM_END[];
+extern u8 map_image_3_ROM_START[], map_image_3_ROM_END[];
+extern u8 map_image_4_ROM_START[], map_image_4_ROM_END[];
+extern u8 map_image_5_ROM_START[], map_image_5_ROM_END[];
+extern u8 map_card_jp_6_ROM_START[], map_card_jp_6_ROM_END[];
+extern u8 map_card_jp_7_ROM_START[], map_card_jp_7_ROM_END[];
+extern u8 map_card_jp_8_ROM_START[], map_card_jp_8_ROM_END[];
+extern u8 map_card_jp_9_ROM_START[], map_card_jp_9_ROM_END[];
+
+/* ---- this file's .data (0x80060CB0-0x80061650) starts with the menu's tables, defined here because DrawMapPage's
+   static (0x800615E0) follows them; the .bss above is all declared first, so these declarations move none of it ---- */
+extern u8 gMenuSheetPixels[];       /* the menu sprite sheet's pixels (CI8), in main's data after this file's */
+s8 gMusicVolumeSetting = 2;          /* the music volume setting: an index into gMusicVolumeLevels (sound.c) */
+SpriteSize gMenuSpriteSizes[88] = {  /* the menu sprite sheet: width, height per kind */
+    { 16, 16 }, { 16, 13 }, { 16, 16 }, { 16, 16 }, { 12, 12 }, { 8, 8 }, { 16, 11 }, { 16, 11 },
+    { 12, 10 }, { 12, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 },
+    { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 },
+    { 8, 10 }, { 8, 10 }, { 82, 13 }, { 24, 15 }, { 28, 13 }, { 36, 15 }, { 28, 15 }, { 36, 13 },
+    { 20, 11 }, { 86, 14 }, { 54, 12 }, { 42, 12 }, { 84, 7 }, { 80, 3 }, { 8, 11 }, { 8, 11 },
+    { 8, 11 }, { 26, 9 }, { 26, 9 }, { 58, 16 }, { 12, 16 }, { 86, 13 }, { 12, 12 }, { 12, 12 },
+    { 12, 12 }, { 12, 12 }, { 60, 7 }, { 52, 3 }, { 60, 20 }, { 32, 12 }, { 28, 13 }, { 4, 4 },
+    { 4, 4 }, { 4, 4 }, { 4, 4 }, { 4, 4 }, { 4, 4 }, { 4, 4 }, { 100, 14 }, { 150, 2 },
+    { 2, 120 }, { 4, 4 }, { 124, 12 }, { 28, 14 }, { 28, 14 }, { 28, 13 }, { 20, 14 }, { 24, 14 },
+    { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 }, { 8, 10 },
+    { 8, 10 }, { 8, 10 }, { 8, 10 }, { 12, 16 }, { 12, 16 }, { 8, 1 }, { 26, 9 }, { 26, 9 },
+};
+s8 gArrowBobOffsets[16] = { -1, -2, -2, -3, -3, -3, -3, -3, -3, -3, -3, -2, -2, -1, 0, 0 };   /* the arrows' bob, by (gMenuFrame >> 2) & 0xF */
+u8* gMenuDigitTextures[89] = {        /* each sprite kind's pixels in the sheet; NULL ends the table */
+    gMenuSheetPixels + 0x0, gMenuSheetPixels + 0x108, gMenuSheetPixels + 0x1E0, gMenuSheetPixels + 0x1F0,
+    gMenuSheetPixels + 0x200, gMenuSheetPixels + 0x298, gMenuSheetPixels + 0x2E0, gMenuSheetPixels + 0x398,
+    gMenuSheetPixels + 0x450, gMenuSheetPixels + 0x460, gMenuSheetPixels + 0x470, gMenuSheetPixels + 0x4C8,
+    gMenuSheetPixels + 0x520, gMenuSheetPixels + 0x578, gMenuSheetPixels + 0x5D0, gMenuSheetPixels + 0x628,
+    gMenuSheetPixels + 0x680, gMenuSheetPixels + 0x6D8, gMenuSheetPixels + 0x730, gMenuSheetPixels + 0x788,
+    gMenuSheetPixels + 0x7E0, gMenuSheetPixels + 0x838, gMenuSheetPixels + 0x890, gMenuSheetPixels + 0x8E8,
+    gMenuSheetPixels + 0x940, gMenuSheetPixels + 0x998, gMenuSheetPixels + 0x9F0, gMenuSheetPixels + 0xE28,
+    gMenuSheetPixels + 0xF98, gMenuSheetPixels + 0x1110, gMenuSheetPixels + 0x1338, gMenuSheetPixels + 0x14E8,
+    gMenuSheetPixels + 0x14F8, gMenuSheetPixels + 0x15E0, gMenuSheetPixels + 0x1AA0, gMenuSheetPixels + 0x1D30,
+    gMenuSheetPixels + 0x1F30, gMenuSheetPixels + 0x2188, gMenuSheetPixels + 0x2280, gMenuSheetPixels + 0x22E0,
+    gMenuSheetPixels + 0x2340, gMenuSheetPixels + 0x23A0, gMenuSheetPixels + 0x2498, gMenuSheetPixels + 0x2590,
+    gMenuSheetPixels + 0x2938, gMenuSheetPixels + 0x2A00, gMenuSheetPixels + 0x2E68, gMenuSheetPixels + 0x2F00,
+    gMenuSheetPixels + 0x2F98, gMenuSheetPixels + 0x3030, gMenuSheetPixels + 0x30C8, gMenuSheetPixels + 0x32B0,
+    gMenuSheetPixels + 0x3358, gMenuSheetPixels + 0x3368, gMenuSheetPixels + 0x3378, gMenuSheetPixels + 0x34F0,
+    gMenuSheetPixels + 0x3508, gMenuSheetPixels + 0x3520, gMenuSheetPixels + 0x3538, gMenuSheetPixels + 0x3550,
+    gMenuSheetPixels + 0x3568, gMenuSheetPixels + 0x3580, gMenuSheetPixels + 0x3598, gMenuSheetPixels + 0x35A8,
+    gMenuSheetPixels + 0x36E0, gMenuSheetPixels + 0x36F0, gMenuSheetPixels + 0x3700, gMenuSheetPixels + 0x3CD8,
+    gMenuSheetPixels + 0x3E68, gMenuSheetPixels + 0x3FF8, gMenuSheetPixels + 0x4170, gMenuSheetPixels + 0x4290,
+    gMenuSheetPixels + 0x43E8, gMenuSheetPixels + 0x4440, gMenuSheetPixels + 0x4498, gMenuSheetPixels + 0x44F0,
+    gMenuSheetPixels + 0x4548, gMenuSheetPixels + 0x45A0, gMenuSheetPixels + 0x45F8, gMenuSheetPixels + 0x4650,
+    gMenuSheetPixels + 0x46A8, gMenuSheetPixels + 0x4700, gMenuSheetPixels + 0x4758, gMenuSheetPixels + 0x47B0,
+    gMenuSheetPixels + 0x4878, gMenuSheetPixels + 0x4940, gMenuSheetPixels + 0x4950, gMenuSheetPixels + 0x4A48,
+    NULL,
+};
+Gfx gMenuSpriteSetup[3] = {   /* the menu sprite render setup */
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
+    gsSPEndDisplayList(),
+};
+Gfx gMenuSpriteSetupEnvAlpha[3] = {   /* the same, using the env colour's alpha */
+    gsDPPipeSync(),
+    gsDPSetCombineLERP(TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, ENVIRONMENT, 0, TEXEL0, 0, ENVIRONMENT, 0),
+    gsSPEndDisplayList(),
+};
+Gfx D_80060F08[4] = {   /* unreferenced: the same setup with the opaque render mode */
+    gsDPPipeSync(),
+    gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
+    gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
+    gsSPEndDisplayList(),
+};
+f32 gMapCursorX = -1.0f;            /* the Map page's free cursor; -1 = not placed yet */
+f32 gMapCursorY = -1.0f;
+s8 gMapLocationTable[298][2] = {     /* (map, submap) pairs by Map page image and marker: -1 starts the next image, -2 its next marker, -8 ends the list (MapCursorToWorld) */
+    { 2, 0 }, { -2, -1 }, { 0, 0 }, { 0, 1 }, { 13, 0 }, { 13, 1 }, { 13, 2 }, { 13, 3 },
+    { 13, 4 }, { 13, 5 }, { 13, 6 }, { 13, 7 }, { 13, 8 }, { 13, 9 }, { 13, 10 }, { 13, 11 },
+    { 13, 12 }, { 13, 13 }, { 13, 14 }, { 13, 15 }, { 13, 16 }, { 13, 17 }, { 15, 0 }, { 15, 1 },
+    { 15, 2 }, { 15, 3 }, { 15, 4 }, { 15, 5 }, { 15, 6 }, { 15, 7 }, { 15, 8 }, { 15, 9 },
+    { 15, 10 }, { 15, 11 }, { 15, 12 }, { -2, -1 }, { 1, 0 }, { 14, 0 }, { 14, 1 }, { 14, 2 },
+    { 14, 3 }, { 14, 4 }, { 14, 5 }, { 14, 6 }, { 14, 7 }, { 14, 8 }, { 14, 9 }, { 14, 10 },
+    { 14, 11 }, { 14, 12 }, { 14, 14 }, { 14, 15 }, { 16, 0 }, { 16, 1 }, { 16, 2 }, { 16, 3 },
+    { 16, 4 }, { 16, 6 }, { 16, 7 }, { 16, 8 }, { 16, 9 }, { 16, 10 }, { 16, 11 }, { 16, 12 },
+    { 16, 13 }, { 16, 14 }, { -2, -1 }, { 16, 5 }, { -2, -1 }, { 16, 21 }, { -2, -1 }, { 31, 0 },
+    { 31, 1 }, { 31, 2 }, { -1, -1 }, { 3, 0 }, { -2, -1 }, { 16, 15 }, { 16, 16 }, { 16, 17 },
+    { 16, 18 }, { 16, 19 }, { 16, 20 }, { -2, -1 }, { 3, 1 }, { -2, -1 }, { 32, 0 }, { 32, 1 },
+    { 32, 2 }, { -1, -1 }, { 5, 0 }, { -2, -1 }, { 5, 1 }, { -2, -1 }, { 4, 0 }, { 4, 1 },
+    { 4, 2 }, { 17, 0 }, { 17, 1 }, { 17, 2 }, { 17, 3 }, { 17, 4 }, { 17, 5 }, { 17, 6 },
+    { 17, 7 }, { 17, 8 }, { 18, 0 }, { 18, 1 }, { 18, 2 }, { 18, 3 }, { 18, 4 }, { -2, -1 },
+    { 6, 0 }, { 19, 0 }, { 19, 1 }, { 19, 2 }, { 19, 3 }, { 20, 0 }, { 20, 1 }, { 20, 2 },
+    { 20, 3 }, { 20, 4 }, { 20, 5 }, { 20, 6 }, { 20, 7 }, { 20, 8 }, { 20, 9 }, { 20, 10 },
+    { 20, 11 }, { -2, -1 }, { 18, 6 }, { -2, -1 }, { 18, 5 }, { -2, -1 }, { 18, 7 }, { -2, -1 },
+    { 33, 0 }, { 33, 1 }, { 33, 2 }, { -2, -1 }, { 27, 0 }, { -2, -1 }, { 26, 0 }, { 26, 1 },
+    { 26, 2 }, { 26, 3 }, { 26, 4 }, { -1, -1 }, { 7, 0 }, { -2, -1 }, { 7, 1 }, { -2, -1 },
+    { 8, 0 }, { 8, 1 }, { 22, 0 }, { 22, 1 }, { 22, 2 }, { 22, 3 }, { 22, 4 }, { 22, 5 },
+    { 22, 6 }, { 22, 7 }, { 22, 8 }, { 22, 9 }, { 22, 10 }, { 22, 11 }, { 22, 12 }, { 22, 13 },
+    { 22, 14 }, { 22, 15 }, { 22, 16 }, { 22, 17 }, { 22, 18 }, { 22, 19 }, { 22, 20 }, { 22, 21 },
+    { 21, 0 }, { 21, 1 }, { 21, 2 }, { 21, 3 }, { 21, 4 }, { 21, 5 }, { 21, 6 }, { 21, 7 },
+    { 21, 8 }, { 21, 9 }, { 21, 10 }, { 21, 11 }, { 21, 12 }, { -2, -1 }, { 22, 22 }, { -2, -1 },
+    { 22, 23 }, { -2, -1 }, { 28, 0 }, { -1, -1 }, { 9, 0 }, { -2, -1 }, { 23, 0 }, { 23, 1 },
+    { 23, 2 }, { 23, 3 }, { 23, 4 }, { 23, 5 }, { -2, -1 }, { 23, 19 }, { -2, -1 }, { 23, 20 },
+    { 23, 21 }, { -2, -1 }, { 29, 0 }, { -1, -1 }, { 11, 2 }, { -2, -1 }, { 23, 22 }, { 23, 23 },
+    { 23, 24 }, { 23, 25 }, { -2, -1 }, { 23, 6 }, { 23, 7 }, { 23, 8 }, { 23, 9 }, { 23, 10 },
+    { 23, 11 }, { 23, 12 }, { 23, 13 }, { 23, 14 }, { 23, 15 }, { 23, 16 }, { 23, 17 }, { 23, 18 },
+    { 11, 0 }, { -2, -1 }, { 30, 0 }, { 30, 1 }, { 30, 2 }, { 30, 3 }, { 30, 4 }, { 30, 5 },
+    { 30, 6 }, { 30, 7 }, { 30, 8 }, { 30, 9 }, { 30, 10 }, { 30, 11 }, { 30, 12 }, { 30, 13 },
+    { 30, 14 }, { 30, 15 }, { 11, 1 }, { 11, 3 }, { 11, 4 }, { 11, 5 }, { 11, 6 }, { 11, 7 },
+    { -1, -1 }, { 12, 0 }, { 12, 1 }, { 25, 0 }, { 25, 1 }, { 35, 0 }, { -1, -1 }, { 25, 5 },
+    { 25, 8 }, { 25, 9 }, { 25, 2 }, { 25, 3 }, { 25, 4 }, { 12, 2 }, { -1, -1 }, { 10, 0 },
+    { 10, 1 }, { 24, 0 }, { 24, 1 }, { 24, 2 }, { -1, -1 }, { 0, 2 }, { 0, 3 }, { 0, 4 },
+    { 14, 13 }, { 34, 0 }, { 34, 1 }, { 34, 2 }, { 34, 3 }, { 34, 4 }, { 34, 5 }, { 34, 6 },
+    { 34, 7 }, { 34, 8 }, { 34, 9 }, { 34, 10 }, { 15, 13 }, { 25, 6 }, { 25, 7 }, { 25, 24 },
+    { 25, 25 }, { -8, -1 },
+};
+s16 gMapPageMarkers[6][9][2] = {     /* per region map: its markers' x, y */
+    { { 150, 10 }, { 90, 115 }, { 143, 128 }, { 131, 70 }, { 98, 167 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } },
+    { { 150, 162 }, { 132, 152 }, { 70, 80 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } },
+    { { 187, 88 }, { 134, 31 }, { 100, 164 }, { 171, 82 }, { 142, 140 }, { 107, 113 }, { 131, 155 }, { 96, 147 }, { 135, 17 } },
+    { { 34, 63 }, { 182, 47 }, { 27, 74 }, { 185, 150 }, { 178, 166 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } },
+    { { 67, 54 }, { 122, 36 }, { 125, 62 }, { 24, 82 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } },
+    { { 177, 88 }, { 88, 98 }, { 70, 97 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 } },
+};
+u16* gMapPagePalettes[6] = {          /* the region maps' palettes: at the start of the image as loaded (0x801C0000) */
+    (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000,
+};
+u8* gMapPageStrips[6][24] = {         /* the region maps' strips, in the image as loaded */
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+    {
+        (u8*)0x801C0200, (u8*)0x801C09A0, (u8*)0x801C1140, (u8*)0x801C18E0, (u8*)0x801C2080, (u8*)0x801C2820,
+        (u8*)0x801C2FC0, (u8*)0x801C3760, (u8*)0x801C3F00, (u8*)0x801C46A0, (u8*)0x801C4E40, (u8*)0x801C55E0,
+        (u8*)0x801C5D80, (u8*)0x801C6520, (u8*)0x801C6CC0, (u8*)0x801C7460, (u8*)0x801C7C00, (u8*)0x801C83A0,
+        (u8*)0x801C8B40, (u8*)0x801C92E0, (u8*)0x801C9A80, (u8*)0x801CA220, (u8*)0x801CA9C0, (u8*)0x801CB160,
+    },
+};
+s16 gMapPageScale[2][6] = {   /* the region maps' scale: [0] divides world x, [1] world z */
+    { 26, 20, 24, 24, 34, 13 },
+    { 26, 21, 23, 24, 28, 13 },
+};
+s16 gMapPageOrigin[2][6] = {   /* their origin, added after the scale */
+    { 139, 125, 124, 124, 88, 133 },
+    { 88, 95, 87, 78, 60, 96 },
+};
+MapPageImage gMapPageImages[10] = {  /* the six region maps, then the four cards: where each loads, its ROM block */
+    { (void*)0x801C0000, map_image_0_ROM_START, map_image_0_ROM_END },
+    { (void*)0x801C0000, map_image_1_ROM_START, map_image_1_ROM_END },
+    { (void*)0x801C0000, map_image_2_ROM_START, map_image_2_ROM_END },
+    { (void*)0x801C0000, map_image_3_ROM_START, map_image_3_ROM_END },
+    { (void*)0x801C0000, map_image_4_ROM_START, map_image_4_ROM_END },
+    { (void*)0x801C0000, map_image_5_ROM_START, map_image_5_ROM_END },
+    { (void*)0x801C0000, map_card_jp_6_ROM_START, map_card_jp_6_ROM_END },
+    { (void*)0x801C0000, map_card_jp_7_ROM_START, map_card_jp_7_ROM_END },
+    { (void*)0x801C0000, map_card_jp_8_ROM_START, map_card_jp_8_ROM_END },
+    { (void*)0x801C0000, map_card_jp_9_ROM_START, map_card_jp_9_ROM_END },
+};
+u16* gMapCardPalettes[4] = { (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000, (u16*)0x801C0000 };   /* the cards' palettes, as loaded */
+u8* gMapCardImages[4][2] = { { (u8*)0x801C0200, (u8*)0x801C0200 }, { (u8*)0x801C0200, (u8*)0x801C0200 }, { (u8*)0x801C0200, (u8*)0x801C0200 }, { (u8*)0x801C0200, (u8*)0x801C0200 } };   /* their pixels, as loaded */
+u8 gMapCardSizes[4][3] = { { 65, 18, 0 }, { 65, 19, 0 }, { 96, 17, 0 }, { 99, 18, 0 } };   /* their width, then the rows of each half */
+s16 gMapCardPositions[4][2] = { { 127, 112 }, { 127, 112 }, { 112, 112 }, { 110, 112 } };   /* their x, y */
+SliderKinds gSliderKinds = { { 0x28, 0x27, 0x26 } };
+SliderStop gMessageSpeedStops[5] = { { 138, 0 }, { 159, 0 }, { 179, 1 }, { 199, 2 }, { 219, 2 } };
+SliderStop D_800615C0[3] = { { 0, 0 }, { 0, 0 }, { 0, 0 } };   /* unreferenced: zero */
+SliderStop gMusicVolumeStops[5] = { { 138, 0 }, { 159, 0 }, { 179, 1 }, { 199, 2 }, { 219, 2 } };
 void DrawMapPage(s32 arg0) {
     static s32 sLoadedMapImage = -1;
     s32 mx;
@@ -794,8 +975,8 @@ void DrawMapPage(s32 arg0) {
     }
 }
 
-/* ---- sound.c's .data from here (0x800615E4-0x80061650, ROM 0x621E4), after DrawMapPage's
-   static at 0x800615E0: the definitions keep this place in the text, so nothing above declares them. */
+/* ---- the rest of this file's .data (0x800615E4-0x80061650), after DrawMapPage's static at 0x800615E0: the
+   definitions keep this place in the text, so nothing above declares them. */
 extern u16 D_80068EB0[];
 extern u16 D_8006A8F0[];
 extern u16 D_8006B4D8[];

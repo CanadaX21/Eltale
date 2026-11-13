@@ -1,4 +1,14 @@
 #include "common.h"
+#include "game/map.h"
+#include "game/audio.h"
+#include "game/collision.h"
+#include "game/dma.h"
+#include "game/dust.h"
+#include "game/effects.h"
+#include "game/math.h"
+#include "game/shadow.h"
+#include "game/sound.h"
+#include "game/spline.h"
 /* float view of the same 0x1C-byte record (AddSpinningProp; Quest func_8000E418) */
 typedef struct {
     s32 unk0;
@@ -10,15 +20,9 @@ typedef struct {
     s32 unk18;  /* id */
 } unke3c4f;  /* unused (SpinningProp has these member types); kept for the declaration count */
 extern s32 gCurrentFrame;  /* which buffer is current (Quest D_8007B2F4) */
-extern f64 D_8006F080;  /* pi */
-u32 getRandomNumber(u32 range);
 extern Gfx* gDisplayListHead;
 extern MapLight* gSubmapLight;         /* the submap's light record */
 /* the map loader (LoadMap; Quest func_8000BD10, names from vbhayden's scratch) */
-typedef struct {
-    u8* rom;                         /* 0x800 bytes to gSkyPalettes, then 0x4000 to gSkyTexture */
-    Gfx* dl;
-} SkyRecord;                         /* gSkyRecords[], picked by MapLight.unk1C */
 extern sMapData gMapTable[];        /* every map's header */
 extern u8* gRegionBlocks[];                /* extra ROM blocks, 3 words each: start, end, RAM (sMapData.unk3C; Quest D_800558A0) */
 extern SkyRecord gSkyRecords[];
@@ -26,17 +30,11 @@ extern ModelTransform gZeroModelTransform;
 extern Dust gMapDustTemplate;              /* the map dust template (map.c's .data, defined after SkyPaletteKey) */
 extern Dust gDustEmitterTemplate;              /* the second dust template */
 extern PlayerState gPlayerState;      /* Brian's state block */
-f32 sqrtf(f32 x);           /* sqrtf */
 extern f32 gFloatingSwayDivX[4];            /* the floating models' sway sizes (x, y, z) */
 extern f32 gFloatingSwayDivY[4];
 extern f32 gFloatingSwayDivZ[4];
-s16 sins(u16 angle);        /* sins */
 extern s8 gTileOffsets0[];               /* tile neighbourhoods: (dx, dz) pairs, one table per tile mode */
 extern u16 gLavaPalette[];                /* a palette map 0x1D loads, rotated here */
-void UpdateEnvironmentObjects(f32 x, f32 y, f32 z, ModelTransform* model);
-void UpdateDustEmitter(ModelTransform* obj);   /* map dust emitter */
-void TickDustEmitter(ModelTransform* obj);   /* the second dust emitter */
-void AddSpinningProp(f32 x, f32 y, f32 z, f32 angle, ModelTransform* prop);   /* record a spinning prop */
 extern MapPropGfx gFlameModelLists[];     /* the flame kinds' setup / model lists (kinds 0x11, 0x12) */
 extern u8** gFlameFrameTables[];            /* their 8 texture frames */
 extern u16 gFlameTexWidths[2];
@@ -57,10 +55,6 @@ extern u8 field_shared_ROM_END[];
 extern u8 D_80100000[];
 extern u8 D_8010FE00[];
 extern u8 D_801E0000[];
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
-void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 arg3_flags, CollisionPollingResult* result);   /* the floor poll (collision.c) */
-void ResetDoorAnims(void);
-void ResetSpinningProps(void);
 
 /* other units' data */
 extern s8 gTileOffsets1[];
@@ -82,9 +76,9 @@ extern ModelPart gDoorAnimTable;         /* door animations */
 extern ModelPart gDoorAnimAlt;
 extern ModelPart gDoorAnim4;
 extern u8 gMapDustTextures[];   /* the map dust textures (0x400 each) */
-extern u8 gMapDustGfx[];              /* their display list */
+extern Gfx gMapDustGfx[];              /* their display list */
 extern u8 gDustTexture2[];              /* the second dust texture */
-extern u8 gDustGfx2[];              /* its display list */
+extern Gfx gDustGfx2[];              /* its display list */
 
 /* ---- map.c's .bss (0x8007C280-0x800842F0). IDO 5.3 orders a file's .bss by where each
    variable is first declared, counted through the file (headers included) modulo 256: these come in address order,
@@ -327,17 +321,6 @@ extern ModelTransform* gScrollingProps[];
 extern s32 gPropsDrawn;
 extern u16 gFloatingSwaySpeeds[][2];   /* texture scroll speeds, (s, t) pairs */
 extern s32 gMusicSourceSounds[];              /* the music of each sound source */
-void guPosition(Mtx* m, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* point);
-void SortMapModels(s32 count, u16* list);
-s32 FindDoorAnim(void* arg0);
-void SampleSpline(ModelPart* part, ModelKey* key, s32 frame);
-void DrawSpinningProps(mkst* arg0);
-void DrawMapProps(mkst* arg0, s32 count, s32 type, ModelTransform** props);
-void FadeSkyPalette(void);
-void RotatePalette(void);
-void StopLoopingSoundSlot4(void);
-void PlaySoundNow(s8 song, u8 volume);
 void DrawMapFrame(mkst* arg0) {
     Camera* cam = &gCamera;
     s8* offs;
@@ -525,8 +508,6 @@ u16 gFloatingSwaySpeeds[4][2] = { { 0, 0 }, { 0x160, 0x160 }, { 0x160, 0x160 }, 
 s16 D_8004DD84[2] = { 0x50, 0x50 };
 s32 gMusicSourceSounds[4] = { 25, 27, 30, 32 };
 ModelTransform gZeroModelTransform = { { 0 } };    /* the empty entry gFloatingRests[] is reset from */
-void guPosition(Mtx* m, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
-void DrawFlames(mkst* dyn, s32 count, s32 kind, ModelTransform** list);
 void DrawMapBillboards(mkst* dyn) {
     static u16 sScroll = 0;          /* the scrolling props' texture offset, in rows */
     static u8* sTextures[5] = {      /* the scrolling props' textures by kind - 0x40 (RGBA16, 32 wide) */
@@ -671,7 +652,6 @@ void SortMapModels(s32 count, u16* list) {
     }
 }
 
-void BuildActorMtx(Mtx* mtx, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
 void DrawSky(Mtx* mtx) {
     BuildActorMtx(&mtx[3] + gMatrixHead, 0.0f, 0.0f, 0.0f, 1.0f, gCamera.cam_x, gCamera.cam_y - 10.0f,
                   gCamera.cam_z);
@@ -741,7 +721,6 @@ void StartDoorAnimation(s32 state, s32 frame, s32 flag, void* position) {
         door->timer = 7;
     }
 }
-void SampleSpline(ModelPart* part, ModelKey* key, s32 frame);
 void UpdateDoorAnimations(void) {
     s32 i;
     DoorAnimData* door;
@@ -785,9 +764,6 @@ void UpdateDoorAnimations(void) {
     }
 }
 extern f32 gViewConeHalf;              /* half the view cone, in degrees */
-void BuildActorMatrix(MtxF* mf, f32 xrot, f32 yrot, f32 zrot, f32 scale, f32 x, f32 y, f32 z);
-void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size);   /* the shadow */
-f32 Atan2(f32 dx, f32 dz);
 void DrawMapProps(mkst* dyn, s32 count, s32 type, ModelTransform** props) {
     ModelTransform* prop;
     s32 drawn;
@@ -841,7 +817,6 @@ void DrawMapProps(mkst* dyn, s32 count, s32 type, ModelTransform** props) {
     }
 }
 
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* point);   /* rotate a 2D point */
 void UpdateDustEmitter(ModelTransform* obj) {
     Dust* dust = &gMapDustTemplate;
 

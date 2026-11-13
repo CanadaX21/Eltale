@@ -1,4 +1,5 @@
 #include "common.h"
+#include "game/screen_fade.h"
 extern u16 gScreenFadeFlags;
 extern s32 gScreenFadeFrames;
 
@@ -19,7 +20,6 @@ void BuildColourRamp(void) {
         gFadeRamp[i][3] = (i * 0xFF) >> 8;
     }
 }
-void func_80038928(Mtx* m);              /* guMtxIdent (identical to Quest 64's; not named there yet) */
 extern Mtx D_2000000[];
 extern Gfx gScreenFadeGfx[];
 extern Gfx gScreenFadeSetupGfx[];
@@ -32,7 +32,7 @@ void DrawScreenFade(mkst* arg0) {
     if (gScreenFadeFlags & 1) {
         gDPPipeSync(gDisplayListHead++);
         gSPMatrix(gDisplayListHead++, &D_2000000[1], G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
-        func_80038928(&arg0->drawMtx[gMatrixHead]);
+        guMtxIdent(&arg0->drawMtx[gMatrixHead]);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;
         gDPSetEnvColor(gDisplayListHead++, gFadeRampEntry->r, gFadeRampEntry->g, gFadeRampEntry->b, gFadeRampEntry->a);

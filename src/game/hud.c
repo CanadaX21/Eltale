@@ -1,4 +1,15 @@
 #include "common.h"
+#include "game/hud.h"
+#include "game/dma.h"
+#include "game/effects.h"
+#include "game/math.h"
+#include "game/player.h"
+#include "game/screen_fade.h"
+#include "game/sound.h"
+#include "game/spells.h"
+#include "game/text.h"
+/* An unreferenced format string: the first item of this file's .rodata, which no code reads. */
+const char D_8006F530[] = "%.4f";
 extern s32 gScreenOffsetX;   /* the 2D draw offset x */
 extern s32 gScreenOffsetY;   /* the 2D draw offset y */
 extern s32 gClipLeft;   /* clip rectangle: left */
@@ -15,16 +26,12 @@ extern f32 gBrianSpawnZ;
 extern f32 gBrianSpawnYaw;
 extern s32 gArrivalFlags;
 extern u16 gTransitionStyle;
-void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage);
 extern BaseItemLightRingData gBaseItemLightRingData;
 extern OddVector gItemLightRingSize;    /* the item lights' effect size (UseHealingItem, UseWings) */
 extern EffectSpawnDef gItemEffectModels[];
-void PlaySound(u8 delay, s8 id, u8 level);
-void StartBrianUseItem(u8 itemID);
 extern u16 gBattleState;   /* battle state flags (0x100 = boss battle) */
 extern u8 item_icon_palettes_ROM_START[];
 extern u16 gInventoryPalette[];
-void dma_write(u8* devAddr, void* vaddr, u32 nbytes);
 extern u8 gVisibleInvItemIDs[8];
 extern u8 gInventory[150];   /* the inventory: item ids, 0xFF = empty (Quest gInventory) */
 extern s32 gItemScroll;
@@ -36,23 +43,15 @@ extern StatusFxDef gStatusFxDefs[];
 extern OddVector gHudVector;    /* (Quest D_8008C748) a scratch: the compass marker's rotated offset (x, y; DrawCompass)
                                    and a status visual's effect size (UpdateStatusVisuals) */
 extern EffectSpawnDef gStatusFxModels[];
-void*SpawnEffectObject(u16 colour, u16 duration, f32 x, f32 y, f32 z, f32 angle, EffectSpawnDef* model, OddVector* size, ActorTransform* actor);
 extern PlayerState gPlayerState;
 extern u16 gMapFlags;   /* map flags (Quest D_80084EE0): 0xA = no teleporting from here */
 extern Submap* gSubmapHeader;
 extern ItemData gItemData[];
 extern s32 (*gItemCheckHandlers[])(ActorTransform*, ItemData*); /* item use handlers (Quest D_8004D480) */
 extern void (*gItemUseHandlers[])(s32, ItemData*, u8, s32);
-s32 count_digits(s32 arg0, u8* arg1, u16 arg2);
-void DrawClippedTexRect(s32 ulx, s32 uly, s32 lrx, s32 lry, s32 s, s32 t, s32 dsdx, s32 dtdy);
 extern Gfx* gDisplayListHead;
 extern u8 gStatusSymbolsPalette[];
 extern HudImage gStatusSymbolsImage;
-s32 WorldToScreen(f32 arg0, f32 arg1, f32 arg2, s32 *arg3, s32 *arg4);
-s16 sins(u16 angle);         /* sins */
-void DrawTexturePart(HudImage* image, s32 ulx, s32 uly, s32 lrx, s32 lry, s32 s, s32 t, s32 dsdx, s32 dtdy);
-void LoadHUDTexture(HudImage* tex, s32 s, s32 t, s32 width, s32 height);
-extern f64 D_8006F560;
 extern MissIcon gMISSData[8];
 
 extern s32 gFieldFreeze;
@@ -63,9 +62,6 @@ extern u16 gSpellBannerTimer;
 extern u16 gSpellCrossFlags;
 extern u16 gSpellBannerFade;              /* spell-name banner fade-in frames */
 extern u8** gSpellNames[];   /* spell names: per element, a pointer per spell */
-void DrawHUDText(s32 x, s32 y, s32 colour, u8* text);
-s32 GetHUDTextWidth(u8* text);
-void DrawNumber(u16 flags, s32 x, s32 y, s32 value);   /* draw a number */
 extern HudImage gHudImage;   /* the HUD image (compass, HP/MP frame) */
 extern u32 gSpiritFlashTimer;          /* unsigned: DrawSpiritCounters fades it with a divu */
 extern u16 gSpiritGainFlags;
@@ -98,21 +94,6 @@ extern SignSlot* gSignTarget;
 extern s32 gSpellLightState;
 extern s32 gEnemyCount;               /* enemies in battle */
 extern EnemyAction gEnemies[];
-void DrawHPMPGauge(ActorTransform* brian);
-void DrawSpiritCounters(mkst* dyn, BrianData1* stats);
-void DrawCompass(mkst* dyn);
-void DrawSpellCross(mkst* arg0, PlayerState* player);
-void DrawSpellBanner(PlayerState* player);
-void SpiritGainWindow(mkst* arg0, PlayerState* player);
-void UpdateTalkMarker(void);
-void DrawSpiritMarker(void);
-void DrawObjectMarker(void);
-void DrawSignMarker(void);
-void DrawEnemyMarker(u16 enemy);
-void DrawEscapeLabel(void);
-void DrawMonsterStatusIcons(MonsterBattleData* actor);
-void DrawMonsterCard(void);
-void Draw_MISS_Icon(void);
 void DrawHUD(mkst* dyn) {
     s32 n;
     EnemyAction* enemy;
@@ -302,14 +283,6 @@ extern f32 gCompassTargetZ;               /* compass target z */
 extern s32 gMapPageImageId;
 extern s32 gMapPageMarker;
 extern Gfx gCompassDialGfx[];             /* compass dial display list */
-void BuildRotationMatrix(MtxF *mtx, f32 xrot, f32 yrot, f32 zrot);
-f32 Atan2(f32 x, f32 z);            /* atan2 */
-void rotateCoordinatesByAngle(f32 angle, Coordinates2D* vec);
-f32 sqrtf(f32 x);                   /* sqrtf */
-extern f64 D_8006F538;               /* -pi (hud.c does not own its .rodata yet) */
-extern f64 D_8006F540;               /* 2 pi */
-extern f64 D_8006F548;               /* pi */
-extern f64 D_8006F550;               /* 2 pi */
 void DrawCompass(mkst* dyn) {
     f32 dx;
     f32 dz;
@@ -334,10 +307,10 @@ void DrawCompass(mkst* dyn) {
         dist = sqrtf(dx * dx + dz * dz);
         if (dist > 10.0) {
             angle = Atan2(dx, dz) - gCamera.yaw;
-            if (angle < D_8006F538) {
-                angle += D_8006F540;
-            } else if (angle > D_8006F548) {
-                angle -= D_8006F550;
+            if (angle < -3.141592653589793) {
+                angle += 6.283185307179586;
+            } else if (angle > 3.141592653589793) {
+                angle -= 6.283185307179586;
             }
             gHudVector.x = 0.0f;
             gHudVector.y = 18.0f;
@@ -346,11 +319,8 @@ void DrawCompass(mkst* dyn) {
         }
     }
 }
-extern u8 D_8004F2CC[][4];
-extern Gfx D_803AA2F8[];
 extern u8 gInfoWindowPalette[];
 extern HudImage gInfoWindowImage;
-void DrawSpellLabel(s32 x, s32 y, u8* path, s32 presses, u16 context);
 extern f32 gSpellCrossFlashPos[];             /* per element: an x, y pair, read flat */
 void DrawSpellCross(mkst* dyn, PlayerState* player) {
     s32 i;
@@ -659,7 +629,6 @@ void DrawSignMarker(void) {
 }
 extern u16 gEnemyMarkerBobPhase;                /* the enemy marker's bob phase */
 extern Gfx gEnemyMarkerIcon[];              /* the enemy marker icon (24 x 42) */
-extern f64 D_8006F558;                /* 350.0 */
 void DrawEnemyMarker(u16 enemy) {
     s32 screenX;
     s32 screenY;
@@ -673,7 +642,7 @@ void DrawEnemyMarker(u16 enemy) {
     if (m->transform.base.monster->monsterType == FLYING) {
         y = m->stats->flyY;
     } else if (m->transform.base.monster->monsterType == MAMMON) {
-        y = m->transform.pos.y + D_8006F558 * m->transform.scale;
+        y = m->transform.pos.y + 350.0 * m->transform.scale;
     } else {
         y = m->transform.pos.y + m->transform.base.monster->height * m->transform.scale;
     }
@@ -931,7 +900,7 @@ void Setup_MISS_Icon(MonsterBattleData* actor) {
     } else if (monsterData->monsterType == FLYING) {
         missIconData->offsetY = actor->stats->flyY - actor->transform.pos.y;
     } else {
-        missIconData->offsetY = actor->transform.scale * D_8006F560;
+        missIconData->offsetY = actor->transform.scale * 600.0;
     }
     missIconData->texS = 0x23; //xpos on texture for MISS icons
     missIconData->texT = 0x31; //ypos on texture for MISS icons
@@ -974,8 +943,6 @@ void Draw_MISS_Icon(void) {
 }
 extern u8 gUnlearnedSpellName[];             /* the placeholder for a spell not learned yet */
 extern u8 gSpellLabelColours[];             /* label colour by availability */
-s32 GetSpellFromPath(u16 presses, u8* path);
-s32 GetSpellAvailability(u32 spell, u16 mp);
 void DrawSpellLabel(s32 x, s32 y, u8* path, s32 presses, u16 context) {
     u32 spell;
     s32 flags;
@@ -1248,9 +1215,6 @@ s32 RemoveKeyItem(u16 id) {
     }
     return found;
 }
-void DrawItemBox(s32 ulx, s32 uly, s32 width, s32 height);
-void StartScreenFade(s32 frames, u16 flags, void* ramp);
-void DrawString(s32 x, s32 y, u8* text);
 extern s8 gStickX;
 extern u16 D_8004F4C0;
 extern u8 D_8004F5B4[];
@@ -1528,7 +1492,7 @@ void UseWings(ActorTransform* brian, ItemData* item) {
     SpawnEffectObject(gBaseItemLightRingData.unk12, gBaseItemLightRingData.wingLightColor, brian->pos.x, brian->pos.y, brian->pos.z, 0.0f, ring, &gItemLightRingSize, brian);
     PlaySound(0, 0x3B, 0xFF);
 }
-void UseSpellItem(ActorTransform* brian, ItemData* item) {
+void UseSpellItem(MonsterBattleData* brian, ItemData* item) {
     SpawnSpell(brian, item->itemArg1, 0, 4);
 }
 void DrawItemBox(s32 ulx, s32 uly, s32 width, s32 height) {

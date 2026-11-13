@@ -1,6 +1,8 @@
 #include "common.h"
+#include "game/message.h"
+#include "game/sound.h"
+#include "game/text.h"
 extern Message gMessageWindows[];         /* 4 message windows, 0x9FC each */
-void ResetMessageWindow(s32 slot, u8 keepPos);
 typedef struct {
     s16 x;
     s16 y;
@@ -26,9 +28,6 @@ typedef struct {
     u8* tex[5];
 } BoxTextureImages;                 /* D_800616D0, copied to the stack */
 extern Gfx* gDisplayListHead;
-void DrawBoxTexture(s32 texture, s32 x, s32 y, s32 w, s32 h);
-void DrawString(s32 x, s32 y, u8* text);
-void ResetStickHeld(void);
 
 void ResetMessageWindows(s32 unused) {
     s32 i;
@@ -153,14 +152,6 @@ s32 OpenMessageWindow(s32 type) {
     return found;
 }
 
-s32 AnimateMessageWindow(s32 slot);
-void DrawMessageBox(s32 slot);
-void SetMessageWindowSize(s32 slot);
-s32 IsStickHeld(void);
-void DrawMessageText(s32 slot);
-void PageMessage(s32 slot);
-void DrawMoreTextQuill(s32 slot);
-void PlaySound(u8 delay, s8 id, u8 level);
 extern s8 gStickY;   /* stick y */
 extern u8 gSavePromptHand;
 extern s32 gMessageChoice;

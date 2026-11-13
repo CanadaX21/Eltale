@@ -1,9 +1,7 @@
 #include "common.h"
-extern void		osInvalDCache(void *, s32);
+#include "game/dma.h"
 extern OSIoMesg gDmaIoMesg;
 extern OSMesgQueue gDmaQueue;
-extern s32		osPiStartDma(OSIoMesg *, s32, s32, u32, void *, u32,
-				     OSMesgQueue *);
 
 void dma_write(u8* devAddr, void* vaddr, u32 nbytes) {
     u32 chunk;

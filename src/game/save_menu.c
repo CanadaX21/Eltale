@@ -1,9 +1,13 @@
 #include "common.h"
+#include "game/save_menu.h"
+#include "game/controller.h"
+#include "game/sound.h"
+#include "game/start_menu.h"
+#include "game/text.h"
 /* The save / load menu (split from sound.c: the original is two files; Quest 64 splits its twin
    code at the same function, and this file's .rodata starts with its own string) */
 extern Gfx* gDisplayListHead;
 extern Gfx gMenuRenderDL[];
-extern s8 D_8008FB81[];
 typedef struct {
     BrianData1 stats;               /* 0x00: gBrianStats */
     u16 playTime;                   /* 0x38: minutes (gPlayTime) */
@@ -28,9 +32,7 @@ typedef struct {
 } SaveListText;                     /* a short game-encoded text, 0xFF-terminated (DrawSaveList copies one to the stack) */
 extern s8 gSaveSlots[];   /* per save slot: [0] pak file, [1] its letter */
 extern s8 gControllerChannel;
-u8 DeleteSaveNote(s32 channel, u8 ext0);
 extern s32 gSavePakError;
-s32 PakErrorCode(s32);
 extern u16 gMenuState;
 extern u16 gGameMode;
 extern u16 gSaveMenuState;
@@ -84,18 +86,6 @@ extern u8 gObjectsOpened[];
 extern u8 gSpiritsFound[];
 extern u8 gInventory[];
 extern u8 gStoryFlags[];
-void DrawMenuSprite(s32 sprite, s32 x, s32 y, s32 w, s32 h);
-void DrawString(s32 x, s32 y, u8* text);
-void DrawSaveListFrame(void);
-void OpenSaveMenu(void);
-void SaveMenuPrompt(void);
-void DrawSaveList(s32 arg0);
-void DeleteSaveSlot(void);
-void LoadSaveSlot(void);
-void SaveToPak(void);
-void RepairSaveSlot(void);
-void SaveMenuWait(void);
-void DrawSaveMessage(void);
 void SaveMenu(void) {
     DrawSaveListFrame();
     if (!(gSaveMenuState & 0x4000)) {
@@ -141,7 +131,6 @@ void SaveMenu(void) {
         gMenuState &= ~0x8000;
     }
 }
-void EndMenuDraw(void);
 void DrawSaveMessage(void) {
     s32 x;
     s32 y;
@@ -169,10 +158,7 @@ void DrawSaveMessage(void) {
 extern OSMesgQueue gSiMesgQueue;
 extern OSPfs gPfs[];
 extern PakNoteExts gPakNotes[];
-s32 func_8003D554(OSMesgQueue *mq, OSPfs *pfs, s32 channel);
-s32 func_8003D6B0(OSMesgQueue *mq, OSPfs *pfs, s32 channel);
-s32 ScanControllerPak(s32 channel);
-void ScanSaveList(void);
+s32 osGbpakInit(OSMesgQueue *mq, OSPfs *pfs, int channel);
 void OpenSaveMenu(void) {
     s32 mode;
     s32 err;
@@ -184,9 +170,9 @@ void OpenSaveMenu(void) {
         if (err == 2) {
             err = 0;
         } else if (err == 10) {
-            if (func_8003D554(&gSiMesgQueue, &gPfs[gControllerChannel], gControllerChannel) == 0) {
+            if (osMotorInit(&gSiMesgQueue, &gPfs[gControllerChannel], gControllerChannel) == 0) {
                 err = 1;
-            } else if (func_8003D6B0(&gSiMesgQueue, &gPfs[gControllerChannel], gControllerChannel) == 0) {
+            } else if (osGbpakInit(&gSiMesgQueue, &gPfs[gControllerChannel], gControllerChannel) == 0) {
                 err = 1;
             } else {
                 err = 10;
@@ -557,9 +543,6 @@ void SaveMenuPrompt(void) {
         }
     }
 }
-void DrawMenuDigits(s32 digits, s32 x, s32 y, u32 value);
-void DrawMenuNumber(s32 digits, s32 x, s32 y, u32 value, s32 font);
-void DrawMenuNumberZeros(s32 digits, s32 x, s32 y, u32 value, s32 font);
 extern s32 gMenuFrame;
 extern s8 gArrowBobOffsets[];
 extern SaveListText D_80061650;
@@ -921,8 +904,6 @@ void DeleteSaveSlot(void) {
 }
 extern SaveData gSaveData;      /* the save data */
 extern u8 gPakReadBuffer[0xE0];          /* the pak read buffer */
-s32 ReadPakNote(s32 channel, s32 file, s32 offset, s32 size, u8* buf);   /* read a pak note */
-void ReadSaveRecord(s32 slot);
 void LoadSaveSlot(void) {
     s32 err;
 
@@ -952,9 +933,6 @@ void LoadSaveSlot(void) {
         gSaveMenuState |= 0x8000;
     }
 }
-u8 AllocateSaveNote(s32 channel, u8 ext0);
-s32 WritePakNote(s32 channel, s32 file, s32 offset, s32 size, u8* data);
-void WriteSaveRecord(u32 slot);
 void SaveToPak(void) {
     s32 i;
     s32 ret;
@@ -1039,8 +1017,6 @@ void SaveToPak(void) {
     gSaveInputDelay = 10;
 }
 
-void osSyncPrintf(const char* fmt, ...);   /* debug print (a stub in retail) */
-s32 RepairPak(s32 file, s32 err);
 void RepairSaveSlot(void) {
     s32 err;
 

@@ -22,5 +22,10 @@ for f in tools/splat/split.py tools/asm-processor/build.py tools/ido_5.3/usr/lib
         exit 1
     fi
 done
+# the build lists each C file's headers with the host C preprocessor (tools/c_deps.py)
+if ! command -v "${CPP:-cpp}" > /dev/null; then
+    echo "Error: the C preprocessor (cpp) not found: install build-essential (README, step 1)"
+    exit 1
+fi
 "$PYTHON" tools/splat/split.py eltail.jp.yaml
 "$PYTHON" configure.py "$@"
