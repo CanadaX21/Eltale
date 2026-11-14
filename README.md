@@ -48,9 +48,11 @@ units (`src/title_overlay/`, `src/intro_overlay/`) whose functions not yet in C 
 the build, as are the credits overlay and the Controller Pak menu module; the RSP microcode is copied as binary data
 ([docs/ROM_MAP.md](docs/ROM_MAP.md#code-outside-the-c)).
 
-A build whose code or data changes size boots and plays: every reference in the C, in the overlays and in the boss
-model files follows a layout change, the linker places each file's sections, and it refuses a build that outgrows
-main's RAM, the title or intro overlay's room, or a boss file's buffer. This has been tested as far as it was run (test builds in an emulator and on
+A build whose code or data changes size boots and plays: every reference in the C, in the overlays, in the boss
+model files and in the monster sets follows a layout change, the linker places each file's sections, and it refuses a
+build that outgrows main's RAM, the title or intro overlay's room, a boss file's buffer or a monster set's. The boss
+files' and monster sets' records are typed C that the build writes from your ROM, and a change to them can be kept as
+a patch ([docs/ASSETS.md](docs/ASSETS.md)). This has been tested as far as it was run (test builds in an emulator and on
 Project64); paths not run, among them the scenes after a boss fight, are not validated.
 
 A byte match proves that the original compiler turns this C into the original machine code. It does not prove that
@@ -184,6 +186,7 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 | A function or a variable by name or address | `symbol_addrs.txt` (names and addresses for splat and the linker); `undefined_syms.jp.txt` (data the C uses that the split does not name, defined by address) |
 | A file by what it holds | [Source file names](#source-file-names), below |
 | What is where in the ROM, and which function loads it | [docs/ROM_MAP.md](docs/ROM_MAP.md), with `eltail.jp.yaml` for every segment |
+| The boss and monster models, their animations, and the monsters' stats and AI options | the files `./configure` writes in `assets/boss_<name>/` and `assets/monsters_<n>/`, declared in `include/boss_files.h` and `include/monster_sets.h`; how to change them: [docs/ASSETS.md](docs/ASSETS.md) |
 | What the game needs from the N64's system software (for a port) | [docs/PLATFORM.md](docs/PLATFORM.md) |
 | Why some code is written the way it is | the comments at the code, and the documented exceptions in [docs/METHODOLOGY.md](docs/METHODOLOGY.md) |
 
@@ -193,7 +196,7 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 |---|---|
 | `src/game/`, `src/sched/`, `src/libultra/` | the main image's 40 C translation units: the game's code, the SDK sample scheduler, and the libultra files built as C; and two data files of the cutscene bank, the boss tables (file names below) |
 | `src/title_overlay/`, `src/intro_overlay/` | the title screen overlay and the splash and intro overlay as C units: a function still in assembly is included from your ROM with a `GLOBAL_ASM` line |
-| `include/` | the project's headers: types and structures (`quest_types.h`, `structs.h`, `scene2d.h`, `boss_files.h`), the functions each file defines (`include/game/`, `include/sched/`), macros (`common.h`); in `include/2.0I`, the 19 SDK headers the build reads, unmodified |
+| `include/` | the project's headers: types and structures (`quest_types.h`, `structs.h`, `scene2d.h`), the boss files' and monster sets' records (`boss_files.h`, `monster_sets.h`), the functions each file defines (`include/game/`, `include/sched/`), macros (`common.h`); in `include/2.0I`, the 19 SDK headers the build reads, unmodified |
 | `asm/entry.s` | the boot entry, kept by hand (the one assembly source file in the repository) |
 | `eltail.jp.yaml` | the splat configuration: how the ROM is split into code, data and assets |
 | `symbol_addrs.txt`, `undefined_syms.jp.txt` | symbol names and addresses for splat and the linker |
@@ -202,6 +205,7 @@ in `DrawSpellBanner` (`src/game/hud.c`), and run `ninja`: the checksum fails. Th
 | `tools/verify.py` | the independent check above |
 | `first_diff.py`, `tools/make_expected.py` | find the first difference from the last matching build |
 | `tools/objdiff_gen.py`, `tools/trim_padding.py` | per-function comparison with [objdiff](https://github.com/encounter/objdiff) (`objdiff.json`, written by `./configure`) |
+| `tools/splat_ext/`, `tools/c_layout.py`, `tools/asset_patches.py` | this repository's splat extensions, the `anim` and `records` segment types, which write the boss files' and monster sets' records as typed C; the reader of the C types' layouts they use; the tool that keeps a change to those records as a patch ([docs/ASSETS.md](docs/ASSETS.md)) |
 | `tools/splat`, `tools/asm-processor` | submodules: [splat](https://github.com/ethteck/splat) and [asm-processor](https://github.com/simonlindholm/asm-processor) at pinned commits |
 | `docs/` | the methodology, the ROM map and the platform boundary ([Documentation](#documentation)) |
 
@@ -245,6 +249,7 @@ code's offset name is 1000, although its code starts at 0x1050, after the boot e
 |---|---|
 | [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | what counts as a match, the documented exceptions, what the figures cover, and what a byte match does not prove |
 | [docs/ROM_MAP.md](docs/ROM_MAP.md) | the ROM block by block: what each block holds, the function that loads it and the RAM it goes to, the pointer tables, the C types that describe the data, and the open questions |
+| [docs/ASSETS.md](docs/ASSETS.md) | the boss files and the monster sets as typed asset files: what `./configure` writes, how the records are written (raw data, inferred lengths), how to change a record and keep the change, what is not kept, and the limits |
 | [docs/PLATFORM.md](docs/PLATFORM.md) | where the game's code meets the N64's system software: the library services it uses and from where, what it assumes about the hardware as far as the evidence shows, notes for a port, and how the 329 library functions linked into the game were identified (the grades and their bases, and the evidence for each probable or unresolved one) |
 | [CHANGELOG.md](CHANGELOG.md) | what changed since the first publication |
 | [CREDITS.md](CREDITS.md) | the work this builds on, and where names and matches came from |

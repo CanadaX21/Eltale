@@ -1233,27 +1233,29 @@ typedef struct {
     f32 tension;                    /* 0x24: Kochanek-Bartels spline parameters (SampleSpline) */
     f32 continuity;
     f32 bias;
-    u16 linear;                     /* 0x30: nonzero = straight interpolation into this key */
-    u16 frame;                      /* 0x32 */
+    u16 linear;                     /* 0x30: nonzero = straight interpolation into this key (SampleSpline); 0 in every
+                                       key of the boss files, the monster sets and the NPC blobs */
+    u16 frame;                      /* 0x32: where the key sits; a part's keys run in increasing frame from 0 to
+                                       the part's frames (SampleSpline) */
 } ModelKeyFrame;                    /* 0x34: one stored key of a part's animation */
 typedef struct {
     ModelKeyFrame* keys;            /* 0x00 */
-    u16 keyCount;                   /* 0x04: 1 = a still pose */
+    u16 keyCount;                   /* 0x04: keys' length; 1 = a still pose (SampleSpline) */
     u16 frames;                     /* 0x06: key frames (SampleSpline samples them) */
     Vec3f pivot;                    /* 0x08: subtracted after the part's rotation (ApplyPivotOffset) */
     s8 parent;                      /* 0x14: parent part + 1, 0 = a root part */
     s8 dlist;                       /* 0x15: display list index, -1 = none */
     u8 flags;                       /* 0x16: bit 0 = face the camera, bit 1 = record its position */
-    char unk17;
+    char unk17;                     /* 0x17: no code reads it; 0 in every boss part */
     s32* dlistFrames;               /* 0x18: per-frame display list indices, or NULL */
-    u16 dlistFrameCount;            /* 0x1C */
-    char unk1E[2];
+    u16 dlistFrameCount;            /* 0x1C: dlistFrames' length (DrawModelPart) */
+    char unk1E[2];                  /* 0x1E: no code reads them; 0 in every boss part */
 } ModelPart;                        /* 0x20: one part of a model's animation (also a camera path, ending.c) (the Quest recomp's Unk8) */
 typedef struct {                    /* 0xC: one animation of a model's table (Brian's: ApplyBrianMovement's anims; an enemy's: gMonsterAnims[model]) (Quest's StrangeAnimPair; the recomp's Unk9) */
-    s16 count;                      /* parts */
+    s16 count;                      /* parts' length (DrawModel) */
     s16 frames;                     /* 0x02: its length, which a state takes as its timer */
     ModelPart* parts;
-    Gfx** dlists;                   /* 0x08 */
+    Gfx** dlists;                   /* 0x08: the model's display-list table, which a part's dlist indexes */
 } AnimEntry;
 typedef struct {
     s16 unk0;

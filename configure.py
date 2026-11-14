@@ -19,10 +19,13 @@ for root, dirs, files in os.walk(dir_path):
         if file.endswith('.c'):
             c_files.append(os.path.join(root, file))
 
-# the typed assets splat writes as C (the boss files' display lists and vertices) are C units of their own
+# the typed assets splat writes as C (the boss files' and monster sets' display lists, vertices, animation records
+# and data records) are C units of their own. They hold data only and are compiled without debug information
+# (-g0): with -g3 every object repeated every record the asset headers declare (270 KB an object).
+ASSET_C = ('.gfx.inc.c', '.vtx.inc.c', '.anim.inc.c', '.records.inc.c')
 for root, dirs, files in os.walk(assets_path):
     for file in files:
-        if file.endswith('.gfx.inc.c') or file.endswith('.vtx.inc.c'):
+        if file.endswith(ASSET_C):
             c_files.append(os.path.join(root, file))
 
 s_files = []
@@ -52,12 +55,24 @@ for root, dirs, files in os.walk(assets_path):
         if file.endswith('rgba16.png'):
             rgba16_files.append(os.path.join(root, file))
             
+i8_files = []
+for root, dirs, files in os.walk(assets_path):
+    for file in files:
+        if file.endswith('i8.png'):
+            i8_files.append(os.path.join(root, file))
+
+i4_files = []
+for root, dirs, files in os.walk(assets_path):
+    for file in files:
+        if file.endswith('i4.png'):
+            i4_files.append(os.path.join(root, file))
+
 j_files = []
-j_files.extend([f.replace('.png', '.j') for f in rgba16_files])
+j_files.extend([f.replace('.png', '.j') for f in rgba16_files + i8_files + i4_files])
             
 # Combine the lists and change file extensions
 o_files = []
-for file in c_files + s_files + bin_files + ia4_files + rgba16_files:
+for file in c_files + s_files + bin_files + ia4_files + rgba16_files + i8_files + i4_files:
     if 'asm/nonmatchings/' not in file:
         o_files.append("build/" + append_extension(file))
 
@@ -147,6 +162,14 @@ ninja_file.rule('rgba16_convert',
                  command = "($PYTHON ./$IMG_CONVERT rgba16 $in $out)",
                  description = "Converting rgba16") 
                  
+ninja_file.rule('i8_convert',
+                 command = "($PYTHON ./$IMG_CONVERT i8 $in $out)",
+                 description = "Converting i8")
+
+ninja_file.rule('i4_convert',
+                 command = "($PYTHON ./$IMG_CONVERT i4 $in $out)",
+                 description = "Converting i4")
+
 ninja_file.rule('rgba16_build',
                  command = "($LD -r -b binary -o $out $in)",
                  description = "Converting rgba16")   
@@ -157,7 +180,7 @@ for c_file in c_files:
         ninja_file.build("build/" + append_extension(c_file), "O2_cc", c_file)
     elif os.path.basename(c_file) in optO1_files:
         ninja_file.build("build/" + append_extension(c_file), "O1_cc", c_file)
-    elif os.path.basename(c_file) in optg0_files:
+    elif os.path.basename(c_file) in optg0_files or c_file.endswith(ASSET_C):
         ninja_file.build("build/" + append_extension(c_file), "O2g0_cc", c_file)
     else:
         ninja_file.build("build/" + append_extension(c_file), "main_cc", c_file)
@@ -171,6 +194,12 @@ for bin_file in bin_files:
 for rgba16_file in rgba16_files:
     ninja_file.build("build/" + append_extension(rgba16_file, '.j'), "rgba16_convert", rgba16_file)
     
+for i8_file in i8_files:
+    ninja_file.build("build/" + append_extension(i8_file, '.j'), "i8_convert", i8_file)
+
+for i4_file in i4_files:
+    ninja_file.build("build/" + append_extension(i4_file, '.j'), "i4_convert", i4_file)
+
  #j files are png images converted using image_converter.py
 for j_file in j_files:
     ninja_file.build("build/" + os.path.splitext(j_file)[0] + ".png.o", "rgba16_build", "build/" + os.path.splitext(j_file)[0] + ".png.j")

@@ -338,13 +338,20 @@ RespawnLocation gRespawnLocationTbl[17] = {   /* where Brian wakes up in a map w
 static u32 sZeroAfterBrianTables[2] = { 0, 0 };
 
 /* -- the enemies' and NPCs' tables (read by enemy.c) -- */
-MonsterSet gMonsterSets[6] = {       /* each monster area's file in ROM; its animation table, base stats and names as LoadMonsterSet loads the file to gMonsterFileBuffer (0x8020E6F0) */
-    { monsters_0_ROM_START, monsters_0_ROM_END, (AnimEntry**)0x80270890, (MonsterBaseData*)0x802705F0, (u8**)0x80270934 },
-    { monsters_1_ROM_START, monsters_1_ROM_END, (AnimEntry**)0x80295990, (MonsterBaseData*)0x80295648, (u8**)0x80295A6C },
-    { monsters_2_ROM_START, monsters_2_ROM_END, (AnimEntry**)0x80269010, (MonsterBaseData*)0x80268DA8, (u8**)0x8026909C },
-    { monsters_3_ROM_START, monsters_3_ROM_END, (AnimEntry**)0x80281FD0, (MonsterBaseData*)0x80281CF8, (u8**)0x80282088 },
-    { monsters_4_ROM_START, monsters_4_ROM_END, (AnimEntry**)0x80278C10, (MonsterBaseData*)0x80278970, (u8**)0x80278CB0 },
-    { monsters_5_ROM_START, monsters_5_ROM_END, (AnimEntry**)0x80236A38, (MonsterBaseData*)0x80236958, (u8**)0x80236A70 },
+/* the typed sets' tables, each defined by its own set's segment (the six sets load at one RAM range) */
+extern AnimEntry* gMonSet0AnimTables[]; extern MonsterBaseData gMonSet0BaseData[]; extern u8* gMonSet0NameTable[];
+extern AnimEntry* gMonSet1AnimTables[]; extern MonsterBaseData gMonSet1BaseData[]; extern u8* gMonSet1NameTable[];
+extern AnimEntry* gMonSet2AnimTables[]; extern MonsterBaseData gMonSet2BaseData[]; extern u8* gMonSet2NameTable[];
+extern AnimEntry* gMonSet3AnimTables[]; extern MonsterBaseData gMonSet3BaseData[]; extern u8* gMonSet3NameTable[];
+extern AnimEntry* gMonSet4AnimTables[]; extern MonsterBaseData gMonSet4BaseData[]; extern u8* gMonSet4NameTable[];
+extern AnimEntry* gMonSet5AnimTables[]; extern MonsterBaseData gMonSet5BaseData[]; extern u8* gMonSet5NameTable[];
+MonsterSet gMonsterSets[6] = {       /* each monster area's file in ROM; its table of animation tables, base records and name table in the file as LoadMonsterSet loads it to gMonsterFileBuffer (0x8020E6F0) */
+    { monsters_0_ROM_START, monsters_0_ROM_END, gMonSet0AnimTables, gMonSet0BaseData, gMonSet0NameTable },
+    { monsters_1_ROM_START, monsters_1_ROM_END, gMonSet1AnimTables, gMonSet1BaseData, gMonSet1NameTable },
+    { monsters_2_ROM_START, monsters_2_ROM_END, gMonSet2AnimTables, gMonSet2BaseData, gMonSet2NameTable },
+    { monsters_3_ROM_START, monsters_3_ROM_END, gMonSet3AnimTables, gMonSet3BaseData, gMonSet3NameTable },
+    { monsters_4_ROM_START, monsters_4_ROM_END, gMonSet4AnimTables, gMonSet4BaseData, gMonSet4NameTable },
+    { monsters_5_ROM_START, monsters_5_ROM_END, gMonSet5AnimTables, gMonSet5BaseData, gMonSet5NameTable },
 };
 /* the boss effect scripts, in gBossEffectScripts' order: frame, stage (in gEnemySpellEffects), flags (1 = last entry), x, y, z, angle */
 static BossFxEntry sBossFxScript00[6] = {

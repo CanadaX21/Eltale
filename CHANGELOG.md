@@ -3,6 +3,32 @@
 What changed in this repository, newest first. Every state listed builds the byte-identical Japanese ROM (SHA-1
 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) from the C, with all 530 tracked compiled C functions byte-matched.
 
+## Typed animation records, the monster sets, and keeping a change
+
+The ROM still builds byte-identical; the figures for the main image are unchanged.
+
+- **The boss files' animation records are typed C.** splat wrote them as data words in assembly. Now this repository's
+  splat extension, the `anim` segment type (`tools/splat_ext/anim.py`), writes the 933 records of the 8 boss files,
+  when you build, as C arrays of the project's own types (`ModelKeyFrame`, `ModelPart`, `AnimEntry` in `include/quest_types.h`), whose layouts
+  `tools/c_layout.py` reads from the headers: a pointer is the name of the record it leads to, a float a decimal.
+- **The six monster sets are built from typed sources** (67 monsters). Each model's animation records, and each set's
+  monster records (every monster's AI options and base data with its stats, the table of animation tables, the name
+  table and the names), are typed C through the same types (`MonsterBaseData`, `EnemyAIOption`; the `records` type,
+  `tools/splat_ext/records.py`). The models are display lists, vertices and textures (517 RGBA16 and 3 I4;
+  `configure.py` now converts I4 and I8 images). `include/monster_sets.h` declares every record, and `gMonsterSets`
+  points into the sets by their symbols.
+- **Raw data stays raw** in the monster sets: what nothing the game's C code is known to read as a type is declared
+  `RawWord` or `RawByte`, with no type claimed. Tables whose length no field or constant states are typed over the
+  range the code is shown to index, and each is marked "inferred length". The boss files' records are all typed.
+- **Keeping a change**: `python3 tools/asset_patches.py save FILE` keeps a change to a record file as a patch in
+  `asset_patches/`, and every extraction applies it exactly or stops. Textures, vertices and display lists have no
+  such step: an edit to them is lost at the next `./configure`. [docs/ASSETS.md](docs/ASSETS.md) describes the files,
+  the patches, the limits and what was tested.
+- **Size limits**: the linker refuses a monster set that would overwrite the NPC areas' actor data (0x802A0000), as it
+  does a boss file that would overwrite the depth buffer.
+- **`./configure` stops when splat fails.** Before, `configure.py` went on, and the build used whatever files an
+  earlier split had left.
+
 ## Headers, modified builds, the boss files and the title and intro overlays
 
 The ROM still builds byte-identical; the figures for the main image are unchanged.

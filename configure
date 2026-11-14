@@ -27,5 +27,6 @@ if ! command -v "${CPP:-cpp}" > /dev/null; then
     echo "Error: the C preprocessor (cpp) not found: install build-essential (README, step 1)"
     exit 1
 fi
-"$PYTHON" tools/splat/split.py eltail.jp.yaml
+# stop when the split fails: configure.py would otherwise write a build from the files an earlier split left
+"$PYTHON" tools/splat/split.py eltail.jp.yaml || { echo "Error: splat failed: configure.py not run" >&2; exit 1; }
 "$PYTHON" configure.py "$@"
