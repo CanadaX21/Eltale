@@ -3,6 +3,77 @@
 What changed in this repository, newest first. Every state listed builds the byte-identical Japanese ROM (SHA-1
 `4161b5c100ec82b0241b20ca8f81366e23564ccb`) from the C, with all 530 tracked compiled C functions byte-matched.
 
+## The game's data from typed sources, the systems documented, and every declaration in a header
+
+The ROM still builds byte-identical; the figures for the main image are unchanged.
+
+- **The game's data is built from typed sources.** The build writes it from your ROM as C, text and images, and it can
+  be changed and rebuilt:
+  - all 36 maps (their records, display lists, vertices and textures);
+  - the NPC files (their models, animations and name pools);
+  - the spell bank;
+  - Brian's model and his 30 animation files;
+  - the dialogue bank, as editable source text that the build encodes;
+  - the dialogue font's sheet and the text palettes.
+  The maps' shared blocks stay binary, locked by the linker because the maps hold addresses inside them.
+  [docs/ASSETS.md](docs/ASSETS.md) covers every family.
+- **Kept changes of every kind.** `tools/asset_patches.py` now keeps a change to a display list, a vertex run, an image
+  (kept whole) or a text source, not only to a record file, and `./configure` refuses to overwrite an edit that is not
+  kept. `tools/n64crc.py` fixes a changed ROM's boot checksum.
+- **The game's state in C.** The game-owned variables of the main image are defined in C, in the units that own them;
+  some of main's data stays binary pieces of your ROM, named by address. Every variable, every shared type and every
+  function called from another file has one declaration, in a header.
+  - **IDO 5.3's `.bss` order** depends on how many declarations precede each variable. It is kept by a padding macro
+    (`BSS_ORDER_PAD`) that `tools/bss_order.py` computes from the compiler's own front end, and the build checks it.
+  - **The declaration rules** are checked by `tools/check_decls.py`; [docs/DECLARATIONS.md](docs/DECLARATIONS.md)
+    describes both.
+- **The Controller Pak manager** that runs at boot is a C unit (`src/pak_menu_module/`): 14 of its 16 functions are in
+  C. The save format is checked by the build (`tools/save_format.py`), and `tools/eltale_save.py` reads and edits saves
+  in a Controller Pak image.
+- **The game's two text encodings.** `text/encoding.json` defines the dialogue font. `text/hud_font.json` defines the
+  HUD font: the monsters', bosses' and spells' names, read cell by cell from the ROM. `tools/text_codec.py` implements
+  both, and `tools/test_hud_text.py` checks every HUD string. [docs/TEXT.md](docs/TEXT.md) gives the names as the game
+  spells them and how each glyph table was established.
+- **Names and documentation.**
+  - The battle system, the game's modes, places and NPC events are named for what the code shows.
+  - Names the code showed wrong were corrected. The end of the game is three modes: the ending's scenes
+    (`EndingLoop`), an epilogue (`EpilogueLoop`; its overlay's segment keeps the historical name `credits_overlay`)
+    and the staff credits (`StaffCreditsLoop`).
+  - **Renamed since the last snapshot** (old → new, at the same addresses), for code written against it:
+    - functions: `AfterCreditsLoop` → `StaffCreditsLoop`, `CreditsLoop` → `EpilogueLoop`, `SaveModeLoop` →
+      `MenuLoop`, `LoadOvl_Ending` → `LoadOvl_Epilogue`, `ResetEndingScenes` → `ResetSceneSequence`, `StartScene` →
+      `StartSequenceScene`, `StepEndingScene` → `StepSequenceScene`, `EndEndingScene` → `EndSequenceScene`,
+      `StartEndingText` → `StartNPCTextFromRAM`, `BrianState_Escape` → `BrianState_Victory`, `StartBrianArrival` →
+      `StartBrianDeparture`, `EnemyHitReaction` → `EnemyIdle`, `TryReadSign` → `FindSignTarget`,
+      `FindFreeEffectSlot` → `StartDustEmitter`, `CheckIfInventoryFull` → `InventoryHasRoom`;
+    - variables: `gEndingNpcText` → `gOpeningSpeechText`, `gLoadScreenTexts` → `gSaveModePromptTexts`,
+      `gSaveScreenTexts` → `gTitleModePromptTexts`, `gWalkingObjectCount` → `gWalkingNpcCount`, `D_8004E1C8` →
+      `gSparkleVertices`, `gEntrance` → `gPendingWarp.entrance`; `D_8008A184` is gone (declared a display-list
+      pointer, it is a byte inside `gDust`);
+    - constants and types: `MODE_PAUSED` → `MODE_MENU`, `MODE_CREDITS` → `MODE_EPILOGUE`, `MODE_AFTER_CREDITS` →
+      `MODE_STAFF_CREDITS`, `unk803a9190s` → `WingDest`; placeholder types that no code used were removed.
+  - New pages: [ARCHITECTURE.md](docs/ARCHITECTURE.md), [GAME_FLOW.md](docs/GAME_FLOW.md), [BATTLE.md](docs/BATTLE.md),
+    [MAPS.md](docs/MAPS.md), [NPCS.md](docs/NPCS.md), [PLAYER.md](docs/PLAYER.md), [SAVE.md](docs/SAVE.md),
+    [TEXT.md](docs/TEXT.md) and [DECLARATIONS.md](docs/DECLARATIONS.md).
+- **File names.** The file that holds the staff credits' scenes, named `game/ending` until now, is
+  `src/game/staff_credits.c`, with its header; the ending's scenes are `src/game/ending_text.c`.
+  `src/pak_menu_module/pak_menu.c` and `src/brian_model/brian_model.c` are new.
+- **`./configure` picks its Python**: `$PYTHON`, else the repository's `.venv`, else `python3`.
+- **What the C holds, listed in full.** The C holds 22 display lists and the vertices of five quads, 21 and four of
+  which were C data in the last snapshot already; the README's list at the top now names them (it said the repository
+  held no graphics). No texture is held in C: the build includes them from your ROM, the spirit sparkle's four frames
+  too (a `GLOBAL_ASM` block in `src/game/spirits.c`, as `src/game/sound.c` includes the flames' art).
+- **`tools/verify.py` reads the `GLOBAL_ASM` blocks too.** A block in the C may include data from your ROM
+  (`.incbin`) and nothing else, and the report counts the blocks and their bytes. Before, the check looked for the
+  `#pragma` form only, so a block holding code would have passed it.
+- **`tools/image_converter.py` is new.** It was written for this repository from the N64 texel formats and replaces
+  the converter that came from papermario's image build script ([CREDITS.md](CREDITS.md)), which the earlier
+  snapshots hold. The command line the build uses is the same, and so are the bytes: every image the earlier converter
+  read correctly, edited or not, converts as before. An image it cannot convert as asked is now refused with a
+  message: 16-bit samples; greyscale or an `sBIT` chunk below 8 bits; a CI format given an image without a palette; a
+  `ci4` index above 15; an odd width in a 4-bit format. The formats `rgba32`, `ia8`, `ia16` and `palette` and the
+  vertical flip, which nothing used, are gone.
+
 ## Typed animation records, the monster sets, and keeping a change
 
 The ROM still builds byte-identical; the figures for the main image are unchanged.

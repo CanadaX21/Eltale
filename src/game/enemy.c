@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/enemy.h"
 #include "game/boss.h"
 #include "game/camera.h"
@@ -15,63 +16,33 @@
 #include "game/shadow.h"
 #include "game/sound.h"
 #include "game/spells.h"
-extern BossFxEntry* gBossEffectScripts[];    /* the boss effect scripts, by a boss action's low tag byte */
-extern u8 gMonsterFileBuffer[]; // the area's loaded file: the monster set's in a monster area (LoadMonsterSet), the NPC blob in an NPC area (LoadNPCArea) (Quest gMonsterFileBuffer)
-extern void (*gEnemyActionHandlers[])(MonsterBattleData*, EnemyAction*, AnimEntry*); // enemy action handlers (Quest D_8004C290)
-extern u16 gBattleState; // battle state flags (0x100 = boss battle)
-extern s32 gBattleExp;
-extern s32 gBattleStone;
-extern Submap* gSubmapHeader;
-extern sMapData* gMapHeader;        /* the current map's header */
-extern u16 gSubmapFlags;   /* the submap's flags (bit 0: random battles and monsters here (FieldLoop, ResetEnemies; SetupNPCs only without it)) */
-extern MonsterSet gMonsterSets[];
-extern u16 gTurnIndex;
+#include "game/main.h"
+#include "game/map.h"
+#include "spell_bank.h"
+#include "segment_symbols.h"
 /* enemy AI (names from vbhayden's Quest 64 scratches; the per-enemy state is EnemyAction, the options EnemyAIOption) */
-extern u16 gMonsterCardTimer;
-extern PlayerState gPlayerState;    /* Brian (Quest D_8007BAB8) */
-extern u8 dialogue_bank_ROM_START[];
 
-extern u16 gFieldMode;
-extern u8 gEndingNpcText[];
-/* other units' variables, declared here so enemy.c's .bss block below starts past the file's 32nd declaration */
-extern Gfx* gDisplayListHead;
-extern RomRange gNpcBlobs[];       /* each area's NPC blob in ROM: its NPCs' models and names (LoadNPCArea loads it into gMonsterFileBuffer) */
-extern u8 npc_held_objects_ROM_START[];               /* display lists and textures, not code: loaded into the overlay area with every NPC area; the NPC blobs' models take textures from it */
-extern u8 npc_held_objects_ROM_END[];
-extern u8 shannon_actor_ROM_START[];               /* loaded to 0x802A0000 */
-extern u8 shannon_actor_ROM_END[];
-extern u8 func_8020C0D0[];          /* the overlay area */
-extern u8 gShannonActorData[];
-extern s32 gCurrentSubmap;              /* current submap */
-extern s32 gPropsNearCount;               /* props near Brian */
-extern ModelTransform* gPropsNear[];
-extern s32 gGameState;
-extern s32 gModeCountdown;
-extern s32 gMessageChoice;
-extern MessageLines gMessageLines;
-extern u8 gSaveChoiceYes[];
-extern u8 gSaveChoiceNo[];
-/* ---- enemy.c's .bss (0x8007AB70-0x8007C0B0), in address order. IDO 5.3 lays out the
-   variables first declared among a file's first 32 declarations (headers included) after all later ones; this
-   block starts past them (the externs above were moved up for that), so it keeps its order whatever the headers
-   hold. Declaring any of these variables above it moves them. Names inside these blocks that other code reads by
+/* ---- enemy.c's .bss (0x8007AB70-0x8007C0B0), in address order. IDO 5.3 lays a unit's .bss
+   out by its variables' block numbers, so a declaration added or removed before them, in a header too, can change
+   their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix` recomputes it
+   (docs/DECLARATIONS.md). Names inside these blocks that other code reads by
    name (D_8007AC70, D_8007B930) are link names in undefined_syms.jp.txt. The D_ names
    marked unreferenced are space no code addresses. ---- */
 RomRange* gAreaNpcBlob;                   /* the current area's NPC blob (its gNpcBlobs entry) */
-u16 gWalkingObjectCount;                         /* map objects walking, at most 3 */
-Coordinates2D gNpcStep;               /* a walking object's step */
+u16 gWalkingNpcCount;                         /* NPCs walking at once, at most 3 */
+Coordinates2D gNpcStep;               /* a walking NPC's step */
 s32 D_8007AB80[2];                      /* unreferenced */
 CollisionPollingResult gActorMovePoll;
 s32 gNpcCount;                          /* NPCs loaded (gNpcs) */
 s32 gNpcsDrawn;                         /* NPCs drawn this frame (within 300 units of Brian) */
 s32 D_8007ABAC;                         /* unreferenced */
 ActorTransform* gNpcsDrawnList[16];             /* their transforms */
-Npc gNpcs[16];                /* the map objects, 0x84 each */
-u8 gTextBuffer[0x4B0];                   /* a 0x4B0-byte buffer: enemy.c, ending_text.c and boss.c fill it */
+Npc gNpcs[16];                /* the submap's NPCs, 0x84 each */
+u8 gTextBuffer[MESSAGE_TEXT_SIZE];       /* one message's text: enemy.c, ending_text.c and boss.c fill it */
 u8 gSpeakerName[0x20];                    /* a 0x20-byte buffer */
 s32 gEnemyCount;                         /* enemies in battle */
 EnemyAction gEnemies[6];              /* the enemies in battle, 0x130 each (Quest D_8007C998) */
-EnemyAction* gCardEnemy;                /* the enemy on the info card: the last one hit (EnemyHitReaction) */
+EnemyAction* gCardEnemy;                /* the enemy on the info card: the one whose turn started last (EnemyIdle) */
 s32 gEnemiesDrawn;                         /* enemies drawn this frame */
 MonsterBattleData* gDrawnEnemies[6];       /* the enemies drawn this frame */
 AnimEntry** gMonsterAnims;
@@ -89,15 +60,15 @@ void SetupNPCs(void) {
     sMapList* list;
 
     gNpcCount = 0;
-    if (!(gSubmapFlags & 1)) {
+    if (!(gSubmapFlags & SUBMAP_ENCOUNTERS)) {
         LoadNPCArea(gSubmapHeader->area);
         list = gMapHeader->npcList;
         if (list != NULL) {
             SpawnNPCs(list->list, list->count);
         }
-        gWalkingObjectCount = 0;
-        if (gFieldMode == 1) {
-            StartEndingText(0, gEndingNpcText);
+        gWalkingNpcCount = 0;
+        if (gFieldMode == FIELD_MODE_NEW_GAME) {
+            StartNPCTextFromRAM(0, gOpeningSpeechText);
             OpenMessageWindow(1);
         }
     }
@@ -114,12 +85,12 @@ void UpdateNPCs(void) {
     for (; n != 0; n--, obj++) {
         xform = &obj->transform;
         switch (obj->state) {
-            case 0:
-                if (obj->record->kind == 2) {
+            case NPC_STATE_STAND:
+                if (obj->record->kind == NPC_KIND_WANDERS) {
                     obj->timer--;
                     if (obj->timer == 0) {
-                        if (gWalkingObjectCount < 3) {
-                            obj->state = 1;
+                        if (gWalkingNpcCount < 3) {
+                            obj->state = NPC_STATE_WALK;
                             obj->timer = (getRandomNumber(2) + 1) * (obj->record->anims + 1)->frames;
                             SetAnimation(xform, 1, 1, 1, 1, 1);
                             dx = obj->spawnX - xform->pos.x;
@@ -129,27 +100,27 @@ void UpdateNPCs(void) {
                             } else {
                                 xform->yrot = (f32)getRandomNumber(16) * 0.39269908169872414 - 1.5707963267948966;
                             }
-                            gWalkingObjectCount++;
+                            gWalkingNpcCount++;
                         } else {
                             obj->timer = (getRandomNumber(2) + 1) * obj->record->anims->frames;
                         }
                     }
                 }
                 break;
-            case 1:
+            case NPC_STATE_WALK:
                 gNpcStep.x = 0.0f;
                 gNpcStep.y = 0.4f;
                 rotateCoordinatesByAngle(xform->yrot, &gNpcStep);
                 MoveActorWithCollision(gNpcStep.x, gNpcStep.y, xform);
                 obj->timer--;
                 if (obj->timer == 0) {
-                    obj->state = 0;
+                    obj->state = NPC_STATE_STAND;
                     obj->timer = obj->record->anims->frames;
                     SetAnimation(xform, 0, 1, 0, 1, 1);
-                    gWalkingObjectCount--;
+                    gWalkingNpcCount--;
                 }
                 break;
-            case 2:
+            case NPC_STATE_TALK:
                 if (obj->timer != 0) {
                     obj->timer--;
                     xform->yrot += obj->turnLeft / 15.0f;
@@ -158,11 +129,11 @@ void UpdateNPCs(void) {
                     }
                 }
                 break;
-            case 3:
+            case NPC_STATE_TURN_BACK:
                 obj->timer--;
                 xform->yrot -= obj->turnLeft / 15.0f;
                 if (obj->timer == 0) {
-                    obj->state = 0;
+                    obj->state = NPC_STATE_STAND;
                     obj->timer = obj->record->anims->frames;
                     xform->yrot = obj->spawnYaw;
                     SetAnimation(xform, 0, 1, 0, 1, 1);
@@ -207,7 +178,7 @@ void LoadNPCArea(s32 area) {
     u8* end;
 
     gAreaNpcBlob = &gNpcBlobs[area];
-    dma_write(npc_held_objects_ROM_START, func_8020C0D0, npc_held_objects_ROM_END - npc_held_objects_ROM_START);
+    dma_write(npc_held_objects_ROM_START, gOverlaySlot, npc_held_objects_ROM_END - npc_held_objects_ROM_START);
     dma_write(shannon_actor_ROM_START, gShannonActorData, shannon_actor_ROM_END - shannon_actor_ROM_START);
     start = gAreaNpcBlob->start;
     end = gAreaNpcBlob->end;
@@ -219,7 +190,7 @@ void SpawnNPCs(NpcRecord* rec, s32 count) {
 
     for (; count != 0; count--, rec++) {
         if (gCurrentSubmap == rec->submap) {
-            obj->state = 0;
+            obj->state = NPC_STATE_STAND;
             obj->timer = 1;
             obj->record = rec;
             obj->transform.pos.x = rec->x;
@@ -238,7 +209,7 @@ void SpawnNPCs(NpcRecord* rec, s32 count) {
             obj->spawnX = rec->x;
             obj->spawnZ = rec->z;
             obj->spawnYaw = rec->yrot;
-            if (rec->flags & 1) {
+            if (rec->flags & NPC_REC_WIDE_TALK) {
                 obj->transform.stateFlags = NPC_WIDE_TALK;
             } else {
                 obj->transform.stateFlags = 0;
@@ -355,8 +326,10 @@ void StartNPCTalk(s32 index) {
     ActorTransform* brian;
 
     brian = &gPlayerState.brian.transform;
-    gNpcs[index].state = 2;
-    if (gNpcs[index].record->flags & 2) {
+    /* BUG: a walk this interrupts never counts gWalkingNpcCount down (only a walk's end does, UpdateNPCs):
+       after three, no NPC of the submap sets off again until the next field start (SetupNPCs) */
+    gNpcs[index].state = NPC_STATE_TALK;
+    if (gNpcs[index].record->flags & NPC_REC_NO_TURN) {
         gNpcs[index].timer = 0;
     } else {
         gNpcs[index].timer = 0xF;
@@ -374,7 +347,7 @@ void StartNPCTalk(s32 index) {
         SetAnimation(&gNpcs[index].transform, 1, 1, 1, 1, 1);
     }
     switch (gNpcs[index].record->talkType) {
-        case 2:
+        case NPC_TALK_ITEM:
             if (CountItem((u8)gNpcs[index].record->talkParam) == 0) {
                 taken = 0;
                 text = gNpcs[index].record->message;
@@ -385,28 +358,28 @@ void StartNPCTalk(s32 index) {
             StartNPCText(&gNpcs[index], text);
             if (taken == 0) {
                 AddItemToInventory((u8)gNpcs[index].record->talkParam);
-                gPlayerState.flags |= 0x40;
+                gPlayerState.flags |= PLAYER_ITEM_GIVEN;
             }
             break;
-        case 5:
+        case NPC_TALK_BOSS_FLAG:
             if (IsStoryFlagSet(gNpcs[index].record->talkParam) == 0) {
                 text = gNpcs[index].record->message;
             } else {
                 text = gNpcs[index].record->altMessage;
-                if (gNpcs[index].record->talkParam == 7) {
-                    gGameState |= 0x8080;
+                if (gNpcs[index].record->talkParam == LAST_BOSS) {
+                    gGameState |= GAME_STATE_MAP_CHANGE | GAME_STATE_RESTART;
                     gModeCountdown = 0x16;
                 }
             }
             StartNPCText(&gNpcs[index], text);
             break;
-        case 6:
+        case NPC_TALK_INN:
             StartNPCText(&gNpcs[index], gNpcs[index].record->message);
             gMessageLines.lineCount = 2;
             gMessageLines.lines[0] = gSaveChoiceYes;
             gMessageLines.lines[1] = gSaveChoiceNo;
             gMessageChoice = -1;
-            gGameState |= 0x10;
+            gGameState |= GAME_STATE_INN_CHOICE;
             break;
         default:
             StartNPCText(&gNpcs[index], gNpcs[index].record->message);
@@ -417,24 +390,24 @@ void ResumeNpcAfterTalk(s32 index) {
     NpcRecord* rec;
 
     rec = gNpcs[index].record;
-    if (rec->kind == 2) {
-        gNpcs[index].state = 0;
+    if (rec->kind == NPC_KIND_WANDERS) {
+        gNpcs[index].state = NPC_STATE_STAND;
         gNpcs[index].timer = getRandomNumber(30) + 30;
         return;
     }
-    if (rec->flags & 2) {
-        gNpcs[index].state = 0;
+    if (rec->flags & NPC_REC_NO_TURN) {
+        gNpcs[index].state = NPC_STATE_STAND;
         gNpcs[index].timer = rec->anims->frames;
         return;
     }
-    gNpcs[index].state = 3;
+    gNpcs[index].state = NPC_STATE_TURN_BACK;
     gNpcs[index].timer = 0xF;
     SetAnimation(&gNpcs[index].transform, 1, 1, 1, 1, 1);
 }
 void StartNPCText(Npc* npc, s32 textOffset) {
     s32 i;
 
-    dma_write(textOffset + dialogue_bank_ROM_START, gTextBuffer, 0x4B0);
+    dma_write(textOffset + dialogue_bank_ROM_START, gTextBuffer, MESSAGE_TEXT_SIZE);
     if (npc->record->name != 0) {
         for (i = 0; i != 0x20; i++) {
             gSpeakerName[i] = (npc->record->name)[i];
@@ -443,14 +416,14 @@ void StartNPCText(Npc* npc, s32 textOffset) {
         gSpeakerName[0] = 0xFF;
     }
 }
-void StartEndingText(s32 index, u8* text) {
+void StartNPCTextFromRAM(s32 index, u8* text) {
     s32 i;
     u8* dst;
     Npc* npc;
 
     dst = gTextBuffer;
 
-    for (i = 0x4B0; i != 0; i--) {
+    for (i = MESSAGE_TEXT_SIZE; i != 0; i--) {
         *dst++ = *text++;
     }
 
@@ -477,7 +450,7 @@ void ResetEnemies(void) {
         enemy++;
         i++;
     }
-    if (gSubmapFlags & 1) {
+    if (gSubmapFlags & SUBMAP_ENCOUNTERS) {
         LoadMonsterSet();
     }
 }
@@ -497,7 +470,7 @@ void UpdateEnemies(void) {
         }
     }
 
-    if (gBattleState & 0x100) {
+    if (gBattleState & BATTLE_BOSS) {
         UpdateBossEffectScript();
     }
 }
@@ -587,7 +560,7 @@ void SpawnEnemy(s32 id, f32 x, f32 z, f32 yrot, MonsterBattleData* m, EnemyActio
     e->monBaseData = base;
     e->currHP = base->maxHP;
     e->currMP = base->maxHP;   /* from maxHP: maxMP is 0 in every record */
-    e->actionID = 0;
+    e->actionID = ENEMY_ACTION_IDLE;
     e->flags = 0;
     e->movementBoundSize = (f32)(u32)base->agi * 0.2857 + 17.0;
     e->pushZ = 0.0;
@@ -652,28 +625,28 @@ void SortTurnOrder(void) {
 void FlagTurnEnemy(void) {
     gEnemies[gTurnOrder[gTurnIndex]].flags |= 1;
 }
-void EnemyHitReaction(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* anims) {
+void EnemyIdle(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* anims) {
     EnemyAIOption* option;
 
     GetRootMotionOffset(actor, &gEnemyStep);
     MoveEnemy(0, gEnemyStep.x, gEnemyStep.y, actor, enemy);
-    if (enemy->flags & 1) {
+    if (enemy->flags & ENEMY_FLAG_TURN) {
         gCardEnemy = enemy;
         gMonsterCardTimer = 0x3C;
-        enemy->flags &= ~3;
-        if (enemy->battleData.statsBuf.statusFlags & 8) {
+        enemy->flags &= ~(ENEMY_FLAG_TURN | ENEMY_FLAG_AT_LEASH);
+        if (enemy->battleData.statsBuf.statusFlags & STATUS_IMMOBILE) {
             EndBattleTurn(actor);
             return;
         }
         option = PickEnemyAIOption(enemy, actor);
         if (option != NULL) {
-            if (!(enemy->flags & 0x10)) {
+            if (!(enemy->flags & ENEMY_FLAG_OUT_OF_RANGE)) {
                 CommitEnemyAIOption(enemy, actor, option);
                 return;
             }
-            enemy->actionID = 1;
+            enemy->actionID = ENEMY_ACTION_APPROACH;
             enemy->tries = 4;
-            if (gBattleState & 0x100) {
+            if (gBattleState & BATTLE_BOSS) {
                 enemy->actionTimer = anims[1].frames;
                 SetAnimation(&actor->transform, 1, 1, 1, 1, 1);
                 return;
@@ -682,9 +655,9 @@ void EnemyHitReaction(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
             SetAnimation(&actor->transform, 1, 10, 1, 10, 1);
             return;
         }
-        enemy->actionID = 1;
+        enemy->actionID = ENEMY_ACTION_APPROACH;
         enemy->tries = 4;
-        if (gBattleState & 0x100) {
+        if (gBattleState & BATTLE_BOSS) {
             enemy->actionTimer = anims[1].frames;
             SetAnimation(&actor->transform, 1, 1, 1, 1, 1);
             return;
@@ -701,7 +674,7 @@ void SelectEnemyAction(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* 
 
     TurnActorToward(actor, gPlayerState.brian.transform.pos.x, gPlayerState.brian.transform.pos.z);
 
-    if (gBattleState & 0x100) {
+    if (gBattleState & BATTLE_BOSS) {
         gEnemyStep.x = 0.0f;
         gEnemyStep.y = 0.4f;
         rotateCoordinatesByAngle(actor->transform.yrot, &gEnemyStep);
@@ -723,11 +696,11 @@ void SelectEnemyAction(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* 
                 CommitEnemyAIOption(enemy, actor, enemy->defaultOption);
                 return;
             }
-            if ((enemy->tries == 0) || (enemy->flags & 2)) {
+            if ((enemy->tries == 0) || (enemy->flags & ENEMY_FLAG_AT_LEASH)) {
                 CommitEnemyAIOption(enemy, actor, enemy->defaultOption);
                 return;
             }
-            if (gBattleState & 0x100) {
+            if (gBattleState & BATTLE_BOSS) {
                 enemy->actionTimer = anims[1].frames;
                 return;
             }
@@ -740,13 +713,13 @@ void SelectEnemyAction(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* 
             CommitEnemyAIOption(enemy, actor, randomized_option);
             return;
         }
-        if ((enemy->tries == 0) || (enemy->flags & 2)) {
-            enemy->actionID = 0;
+        if ((enemy->tries == 0) || (enemy->flags & ENEMY_FLAG_AT_LEASH)) {
+            enemy->actionID = ENEMY_ACTION_IDLE;
             SetAnimation(&actor->transform, 0, 1, 0, 1, 1);
             EndBattleTurn(actor);
             return;
         }
-        if (gBattleState & 0x100) {
+        if (gBattleState & BATTLE_BOSS) {
             enemy->actionTimer = anims[1].frames;
             return;
         }
@@ -769,7 +742,7 @@ void EnemyKnockback(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
             PlaySound(0, 0xA, 0xFF);
             return;
         }
-        enemy->actionID = 0;
+        enemy->actionID = ENEMY_ACTION_IDLE;
         actor->transform.stateFlags &= ~(ACTOR_BUSY | ACTOR_NO_MELEE_HIT);
     }
 }
@@ -779,7 +752,7 @@ void EnemyFaceBrian(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* ani
     MoveEnemy(0, gEnemyStep.x, gEnemyStep.y, actor, enemy);
     enemy->actionTimer--;
     if (enemy->actionTimer == 0) {
-        enemy->actionID = 0;
+        enemy->actionID = ENEMY_ACTION_IDLE;
         actor->transform.stateFlags &= ~ACTOR_BUSY;
         EndBattleTurn(actor);
     }
@@ -812,7 +785,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                 GetRootMotionOffset(actor, &gEnemyStep);
                 MoveEnemy(0, gEnemyStep.x, gEnemyStep.y, actor, enemy);
             }
-            if (!(gPlayerState.brian.transform.stateFlags & ACTOR_NO_MELEE_HIT) && !(enemy->flags & 8)) {
+            if (!(gPlayerState.brian.transform.stateFlags & ACTOR_NO_MELEE_HIT) && !(enemy->flags & ENEMY_FLAG_HIT_RESOLVED)) {
                 dx = gPlayerState.brian.transform.pos.x - actor->transform.pos.x;
                 dz = gPlayerState.brian.transform.pos.z - actor->transform.pos.z;
                 dist = sqrtf(dx * dx + dz * dz) - gPlayerState.brian.transform.scale * gPlayerState.stats->radius;
@@ -820,9 +793,9 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                     if (EnemyAgilityCheck(actor) != 0) {
                         /* damage holds the attack's power first, then what Brian took */
                         damage = CalcEnemyMeleeDamage(enemy);
-                        hitFlags = 0x8004;
-                        if (enemy->flags & 0x20) {
-                            hitFlags = 0xC004;
+                        hitFlags = HIT_PHYSICAL | HIT_NO_MELEE;
+                        if (enemy->flags & ENEMY_FLAG_CRITICAL) {
+                            hitFlags = HIT_PHYSICAL | HIT_CRITICAL | HIT_NO_MELEE;
                         }
                         damage = DamageBrian(damage, hitFlags, actor);
                         gEnemyStep.x = 0.0f;
@@ -830,7 +803,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                         rotateCoordinatesByAngle(actor->transform.yrot, &gEnemyStep);
                         SpawnStaffHitEffect(actor->transform.pos.x + gEnemyStep.x, actor->transform.pos.y + actor->transform.base.monster->height * actor->transform.scale * 0.7f,
                                       actor->transform.pos.z + gEnemyStep.y);
-                        if (enemy->battleData.statsBuf.statusFlags & 2) {
+                        if (enemy->battleData.statsBuf.statusFlags & STATUS_DRAIN) {
                             /* draining: the enemy heals a quarter of the damage, plus one */
                             damage = ((damage + 3) >> 2) + 1;
                             enemy->currHP += damage;
@@ -838,13 +811,13 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
                                 enemy->currHP = actor->transform.base.monster->maxHP;
                             }
                             SpawnDamageNumber(actor, 1, damage);
-                            UpdateStatusVisuals(actor, 2, 1, 30);
+                            UpdateStatusVisuals(actor, STATUS_DRAIN, 1, 30);
                         }
                     } else {
                         StartBrianDodge();
                         gPlayerState.stats->agiXP++;
                     }
-                    enemy->flags |= 8;
+                    enemy->flags |= ENEMY_FLAG_HIT_RESOLVED;
                 }
             }
             enemy->actionTimer--;
@@ -869,7 +842,7 @@ void EnemyMeleeAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* a
             MoveEnemy(0, gEnemyStep.x, gEnemyStep.y, actor, enemy);
             enemy->actionTimer--;
             if (enemy->actionTimer == 0) {
-                enemy->actionID = 0;
+                enemy->actionID = ENEMY_ACTION_IDLE;
                 actor->transform.stateFlags &= ~ACTOR_BUSY;
             }
             break;
@@ -908,7 +881,7 @@ void EnemyCastAttack(MonsterBattleData* actor, EnemyAction* enemy, AnimEntry* an
             }
             enemy->actionTimer--;
             if (enemy->actionTimer == 0) {
-                enemy->actionID = 0;
+                enemy->actionID = ENEMY_ACTION_IDLE;
                 actor->transform.stateFlags &= ~ACTOR_BUSY;
                 enemy->pushX = 0.0f;
                 enemy->pushZ = 0.0f;
@@ -947,7 +920,7 @@ EnemyAIOption* PickEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor) {
     u32 i;
 
     brian = &gPlayerState.brian.transform;
-    enemy->flags &= ~0x10;
+    enemy->flags &= ~ENEMY_FLAG_OUT_OF_RANGE;
     dx = gPlayerState.brian.transform.pos.x - actor->transform.pos.x;
     dz = gPlayerState.brian.transform.pos.z - actor->transform.pos.z;
     dist = sqrtf((dx * dx) + (dz * dz)) - (brian->base.monster->radius * brian->scale);
@@ -986,7 +959,7 @@ EnemyAIOption* PickEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor) {
                     }
                     flag = 1;
                     if (option != other) {
-                        enemy->flags |= 0x10;
+                        enemy->flags |= ENEMY_FLAG_OUT_OF_RANGE;
                     }
                     break;
                 }
@@ -996,7 +969,7 @@ EnemyAIOption* PickEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor) {
             sum = (enemy->movementBoundSize * enemy->battleData.statsBuf.moveScale) + range;
             if (dist < sum) {
                 if (range < dist) {
-                    enemy->flags |= 0x10;
+                    enemy->flags |= ENEMY_FLAG_OUT_OF_RANGE;
                 }
                 flag = 1;
                 break;
@@ -1006,7 +979,7 @@ EnemyAIOption* PickEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor) {
     if (flag == 0) {
         option = NULL;
     }
-    if (enemy->monBaseData->aiFlags & 4) {
+    if (enemy->monBaseData->aiFlags & MONSTER_AI_RANDOM) {
         count = enemy->monBaseData->aiScriptNumber;
         option = &enemy->monBaseData->aiOptions[getRandomNumber(count)];
     }
@@ -1019,21 +992,21 @@ void CommitEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor, EnemyAIOp
     s32 nextAnim;
 
     isSpell = option->action_tag & AI_ACTION_SPELL;
-    if ((isSpell != 0) && (enemy->battleData.statsBuf.statusFlags & 0x40)) {
-        enemy->actionID = 0;
+    if ((isSpell != 0) && (enemy->battleData.statsBuf.statusFlags & STATUS_SILENCE)) {
+        enemy->actionID = ENEMY_ACTION_IDLE;
         SetAnimation(&actor->transform, 0, 1, 0, 1, 1);
         EndBattleTurn(actor);
         return;
     }
     if (isSpell != 0) {
-        enemy->actionID = 5;
+        enemy->actionID = ENEMY_ACTION_CAST;
     } else {
-        enemy->actionID = 4;
+        enemy->actionID = ENEMY_ACTION_MELEE;
     }
 
     enemy->phase = 0;
     enemy->actionTimer = option->cast_delay;
-    enemy->flags &= ~0x28;
+    enemy->flags &= ~(ENEMY_FLAG_HIT_RESOLVED | ENEMY_FLAG_CRITICAL);
 
     actor->transform.stateFlags = ACTOR_BUSY;
     actor->transform.yrot = Atan2(gPlayerState.brian.transform.pos.x - actor->transform.pos.x, gPlayerState.brian.transform.pos.z - actor->transform.pos.z);
@@ -1049,7 +1022,7 @@ void CommitEnemyAIOption(EnemyAction* enemy, MonsterBattleData* actor, EnemyAIOp
     if (enemy->actionTimer == 0) {
         enemy->actionTimer = 1;
     }
-    if (gBattleState & 0x100) {
+    if (gBattleState & BATTLE_BOSS) {
         StartBossEffectScript(option->action_tag & 0xFF, enemy);
     }
 }
@@ -1071,11 +1044,6 @@ void TurnActorToward(MonsterBattleData* actor, f32 targetX, f32 targetZ) {
         actor->transform.yrot += 6.283185307179586;
     }
 }
-extern f32 gBattleCenterX;               /* the battle circle's centre x */
-extern f32 gBattleCenterZ;               /* and z */
-extern f32 gTurnCenterX;               /* the turn\'s movement circle centre x */
-extern f32 gTurnCenterZ;               /* and z */
-extern f32 gBattleRadius;               /* the battle circle's radius */
 void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) {
     f32 dist;
     f32 ddx;
@@ -1098,7 +1066,7 @@ void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) 
         if (reach < dist) {
             dx = ((reach * ddx) / dist - m->transform.pos.x) + gTurnCenterX;
             dz = ((reach * ddz) / dist - m->transform.pos.z) + gTurnCenterZ;
-            e->flags |= 2;
+            e->flags |= ENEMY_FLAG_AT_LEASH;
         }
     }
     ddx = (m->transform.pos.x + m->transform.xspeed) - gBattleCenterX;
@@ -1115,7 +1083,7 @@ void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) 
     m->transform.zspeed = dz;
     m->transform.pos.x += dx;
     m->transform.pos.z += dz;
-    if (base->monsterType == ON_GROUND && e->actionID != 0) {
+    if (base->monsterType == ON_GROUND && e->actionID != ENEMY_ACTION_IDLE) {
         mask = 0xA01;
     }
     gEnemyFloorPoll.x = base->radius * base->modelScale;
@@ -1123,7 +1091,7 @@ void MoveEnemy(s32 leash, f32 dx, f32 dz, MonsterBattleData* m, EnemyAction* e) 
     m->transform.pos.x = gEnemyFloorPoll.x;
     m->transform.pos.y = gEnemyFloorPoll.y;
     m->transform.pos.z = gEnemyFloorPoll.z;
-    if (e->flags & 4) {
+    if (e->flags & ENEMY_FLAG_SUNK) {
         m->transform.pos.y -= 30.0;
     }
     m->transform.shadowXRot = gEnemyFloorPoll.sn_x;
@@ -1230,7 +1198,6 @@ s32 EnemyAgilityCheck(MonsterBattleData *actor)
   chance = (agi * 100) / (agi + ((gPlayerState.brian.stats->agi + 7) >> 3));
   return getRandomNumber(100) < chance;
 }
-extern u8 gCritFade[];             /* the critical hit cue (spells.c plays it too) */
 u16 CalcEnemyMeleeDamage(EnemyAction* enemy) {
     u16 damage = enemy->battleData.statsBuf.atk;
 
@@ -1238,14 +1205,13 @@ u16 CalcEnemyMeleeDamage(EnemyAction* enemy) {
     if (getRandomNumber(0x20) == 0) {
         damage += damage >> 1;
         StartScreenFade(4, 0, gCritFade);
-        enemy->flags |= 0x20;
+        enemy->flags |= ENEMY_FLAG_CRITICAL;
     }
-    if (enemy->battleData.statsBuf.statusFlags & 1) {
+    if (enemy->battleData.statsBuf.statusFlags & STATUS_SHRUNK) {
         damage >>= 1;
     }
     return damage;
 }
-extern s32 gElementMasks[];             /* element bits per element */
 u16 DamageEnemy(s32 index, u16 damage, u16 element, u16 flags, MonsterBattleData* attacker) {
     EnemyAction* enemy;
     MonsterBattleData* actor;
@@ -1257,7 +1223,7 @@ u16 DamageEnemy(s32 index, u16 damage, u16 element, u16 flags, MonsterBattleData
     if (enemy->currHP != 0) {
         actor = &enemy->battleData;
         if (damage) {
-            if (!(flags & 0x8000)) {
+            if (!(flags & HIT_PHYSICAL)) {
                 switch (gElementMasks[enemy->monBaseData->element] | gElementMasks[element]) {
                     case 1:
                     case 2:
@@ -1297,21 +1263,21 @@ u16 DamageEnemy(s32 index, u16 damage, u16 element, u16 flags, MonsterBattleData
             } else {
                 enemy->currHP -= damage;
             }
-            if (enemy->battleData.statsBuf.statusFlags & 0x200) {
+            if (enemy->battleData.statsBuf.statusFlags & STATUS_MP_ABSORB) {
                 enemy->currMP += damage;
                 if (actor->transform.base.monster->maxMP < enemy->currMP) {
                     enemy->currMP = actor->transform.base.monster->maxMP;
                 }
-                UpdateStatusVisuals(actor, 0x200, 2, 0x1E);
+                UpdateStatusVisuals(actor, STATUS_MP_ABSORB, 2, 0x1E);
             }
-            SpawnDamageNumber(actor, (flags & 0x4000) ? 0x8003 : 0, damage);
+            SpawnDamageNumber(actor, (flags & HIT_CRITICAL) ? 0x8003 : 0, damage);
         }
-        enemy->actionID = 2;
+        enemy->actionID = ENEMY_ACTION_HIT;
         actor->transform.stateFlags |= ACTOR_BUSY;
-        if (flags & 4) {
+        if (flags & HIT_NO_MELEE) {
             actor->transform.stateFlags |= ACTOR_NO_MELEE_HIT;
         }
-        if (gBattleState & 0x100) {
+        if (gBattleState & BATTLE_BOSS) {
             enemy->actionTimer = anims[enemy->monBaseData->hitAnim].frames;
             SetAnimation(&actor->transform, enemy->monBaseData->hitAnim, 1, 0, 1, 1);
         } else {
@@ -1319,7 +1285,7 @@ u16 DamageEnemy(s32 index, u16 damage, u16 element, u16 flags, MonsterBattleData
             SetAnimation(&actor->transform, enemy->monBaseData->hitAnim, 10, 0, 1, 1);
         }
     }
-    if (flags & 0x8000) {
+    if (flags & HIT_PHYSICAL) {
         PlaySound(0, 0x18, 0xFF);
     }
     return damage;
@@ -1339,8 +1305,6 @@ s32 GetEnemyIndex(MonsterBattleData* battleData) {
     }
     return i;
 }
-extern SpellAnimStage gEnemySpellEffects[];     /* the enemies' effect stages: the boss scripts count them flat; stages 18-21 with the 8 bytes after them are the landing burst's SpellAnimDef */
-extern EffectSpawnDef gEffectModels[];   /* effect models */
 void SpawnEnemyLandingBurst(MonsterBattleData* actor) {
     f32 y;
     EffectSpawnDef* model;
@@ -1356,7 +1320,7 @@ void SpawnEnemyLandingBurst(MonsterBattleData* actor) {
     } else {
         y = actor->transform.pos.y + actor->transform.base.monster->height * 0.5 * actor->transform.scale;
     }
-    SpawnEffectObject(def->land_color, def->land_duration, actor->transform.pos.x, y, actor->transform.pos.z, actor->transform.yrot, model, (OddVector*)&gEnemyStep, &actor->transform);
+    SpawnEffectObject(def->land_color, def->land_flags, actor->transform.pos.x, y, actor->transform.pos.z, actor->transform.yrot, model, (OddVector*)&gEnemyStep, &actor->transform);
     QueueSparkleBurst(2, 0x1E, actor->transform.pos.x, actor->transform.base.monster->height * actor->transform.scale + y, actor->transform.pos.z,
                   actor->transform.base.monster->radius * actor->transform.scale * 3.6);
 }
@@ -1369,7 +1333,6 @@ void StartBossEffectScript(s32 id, EnemyAction* enemy) {
     gBossEffectScript.enemy = enemy;
     gBossEffectScript.battleData = &gEnemies[0].battleData;
 }
-extern SpellDef* gSpellDefs[];
 void UpdateBossEffectScript(void) {
     BossFxEntry* fx;
     EnemyAction* boss;
@@ -1427,7 +1390,7 @@ void UpdateBossEffectScript(void) {
                 } else {
                     ((OddVector*)&gEnemyStep)->scale = actor->transform.collisionScale;
                 }
-                SpawnEffectObject(stage->color, stage->duration, x, y, z, actor->transform.yrot + fx->angle, model, (OddVector*)&gEnemyStep,
+                SpawnEffectObject(stage->color, stage->flags, x, y, z, actor->transform.yrot + fx->angle, model, (OddVector*)&gEnemyStep,
                               &actor->transform);
             }
             if (fx->flags & 4) {

@@ -1,16 +1,20 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/collision.h"
 #include "game/math.h"
-extern MapModelData* gMapModelData;    /* (Quest D_80084F20) */
-extern NavMeshData* gWallNavmeshActors;              /* wall navmesh, actors (Quest D_80084F2C) */
-extern NavMeshData* gWallNavmeshCamera;              /* wall navmesh, camera (Quest D_80084F30) */
-extern s32 gCurrentSubmap;              /* current submap (Quest gNextSubmap) */
-extern ModelTransform* gMapModels;  /* (Quest D_80084F24) */
-extern ModelGeometry* gMapGeometry;              /* geometry table, 0x20 per entry (Quest D_80084F28) */
-extern f32 gCollisionRadius; /* collision radius (Quest D_80085340) */
-extern Submap* gSubmapHeader;
-extern u16 gBattleState;
-extern Coordinates2D gDoorOffset;
+#include "game/encounter.h"
+#include "game/hud.h"
+#include "game/map.h"
+/* ---- collision.c's .bss (0x800842F0-0x80084330): collision and doors. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more, structs too
+   (gPendingWarp, gDoorOffset). The D_ names marked unreferenced are space no code addresses (unknown
+   variables). ---- */
+f32 gCollisionRadius;                    /* collision radius (Quest D_80085340) */
+s32 D_800842F4;                          /* unreferenced (at least two variables before gPendingWarp; */
+s32 D_800842F8;                          /* unreferenced  0x800842FC may be padding) */
+PendingWarp gPendingWarp;                /* the pending warp: map, submap, entrance, ... */
+u16* gWarpDoorDest;                      /* the destination triple of the door last used */
+Coordinates2D gDoorOffset;
 
 void PollWorldCollision(f32 sample_x, f32 sample_y, f32 sample_z, u16 flags, CollisionPollingResult* result) {
     s32 tile_x;
@@ -381,7 +385,7 @@ s32 CheckDoorTriggers(f32 x, f32 z, f32 yaw) {
 
     submap = gSubmapHeader;
     ret = 0;
-    if (submap->doorCount == 0 || (gBattleState & 1)) {
+    if (submap->doorCount == 0 || (gBattleState & BATTLE_ACTIVE)) {
         return 0;
     }
     door = submap->doors;
@@ -401,7 +405,7 @@ s32 CheckDoorTriggers(f32 x, f32 z, f32 yaw) {
             if (dx < door->halfWidth && dz < door->halfDepth) {
                 /* inside the door's rectangle: warp if the door needs no facing or Brian faces it; either way
                    no other door is checked */
-                if ((door->flags & 2) || IsAngleWithin22(yaw - door->angle)) {
+                if ((door->flags & DOOR_ANY_FACING) || IsAngleWithin22(yaw - door->angle)) {
                     SetDoorWarp(door);
                     ret = 1;
                 }
@@ -422,18 +426,17 @@ s32 IsAngleWithin22(f32 angle) {
     }
     return angle < 0.39269908169872414;
 }
-extern u8 gInventory[150];          /* the inventory: item ids, 0xFF = empty */
 s32 CheckDoorKeyItem(MapDoor* door) {
     s32 i;
     s32 open;
 
-    if (door->flags & 0x30) {
+    if (door->flags & (DOOR_NEEDS_KEY | DOOR_REFUSES_KEY)) {
         for (i = 0; i < 150; i++) {
             if (door->keyItem == gInventory[i]) {
                 break;
             }
         }
-        if (door->flags & 0x10) {
+        if (door->flags & DOOR_NEEDS_KEY) {
             if (i < 150) {
                 open = 1;
             } else {
@@ -449,8 +452,6 @@ s32 CheckDoorKeyItem(MapDoor* door) {
     }
     return open;
 }
-extern PendingWarp gPendingWarp;     /* the pending warp: map, submap, entrance, ... */
-extern u16* gWarpDoorDest;              /* the destination triple of the door last used */
 void SetDoorWarp(MapDoor* door) {
     gWarpDoorDest = door->dest;
     gPendingWarp.map = gWarpDoorDest[0];

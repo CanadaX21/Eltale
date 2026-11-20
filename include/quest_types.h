@@ -1,6 +1,6 @@
-/* Types and #defines from Quest 64's headers (Mallos31/Quest @401fe0e), generated when the
- * decomp.wtf project was set up and edited by hand since (Eltale's names, sizes and comments).
- * No extern/prototype lines: Quest's declarations use Quest addresses. */
+/* The types and constants the game's modules share (docs/ARCHITECTURE.md, docs/DECLARATIONS.md). The section
+ * markers say which of Quest 64's headers (Mallos31/Quest @401fe0e) a type came from; the names, sizes and
+ * comments are this game's. No extern or prototype lines: those are in the module headers. */
 #ifndef _QUEST_TYPES_H_
 #define _QUEST_TYPES_H_
 #include <ultra64.h>
@@ -16,31 +16,10 @@ typedef union {
               xw, yw, zw, ww;
     };
 } MtxF;
-typedef struct {
-Vec3f pos;
-Vec3f rot;
-} PosRot; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef struct
-{
-    u8 red;
-    u8 green;
-    u8 blue;
-    u8 alpha;
-}Color_RGBA8; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 typedef struct unk_232f4_s{
     f32 x;
     f32 y;
 }Coordinates2D;
-typedef struct unk_1d924_s
-{
-    s32 unk0;
-    s16 unk4;
-    s16 unk6;
-    s32 unk8;
-    s32 unkC;
-    s32 unk10;
-    s32 unk14;
-}unk1d924s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 typedef struct {
     s32 type;                       /* 0 and 2 keep the camera's position */
     f32 x;
@@ -71,40 +50,59 @@ typedef struct {
     f32 angle;
     f32 halfWidth;
     f32 halfDepth;
-    u16 flags;          /* 2: no facing test; 0x10 opens only with keyItem, 0x20 only without it (CheckDoorKeyItem) */
-    u16 keyItem;        /* the item the 0x10 / 0x20 flags test */
+    u16 flags;          /* DOOR_ (below the struct), and the door's kind in bits 8-11 */
+    u16 keyItem;        /* the item DOOR_NEEDS_KEY / DOOR_REFUSES_KEY test */
     char unk18[2];
     u16 model;          /* the door model (index into gMapModels), copied to gPendingWarp.door when used */
     char unk1C[2];
     u16 dest[3];        /* 0x1E: map, submap and entrance the door leads to (SetDoorWarp) */
 }MapDoor;              /* a door / warp trigger, 0x24 (gSubmapHeader->doors[]): a box of half size
                           halfWidth x halfDepth at (x, z), turned by angle (the way Brian must face) */
+/* MapDoor.flags; gPendingWarp.doorFlags takes them when Brian walks into the door, then gArrivalFlags on the other side.
+   Bits 8-11 are the door's kind, which StartBrianDeparture and SpawnBrian switch on: 1 walk out and walk in, 2 and 3
+   leave through a door model (on arrival 2 comes through it, 3 walks in while it moves), 4 a door that opens. Kind 0 (two
+   doors, both DOOR_LEAVE_STANDING) has no departure of its own: without DOOR_LEAVE_STANDING no countdown would
+   start. Bit 0 (on 177 of the 538 doors) picks which way a door model is passed: BRIAN_ANIM_DOOR_FLAG1 and the door's
+   other animation (gDoorAnimAlt) */
+#define DOOR_ANY_FACING       0x02  /* the trigger works whichever way Brian faces (CheckDoorTriggers) */
+#define DOOR_LEAVE_STANDING   0x04  /* Brian stands 30 frames instead of leaving by the kind (StartBrianDeparture) */
+#define DOOR_ARRIVE_STANDING  0x08  /* Brian stands 15 frames instead of arriving by the kind (SpawnBrian) */
+#define DOOR_NEEDS_KEY        0x10  /* opens only with keyItem in the inventory (CheckDoorKeyItem) */
+#define DOOR_REFUSES_KEY      0x20  /* opens only without keyItem in the inventory (CheckDoorKeyItem) */
+#define WARP_ARRIVAL         0x108  /* how a warp sets Brian down (gArrivalFlags: the Wings, Return, Exit, a defeat, a new
+                                       game, the ending's scenes): DOOR_ARRIVE_STANDING, kind 1 */
 typedef struct {
     f32 x;
     f32 z;
     f32 yrot;
     char unkC[2];
-    u16 unkE;               /* copied to gEntranceDoorModel */
+    u16 doorModel;               /* copied to gEntranceDoorModel */
     char unk10[4];
-} MapEntrance;              /* 0x14: where Brian appears when he enters a submap (gSubmapHeader->entrances[gEntrance]) */
+} MapEntrance;              /* 0x14: where Brian appears when he enters a submap (gSubmapHeader->entrances[gPendingWarp.entrance]) */
 typedef struct {
     u16 modelSet;               /* this submap's model set (gMapHeader->modelSets[]) */
     u16 light;               /* its light record (gMapHeader->lights[]) */
     MapDoor* doors;
     s32 doorCount;          /* doors[] */
     MapEntrance* entrances;      /* entrances */
-    char unk10[2];
+    char unk10[2];          /* as a u16, the number of entrances the data gives the submap; no code reads it */
     u16 area;               /* the area: its NPC blob (LoadNPCArea) and its monster set (LoadMonsterSet) */
-    u16 flags;              /* copied to gSubmapFlags: bit 0 a town; 2, 4, 8 tested by the camera,
-                               the Return / Exit spells and the HUD */
+    u16 flags;              /* SUBMAP_ (below the struct); copied to gSubmapFlags */
 }Submap;                 /* a submap, 0x18 (gMapHeader->submaps[], gSubmapHeader) */
+/* Submap.flags (gSubmapFlags) */
+#define SUBMAP_ENCOUNTERS     0x1  /* random encounters (FieldLoop, InitEncounters) and the area's monster set
+                                      (ResetEnemies: LoadMonsterSet); no NPCs are set up (SetupNPCs); the walking that trains agility counts
+                                      800 units, not 1500 (UpdateBrianGrowth) */
+#define SUBMAP_FLOOR_CAMERAS  0x2  /* the camera setup follows the floor Brian stands on (its floor flags' bits 1-3), and
+                                      L does not cycle the setups (UpdateCamera) */
+#define SUBMAP_NO_RETURN      0x4  /* the Return spell and the Wings do nothing here (SpellEffect_Return,
+                                      CheckIfTeleportPossible) */
+#define SUBMAP_NO_EXIT        0x8  /* the Exit spell does nothing here, and the compass is not drawn (SpellEffect_Exit,
+                                      DrawHUD) */
 typedef struct FontStrip {
      char texels[0x7B8];         /* 304 x 13 texels, CI4 */
 } FontStrip;                     /* one strip of the font sheet (gFontSheet[], DrawString) */
 /* ---- from Quest include/player.h ---- */
-typedef struct {
-    u8 unk0[0x18];
-}AIScript;
 typedef struct {            /* one move an enemy's AI can pick (names from vbhayden's Quest 64 scratches) */
     u16 action_tag;         /* 0x00: AI_ACTION_SPELL, and below it the spell (element << 8 | index: gSpellDefs[element][index]);
                                in a boss battle the low byte also names the boss effect script (StartBossEffectScript) */
@@ -136,7 +134,7 @@ typedef struct {
      f32 height;     /* 0x1C: hit height: 0.5x mid-body, 1x the over-enemy icon, 2x where effects start above
                         (Quest decomp: hitboxWidth) */
      f32 modelScale;
-     u16 aiFlags;           /* 4 = pick an option at random (PickEnemyAIOption) */
+     u16 aiFlags;           /* MONSTER_AI_RANDOM (below the struct) */
      u16 element; 
      s16 hitAnim;           /* the animation it plays when hit (DamageEnemy) */
      u16 atk; 
@@ -147,9 +145,18 @@ typedef struct {
      u8 unk35;              /* 0 in every record; never read */
      u16 unk36;             /* 0 in every record; never read */
 } MonsterBaseData; 
+/* The elements (MonsterBaseData.element, BrianData1.spirits[], a spell's path[0], gElementMasks): the order of the C
+   buttons that start a spell (BrianSpellInput), and the game's own names on its spell banner */
+#define ELEMENT_FIRE   0   /* C up: Fire Ball */
+#define ELEMENT_EARTH  1   /* C left: Rock */
+#define ELEMENT_WATER  2   /* C down: Water Pillar */
+#define ELEMENT_WIND   3   /* C right: Wind Cutter */
+#define ELEMENT_NONE   4   /* no element: no icon on the monster card, and no pair rule in DamageEnemy */
+
+#define MONSTER_AI_RANDOM  0x4  /* MonsterBaseData.aiFlags: PickEnemyAIOption takes a move at random */
 typedef struct {
      u16 unk0;
-     s16 unk2;
+     s16 modelID;
      u16 currHP;
      u16 maxHP;
      u16 currMP;
@@ -157,11 +164,11 @@ typedef struct {
      u16 agi;
      u16 def;
      s32 exp;
-     s32 stone;             /* 0x14: the pre-release currency "stone", unused (Quest 64 decomp community name) */
+     s32 stone;             /* 0x14: the pre-release currency "stone" (Quest 64 decomp community name): battles won add to it; nothing spends or shows it */
      f32 radius;            /* 0x18: Brian's collision radius (copied to ActorTransform.collisionScale); was colissionSize */
      f32 height;            /* 0x1C: as MonsterBaseData's: effects start at fractions of height x scale */
      f32 modelScale;        /* 0x20: InitBrian copies it into his transform's scale (MonsterBaseData's modelScale) */
-     u8 spirits[4];         /* 0x24: fire, earth, water, wind */
+     u8 spirits[4];         /* 0x24: by element (ELEMENT_FIRE .. ELEMENT_WIND) */
      u16 HPXP;
      u16 MPXP;
      u16 agiXP;
@@ -229,7 +236,8 @@ typedef struct {                /* an actor's place, motion, model and animation
                                        DrawMapObjects) */
 typedef struct unk_D_80086DC0_s
 {
-    s32 mode;                       /* 0x00: the camera mode (a setup's type; 4 = spell, 5 = transition) */
+    s32 mode;                       /* 0x00: the camera mode, gCameraModeHandlers' index: 0 and 2 the field, 1
+                                       fixed, 3 aimed fixed, 4 a battle (and its spells), 5 after a battle */
     s32 timer;                      /* 0x04: frames of a timed override (flag 0x40) */
     u16 flags;                      /* 0x08: 0x10, 0x40 = set up / following (InitRoomCamera, SnapSpellCamera) */
     s16 unkA;
@@ -263,7 +271,9 @@ typedef struct unk_D_80086DC0_s
     f32 orbit_pull;            /* 0x78 */
     f32 orbit_drag;            /* 0x7C */
     ActorTransform* target_transform;    /* 0x80 */
-    f32 unk84;                 /* (ClampCameraToTarget: the target's yaw turned round, within -pi .. pi) */
+    f32 arrivalYaw;                 /* the camera's yaw from Brian's facing for the next submap's start (InitRoomCamera):
+                                  ClampCameraToTarget keeps it as Brian leaves through a door (within 45
+                                  degrees of behind him); behind him (pi) after a warp */
 }Camera; /* camera state, 0x88 (camera.c's gCamera); field names from vbhayden's Quest 64 scratches.
                    Quest's camera goes on to 0x120; Eltale keeps those parts as separate variables (camera.c's
                    gProjectionMtxF ... gCameraSetups, each with its own lui in LoadCameraSetup). */
@@ -284,7 +294,7 @@ typedef struct {
     f32 z;
 }StatusFxObject;
 typedef struct {
- u16  statusFlags;    /* 0x00: status bits; bit 0 halves Brian's staff damage (CalcStaffPower) */
+ u16  statusFlags;    /* 0x00: the STATUS_ bits (below the struct) */
  u8 statusTimers[0x10];       /* 0x02: per-status counters (CountDownStatuses counts them down) */
  u8 status[7];
  char unk19[0x9];
@@ -306,18 +316,50 @@ typedef struct {
                    movement radius is PlayerState.moveRadius times this */
  f32 flyY;
 } ActorStats;
+
+/* ActorStats.statusFlags: one bit per status slot (the bit is 1 << slot). gApplyStatusHandlers[slot] sets it, and
+   CountDownStatuses clears it when the slot's turns (statusTimers[slot]) run out. The effects are the handlers' and
+   the readers'. */
+#define STATUS_SHRUNK          0x0001  /* half size; its staff, melee and spell damage halved (slot 0; in a boss battle it
+                                          misses everyone) */
+#define STATUS_DRAIN           0x0002  /* its staff and melee hits heal it a quarter of the damage, plus one (slot 1) */
+#define STATUS_ATTACK_UP       0x0004  /* atkScale 0x18 (level 1) or 0x20 (level 2) (slot 2) */
+#define STATUS_IMMOBILE        0x0008  /* an enemy's turns end at once (EnemyIdle); Brian cannot move (BrianFieldMovement
+                                          zeroes his stick) but can still act. Its handler also sets ACTOR_BUSY, which
+                                          the end of the hit reaction the spell starts clears (EnemyKnockback, or
+                                          BrianState_KnockedDown for Brian, whom UpdateBrianGrowth then keeps clear
+                                          while he stands or walks) (slot 3; in a boss battle it misses everyone) */
+#define STATUS_MOVE_SCALE      0x0010  /* moveScale 0.5 (level 1) or 2.0 (level 2) (slot 4) */
+#define STATUS_AGILITY_SCALE   0x0020  /* agi x2 (level 1), x4 (2) or /2 (3) (slot 5) */
+#define STATUS_SILENCE         0x0040  /* cannot cast (slot 6; in a boss battle it misses everyone) */
+#define STATUS_REVEALED        0x0080  /* the monster card shows its stats and element (slot 7) */
+#define STATUS_SPELL_BARRIER   0x0100  /* another's spell makes no roll and has no effect on it, though one that does not
+                                          pierce still ends there; a self-target spell is not stopped (UpdateSpells)
+                                          (slot 8) */
+#define STATUS_MP_ABSORB       0x0200  /* the damage it takes is added to its MP (slot 9) */
+#define STATUS_DEFENCE_SCALE   0x0400  /* def /2 (level 1), x0.75 (2), x1.5 (3) or x2 (4) (slot 10) */
+#define STATUS_SLOT11          0x0800  /* set by its handler; no code reads it, and no spell's effects name the slot
+                                          (slot 11) */
+
+/* The flags DamageEnemy and DamageBrian take. A staff swing and an enemy's melee hit pass HIT_PHYSICAL | HIT_NO_MELEE,
+   and HIT_CRITICAL with them for a critical; a spell passes its SpellDef.on_hit, with HIT_CRITICAL for a critical, so
+   on_hit's SPELL_PIERCES (4) arrives here as HIT_NO_MELEE. */
+#define HIT_NO_MELEE   0x0004  /* the target is ACTOR_NO_MELEE_HIT while it reacts */
+#define HIT_CRITICAL   0x4000  /* shown in the critical number style (SpawnDamageNumber) */
+#define HIT_PHYSICAL   0x8000  /* no element; from behind (over 135 degrees off the target's facing) x1.5; the hit
+                                  sound */
 typedef struct {
      ActorTransform transform;     /* 0x00: place, model, animation, base data */
      ActorStats* stats;            /* 0x68: points at statsBuf (SpawnEnemy; InitBrian for Brian) */
      ActorStats statsBuf;          /* 0x6C */
 } MonsterBattleData;               /* 0x104: an actor in battle, an enemy's (EnemyAction.battleData) or Brian's
-                                      (PlayerState.brian = gBrian); the name is the Quest 64 decomps' */
+                                      (gPlayerState.brian); the name is the Quest 64 decomps' */
 typedef struct {
-     u16 actionID;   /* 0x00: the handler (gEnemyActionHandlers) */
+     u16 actionID;   /* 0x00: the handler gEnemyActionHandlers runs: ENEMY_ACTION_ (below the struct) */
      s16 actionTimer;
      u16 tries;      /* 0x04: AI attempts left */
      u16 phase;      /* 0x06: the attack's step (EnemyMeleeAttack / EnemyCastAttack switch on it) */
-     u16 flags;      /* 0x08: 2 = give up */
+     u16 flags;      /* 0x08: ENEMY_FLAG_ (below the struct) */
      u16 currHP;     /* 0x0A */
      u16 currMP;     /* 0x0C (was maxHP; drained by SpellEffect_DrainMP, capped by the base data's maxMP) */
      u16 unkE;
@@ -330,20 +372,34 @@ typedef struct {
      MonsterBaseData* monBaseData;
      MonsterBattleData battleData;
 } EnemyAction; 
+
+/* EnemyAction.actionID: the handler gEnemyActionHandlers runs for the enemy each frame (UpdateEnemies) */
+#define ENEMY_ACTION_IDLE       0  /* EnemyIdle: idle; at its turn the card, and the choice of a move */
+#define ENEMY_ACTION_APPROACH   1  /* SelectEnemyAction: walks toward Brian, then a move or the turn's end */
+#define ENEMY_ACTION_HIT        2  /* EnemyKnockback: hit (DamageEnemy); at 0 HP it dies */
+#define ENEMY_ACTION_FACE       3  /* EnemyFaceBrian: no code sets it */
+#define ENEMY_ACTION_MELEE      4  /* EnemyMeleeAttack */
+#define ENEMY_ACTION_CAST       5  /* EnemyCastAttack */
+
+/* EnemyAction.flags */
+#define ENEMY_FLAG_TURN          0x01  /* its turn has come (FlagTurnEnemy); EnemyIdle starts the turn and clears it */
+#define ENEMY_FLAG_AT_LEASH      0x02  /* it reached its turn's movement limit (MoveEnemy): the approach ends */
+#define ENEMY_FLAG_SUNK          0x04  /* placed 30 units lower (MoveEnemy; SpawnBoss sets it for Mammon) */
+#define ENEMY_FLAG_HIT_RESOLVED  0x08  /* this melee swing has hit or missed (EnemyMeleeAttack) */
+#define ENEMY_FLAG_OUT_OF_RANGE  0x10  /* PickEnemyAIOption chose a move out of reach: it approaches first */
+#define ENEMY_FLAG_CRITICAL      0x20  /* its melee hit is critical (CalcEnemyMeleeDamage) */
 typedef struct PlayerState {        /* Brian's state block (gPlayerState; Quest's BrianRoot) */
     u16 state;                      /* 0x00 (DrawBrian reads it with lhu) */
     u16 staffTarget;                       /* 0x02: the enemy targeted by the staff, 1-based (BrianState_StaffSwing) */
     u16 timer;                      /* 0x04: frames left in the state */
     u16 animCue;                       /* 0x06: an animation cue (SetAnimation plays it; the Exit / Return spells
                                        clear it; Quest names this offset doorSide) */
-    s32 flags;                      /* 0x08: bit 0x20 = left the battle circle (escape); 0x1000 << element =
-                                       that element at 50 spirits (gSpiritMaxBits), 0x10000 = all four
-                                       (both set by SpiritGainWindow) */
+    s32 flags;                      /* 0x08: PLAYER_ (below) */
     f32 moveRadius;                       /* times brian.statsBuf.moveScale: Brian's battle movement radius */
     s32 comboWindow;                      /* 0x10: battle start: spirit total less each element's excess over total / 4,
                                        then / 10 + 1, at most 16 (SetupBrianForBattle) */
     BrianData1* stats;              /* 0x14: gBrianStats */
-    MonsterBattleData brian;        /* 0x18: Brian in battle and in the field (gBrian): his
+    MonsterBattleData brian;        /* 0x18: Brian in battle and in the field (gPlayerState.brian): his
                                        stats pointer at 0x80 points at the statsBuf at 0x84 */
     u8 itemId;
     u8 path[3];                     /* 0x11D: the spell's directions so far, 0-3 (BrianSpellInput) */
@@ -358,50 +414,30 @@ typedef struct PlayerState {        /* Brian's state block (gPlayerState; Quest'
     f32 savedYRot;                  /* 0x134 */
     f32 endYaw;
 } PlayerState;
-/* ---- from Quest include/npc.h ---- */
-typedef struct {
-    char unk0[0x2];
-    s16 unk2;
-    char unk4[0xA];
-    s16 unkE;
-    
-}NPCData3; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef struct {
-    char unk0[0x4];
-    u8 unk4;
-    char unk5[0xB];
-    NPCData3* unk10;
-    char unk14[4];
-    u16 unk18;
-}NPCData2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef struct {
-u16 action;
-u16 actionTimer;
-f32 xWanderOrigin; 
-f32 zWanderOrigin; 
-f32 yRotReturn; 
-f32 unk10; 
-PosRot PosRot;
-f32 unk2C; 
-f32 unk30;
-f32 unk34;
-f32 scale;
-f32 collisionSize;
-Vec3f shadowRot;
-char unk4C[0x14];
-u16 unk60;
-char unk62[4];
-s16 animID;
-u16 animFrames;
-u16 totalFrames;
-u16 animSpeed;
-s16 unkAnimID; 
-s16 unk70;
-char unk72[0x2];
-u16 unk74;
-char unk76[0xA];
-NPCData2* unk80;    
-}NPCData; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
+
+/* PlayerState.flags */
+#define PLAYER_BOSS_SCENE      0x0001  /* a boss's scene is on: its battle starts when the message closes */
+#define PLAYER_PICKUP_MESSAGE  0x0002  /* the battle drop's message is on (UpdateBrianGrowth sets it only when it gives
+                                          the drop): GAME_STATE_MESSAGE ends with it */
+#define PLAYER_CAST_ON_SELF    0x0004  /* the spell being cast is on himself (BrianStartCast, BrianState_Cast) */
+#define PLAYER_OUTSIDE_CIRCLE  0x0020  /* outside the battle circle: he escapes at the next turn (StepBattleRound) */
+#define PLAYER_COMBO_INPUT     0x0100  /* A or Z in the staff swing's window: a second swing follows */
+#define PLAYER_SIGN_NO_POSE    0x0200  /* reading a SIGN_NO_POSE sign: no BRIAN_ANIM_SIGN_END when its message closes
+                                          (UpdateBrian sets it, BrianState_FaceAndMessage clears it) */
+#define PLAYER_STAFF_CRITICAL  0x0400  /* the staff swing is critical (CalcStaffPower) */
+#define PLAYER_AT_50(element)  (0x1000 << (element))   /* that element's spirits reached 50 (SpiritGainWindow,
+                                                     gSpiritMaxBits) */
+#define PLAYER_AT_50_BITS      0xF000   /* the four together */
+#define PLAYER_ALL_AT_50       0x10000  /* set with the fourth (SpiritGainWindow) */
+#define PLAYER_MESSAGE_HOLD    0x0010  /* a message the game opened keeps GAME_STATE_MESSAGE until every message window
+                                          has closed (BrianFieldMovement), and no one can be talked to meanwhile
+                                          (FindTalkTarget): set when Brian is put down away from an entrance
+                                          (SpawnBrian at entrance -1: a new game, the Wings, a respawn at a listed place, the ending's
+                                          and the staff credits' scenes)
+                                          and by the last boss's last words
+                                          (OnBossDefeated) */
+#define PLAYER_ITEM_GIVEN      0x0040  /* an NPC gave an item (NPC_TALK_ITEM): its sound plays when the talk ends
+                                          (BrianState_TalkEnd) */
 /* ---- from Quest include/hud.h ---- */
 #define U_CBUTTONS	CONT_E
 #define L_CBUTTONS	CONT_C
@@ -412,28 +448,9 @@ typedef struct {
     u16 ci4;                /* 0x04: 0 = CI8, else CI4 (loaded as 8-bit at half width) */
     u16 unk6;
     u32 width;              /* 0x08: texels per row */
-    s32 unkC;
+    s32 unkC;               /* 0x0C: the image's height in texels (45 the HUD font's, 80 the info window's);
+                               no code reads it */
 }HudImage;
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-    u16 unk6;
-    u16 unk8;
-    s16 unkA;
-    u16 unkC;
-    u16 unkE;
-    char unk10[0x16];
-    u16 unk26;
-    u16 unk28;
-    u16 unk2A;
-}unk203d0s2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef struct {
-    char unk0[0x20];
-    unk203d0s2* unk20;
-    char unk24[0x6C];
-    u16 unk90;    
-}unk203d0s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 typedef struct unk_20888_s{
     u16 displayTimer;
     s16 unk2;
@@ -446,38 +463,28 @@ typedef struct unk_20888_s{
     u16 width;
     u16 height;
 }MissIcon;
-typedef struct {
-    char unk0[0x24];
-    u8 unk24;
-    u8 unk25;
-    u8 unk26;
-    u8 unk27;
-}unk1f3dcTEST2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */ 
-typedef struct temp4 {
- u8 unk_00;
- char unk_01[5];
-} temp4;
-typedef struct temp2 {
- char unk_00[0x14];
- Vec3f unk_14;
- char unk_20[0x64];
-} temp2; 
 /* ---- from Quest include/inventory.h ---- */
 typedef struct unk_22260_s3{
-    u16 canBeUsed;
-    u16 type;
+    u16 canBeUsed;      /* ITEM_USE_ and ITEM_NOT_BOSS (below the struct) */
+    u16 type;           /* ITEM_TYPE_ */
     s16 itemArg1;
     s16 itemArg2;
-    u16 unk8;
-    u16 unkA;
+    u16 unk8;           /* 0 in every item record; never read */
+    u16 unkA;           /* the same */
 }ItemData;
+
+/* ItemData.canBeUsed (items 20-24 also carry 4, which no code reads) */
+#define ITEM_USE_FIELD   0x1
+#define ITEM_USE_BATTLE  0x2
+#define ITEM_NOT_BOSS    0x8   /* not in a boss battle (CheckIfSpellItemUsable) */
+/* ItemData.type: the handlers gItemCheckHandlers and gItemUseHandlers */
+#define ITEM_TYPE_NONE   0     /* NoEffectItem: never usable (the key items, 20-24, among them) */
+#define ITEM_TYPE_HEAL   1     /* itemArg1 HP, itemArg2 MP */
+#define ITEM_TYPE_WINGS  2     /* itemArg1 the destination (gWingData) */
+#define ITEM_TYPE_SPELL  3     /* itemArg1 the spell, cast SPELLSLOT_SURE */
+#define ITEM_TYPE_UNUSED_F 0xF /* no item record has it: RemoveKeyItem, which nothing calls, takes out the first
+                                 item of this type whose itemArg1 is the id it is given */
 /* ---- from Quest include/bgm.h ---- */
-typedef struct {
-    s16 map;
-    s16 submap;
-    s8 bgm;
-    s8 pad;
-}bgmData; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 typedef struct unk26658_s{
     u8 delay;
     s8 id;
@@ -487,19 +494,6 @@ typedef struct unk26658_s{
 typedef short int16_t;
 typedef int16_t   qs510_t;
 #define qs510(n)                      ((qs510_t)((n)*0x0400))
-typedef struct {
-    s32 unk0;
-    s32 unk4;
-    s32 unk8;
-    s32 unkC;
-}temps; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef struct TextPalette {
-     char colours[0x20];         /* 16 x RGBA5551 */
-} TextPalette;                   /* unused: gTextPalettes is read as u16 colours; kept: the header typedef count orders IDO .bss */
-/* ---- from Quest include/screen_dim.h ---- */
-#define SCREEN_DIMMABLE 1
-#define USE_TIMER 2
-#define SCREEN_BRIGHTENING 4
 /* ---- from Quest include/nnsched.h ---- */
 #include <ultra64.h>
 #define NN_SC_SWAPBUFFER   0x0040  
@@ -510,14 +504,23 @@ typedef struct TextPalette {
 #define NN_SC_MAX_MESGS    8  
 #define NN_SC_STACKSIZE    0x1000  /* each scheduler thread's stack (Quest 64's nnsched.h has 0x2000) */
 #define OS_SC_SWAPBUFFER   0x0040  /* as in the SDK sched.h */
-/* gGameMode (Quest64-Decomp's names, the last two are Eltale's) */
+/* gGameMode: which loop mainproc runs. Quest64-Decomp names modes 1 to 5 MODE_GAMEPLAY, MODE_PAUSED, MODE_TITLE,
+   MODE_SPLASH and MODE_CREDITS and defines no 0, 6 or 7; this decomp keeps MODE_GAMEPLAY, MODE_TITLE and
+   MODE_SPLASH, names 2 MODE_MENU and 5 MODE_EPILOGUE for what each mode does and shows, and names 0, 6 and 7
+   itself */
+#define MODE_NONE          0  /* none yet: mainproc starts the field loop again (FieldLoop's countdown to a new
+                                 place, EndSequenceScene) */
 #define MODE_GAMEPLAY      1
-#define MODE_PAUSED        2
+#define MODE_MENU          2  /* the Start menu, and its save pages for the inn's save and the title's load and
+                                 delete (EnterSaveMode); MenuLoop */
 #define MODE_TITLE         3
 #define MODE_SPLASH        4
-#define MODE_CREDITS       5
-#define MODE_ENDING        6
-#define MODE_AFTER_CREDITS 7
+#define MODE_EPILOGUE      5  /* the epilogue: a narration scrolls over a painting of the castle in the clouds, with no
+                                 credits (EpilogueLoop; the overlay's segment keeps the historical name
+                                 credits_overlay); it starts the credits' song; then MODE_STAFF_CREDITS (BuildFrame) */
+#define MODE_ENDING        6  /* the ending's seven scenes (EndingLoop, gEndingScenes); then MODE_EPILOGUE */
+#define MODE_STAFF_CREDITS 7  /* the staff credits: fourteen scenes of the world with their credit images, then End
+                                 (StaffCreditsLoop, gSceneSequence); then a new game (EndSequenceScene) */
 #define NN_SC_PRI          120  
 #define NN_SC_AUDIO_PRI    110  
 #define NN_SC_GRAPHICS_PRI 100  
@@ -576,35 +579,9 @@ typedef struct {
   
   u32         firstTime;  
 } NNSched;
-typedef struct {
-  u32 gtask_cnt;                        
-  u32 autask_cnt;                       
-  u64 retrace_time;                     
-  u64 gtask_stime[NN_SC_GTASK_NUM];   
-  u64 rdp_etime[NN_SC_GTASK_NUM];     
-  u64 rsp_etime[NN_SC_GTASK_NUM];     
-  u64 autask_stime[NN_SC_AUTASK_NUM]; 
-  u64 autask_etime[NN_SC_AUTASK_NUM]; 
-  u32 endflag;
-} NNScPerf; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 #ifdef NN_SC_PERF
 #endif 
 /* ---- from Quest include/guint.h ---- */
-typedef union
-{
-	struct
-	{
-		unsigned int hi;
-		unsigned int lo;
-	} word;
-
-	double	d;
-} du; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-typedef union
-{
-	unsigned int	i;
-	float		f;
-} fu; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 #ifndef __GL_GL_H__
 typedef	float	Matrix[4][4];
 #endif
@@ -612,11 +589,6 @@ typedef	float	Matrix[4][4];
 #define	ABS(d)		((d) > 0) ? (d) : -(d)
 /* ---- from Quest include/osint.h ---- */
 #include <os_internal.h>
-typedef struct __OSEventState
-{
-    OSMesgQueue *messageQueue;
-    OSMesg message;
-} __OSEventState;
 /* ---- from Quest include/viint.h ---- */
 #include <os_internal.h>
 #define OS_TV_TYPE_PAL 0
@@ -670,13 +642,6 @@ typedef struct
 } __OSViContext;
 /* ---- typedefs from Quest .c files under src ---- */
 /* 12740.c */
-typedef struct unk_1205c_s
-{
-    char unk0[0x60];
-    u16 unk60;
-    u16 unk62;
-}unk1205cs; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 12740.c */
 typedef struct {
     f32 x;
     f32 y;
@@ -687,14 +652,6 @@ typedef struct {
     u8 flag;                        /* 0x14: its found flag (SetSpiritFound) */
     char unk15[0x3];
 }Spirit;
-/* 12740.c */
-typedef struct {
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-}unk12358s; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
 /* 12740.c */
 typedef struct unkD_80086EE0_s
 {
@@ -707,74 +664,6 @@ typedef struct unkD_80086EE0_s
     f32 orbitPull;
     f32 orbitDrag;
 }CameraTransition;
-/* 15440.c */
-typedef struct {
-    s32 unk0;
-    u16 unk4;
-    char unk6[0x36];
-}unk15b50s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 15440.c */
-typedef struct unk_16ffc_s{
-    char unk0[0x24];
-    s32 unk24;
-    s32 unk28;
-}unk16ffcs; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 15440.c */
-typedef struct unk_164e4_s{
-    char unk0[0xA];
-    u16 unkA;
-}unk164e4s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 15440.c */
-typedef struct {
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-}tempStruct14F48_3; /* unused (replaced by SpellSlot / SpellDef / MonsterBattleData / SpellFx); kept: removing it can move IDO's .bss order */
-/* 15440.c */
-typedef struct {
-    u16 unlockLevel;    /* 0x00: the element level needed */
-    u16 flags;          /* 0x02: 1 battle, 2 field, 4 carries on after a hit, 8 aim by its own direction */
-    u16 presses;        /* 0x04: 1-3, the MP cost index */
-    u8 path[3];         /* 0x06: the directions; path[0] = the element */
-    u8 unk9;
-    u16 lifetime;       /* 0x0A: frames (object +0x04) */
-    u16 power;          /* 0x0C */
-    u16 hitRate;        /* 0x0E: % */
-    u16 effect;         /* 0x10: effect routine */
-    u16 movement;       /* 0x12: movement routine */
-    u16 heightSnapping; /* 0x14: 1 = stop at the ground */
-    char unk16[2];
-    u16 targetType; /* Quest: x2C_spell_def->targetType (2 = self) */
-    char unk1A[2];
-    f32 unk1C;
-    char unk20[0xA];
-    u16 gravity;    /* 0x2A: bit 0 = falls (Quest "angle") */
-}tempStruct14F48_2; /* unused (replaced by SpellSlot / SpellDef / MonsterBattleData / SpellFx); kept: removing it can move IDO's .bss order */ /* spell definition */
-typedef struct {
-    u16 unk0;
-    char unk2[6];
-    u16 unk8;
-} tempStruct14F48_4; /* unused (replaced by SpellSlot / SpellDef / MonsterBattleData / SpellFx); kept: removing it can move IDO's .bss order */ /* spell effect object (Quest unk34) */
-/* 15440.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    u16 range;      /* 0x04 */
-    u16 unk6;
-    u16 unk8;
-    u16 flags;      /* 0x0A: bit 0 = hit the ground */
-    f32 unkC;       /* x */
-    f32 unk10;      /* y */
-    f32 unk14;      /* z */
-    f32 vx;         /* 0x18 */
-    f32 vy;         /* 0x1C */
-    f32 vz;         /* 0x20 */
-    s32 caster; /* Quest: x24_caster */
-    tempStruct14F48_3* unk28;
-    tempStruct14F48_2* unk2C;
-    s32 unk30;
-    tempStruct14F48_4* unk34;
-}tempStruct14F48; /* unused (replaced by SpellSlot / SpellDef / MonsterBattleData / SpellFx); kept: removing it can move IDO's .bss order */ /* spell object; field names from vbhayden's Quest 64 scratches */
 /* 1850.c */
     typedef unsigned            uintptr_t;
 /* 1850.c */
@@ -792,71 +681,6 @@ typedef struct OSScTask_s {
     OSTime              totalTime;      
 #endif                                  
 } OSScTask;                             
-/* 1850.c */
-typedef struct {
-    OSScTask task;
-    char unk58[0xD0F0];
-    OSMesg unkD148;
-    void *unkD14C; 
-}unk111Cs;
-/* 191F0.c */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-    u8 unk3;
-}unk19918s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 191F0.c */
-typedef struct {
-    s32 unk0;
-    s32 unk4;
-    s32 unk8;
-    s32 unkC;
-    s32 unk10;
-    s32 unk14;
-    s32 unk18;
-    s32 unk1C;
-}unk18684s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 191F0.c */
-typedef struct {
-    s32 unk0;
-    char unk4[0x14];
-    s32 unk18;
-    char unk1C[0x14];
-    s32 unk30;
-    char unk34[0x14];
-    s32 unk48;
-    char unk4C[0x14];
-}unk19324s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 191F0.c */
-typedef struct {
-    u16 unk0;
-    s16 unk2;
-    s16 unk4;
-    s16 unk6;
-    s16 unk8;
-    s16 unkA;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
-    f32 unk18;
-    f32 unk1C;
-    f32 unk20;
-    f32 unk24;
-    f32 unk28;
-    f32 unk2C;
-    f32 unk30;
-    s32 unk34; 
-    s16 unk38;
-    s16 unk3A;
-    s32 unk3C;
-    s32 unk40;
-    s32 unk44;
-    s32 unk48;
-    s32 unk4C;
-    s32 unk50;
-    s32 unk54;
-}unk1a238s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* 191F0.c */
 /* 191F0.c */
 typedef struct {
@@ -868,15 +692,6 @@ typedef struct {
  s32 numDigits;
  s32 stackIndex;    
 }DamageDigs; 
-/* 191F0.c */
-typedef struct {
-    s32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    void* unk14;
-} unkSmoke; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */ 
 /* 191F0.c */
 /* 1D160.c */
 typedef struct {
@@ -891,151 +706,15 @@ typedef struct {
     EncounterZone* zones;
     s32 count;
 }EncounterZoneList;
-/* 1D160.c */
-typedef struct unk_1c560_s{
-    char unk0[0x30];
-    s32 unk30;
-    s32 unk34;
-}unk1c560s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */ 
-/* 1D160.c */
-typedef struct {
-    void* stats;
-    Vec3f* pos;
-    Vec3f* rot;
-    f32 unk1C;
-    f32 unk20;
-    f32 unk24;
-    f32 scale;
-    f32 collisionScale;
-    Vec3f* shadowPos;
-    f32 unk38;
-    f32 unk3C;
-    f32 unk40;
-    f32 unk44;
-    f32 unk48;
-    f32 unk4C;
-    s16 modelID;
-    s16 animID;
-    u16 animFrame;
-    u16 totalFrameCnt;
-    u16 animSpeed;
-    u16 nextAnimID;
-    s16 unk5C;
-    s16 unk5E;
-    u16 unk60;
-    u16 unk62;
-    MonsterBaseData *unk64;
-    ActorStats *unk68;
-    ActorStats unk6C;
-}unkEnemy; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 1D160.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-}unkEncounterSomething; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 1D160.c */
-typedef struct {
-    void* unk0;
-    void* unk4;
-    unkEncounterSomething* unk8;
-    s32 unkC; 
-}unkEncounterData; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 1E4B0.c */
-typedef struct {
-    void* unk0;
-    u16 unk4;
-    u16 unk6;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    s8 unk14;
-    s8 unk15;
-    u8 unk16;
-    char unk17; 
-    s32 unk18;
-    char unk1C[4];
-}unk1e138s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 1E4B0.c */
-typedef struct {
-    char unk0[0x52];
-    s16 unk52;
-    u16 unk54;
-    u16 unk56;
-    s16 unk58;
-    s16 unk5A;
-    u16 unk5C;
-    s16 unk5E;
-    u16 unk60;
-}unk1e0acs; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
-/* 1E4B0.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-}unk1e0acs2; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
-/* 23740.c */
-typedef struct {
- Vec3f pos;
- f32 yrot;
- f32 zrot;
- f32 xrot;
- Vec3f scale;
- f32 unk24;
- f32 unk28;
- f32 unk2C;
- s16 unk30; 
- u16 startingFrame;
-}LimbKeyframe; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 23740.c */
-typedef struct {
-    LimbKeyframe* unk0; 
-    u16 unk4;
-    u16 numFramesInAnim;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    s8 unk14;
-    s8 unk15;
-    u8 unk16;
-    char unk17; 
-    s32 unk18;
-    char unk1C[4];
-}unk22b40s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 25290.c */
-typedef struct unk_2513c_s{
-    s32 unk0;
-    s32 unk4;
-    u8 unk8;
-    u8 unk9;
-    u16 unkA;
-    ALHeap* unkC;
-    s32 unk10;
-    s32 unk14;
-    s32 unk18;
-    char unk1C[0x174];
-    s32 unk190;
-    char unk194[8];
-    s32 unk19C;
-    s32 unk1A0;
-    u8 unk1A4;
-    u8 unk1A5;
-    s16 unk1A6;
-    s32 unk1A8;
-    s32 unk1AC;
-    s32 unk1B0;
-    s32 unk1B4;
-    char unk1B8[0x174];
-    s32 unk32C;
-}unk2513cs; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* 25290.c */
 typedef struct {
     s32 volume;
 }MusicVolume;
-/* 25290.c */
-typedef struct {
-    s32 unk0;
-    s32 unk4;
-}unkVolume2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* 2F1E0.c */
+/* The bytes of text a message holds: Message.text and .page, and gTextBuffer (enemy.c). StartNPCText reads this
+   many from the dialogue bank, the ending and the boss scenes copy this many into gTextBuffer, and
+   text/encoding.json's NPC part gives the same limit (tools/text_build.py stops the build if the two differ). */
+#define MESSAGE_TEXT_SIZE 0x4B0
 typedef struct Message
 {
     s32 flags; 
@@ -1057,101 +736,9 @@ typedef struct Message
     s16 lineCount;                      /* lines in use */
     s16 unk3A;
     u8 lines[4][0x18];              /* 0x3C: the window's lines, 0xFF-terminated */
-    u8 text[0x4B0];                 /* 0x9C: the message text (Eltale's 0x4B0, Quest 0x400): slots are 0x9FC */
-    u8 page[0x4B0];                 /* 0x54C: the page being shown (PageMessage fills it, DrawMessageText draws it) */
+    u8 text[MESSAGE_TEXT_SIZE];     /* 0x9C: the message text (Eltale's 0x4B0, Quest 0x400): slots are 0x9FC */
+    u8 page[MESSAGE_TEXT_SIZE];     /* 0x54C: the page being shown (PageMessage fills it, DrawMessageText draws it) */
 } Message; 
-/* 328F0.c */
-typedef struct {  
-    s16 unk0;
-    s16 unk2;
-    u8 unk4;
-    u8 unk5;
-    s8 unk6;
-    s8 unk7;
-    s32 unk8;
-    s32 unkC;    
-}unk32218s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 328F0.c */
-typedef struct {
-    u8 unk0;
-    u8 unk1;
-    u8 unk2;
-}unk31cf0s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 328F0.c */
-/* 33D0.c */
-typedef struct unk_1d924_s2
-{
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
-    f32 unk18;
-    f32 unk1C;
-    f32 unk20;
-    f32 unk24;
-    f32 unk28;
-    f32 unk2C;
-    f32 unk30;
-    f32 unk34;
-    f32 unk38;
-    f32 unk3C;
-    f32 unk40;
-    f32 unk44;
-    f32 unk48;
-    f32 unk4C;
-    s16 unk50;
-    s16 unk52;
-    f32 unk54;
-    char unk56[0x8];
-    u16 unk60;
-}unk1d924s2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 33D0.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-}unk6604s; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
-/* 33D0.c */
-typedef struct {
-    s32 start;
-    s32 end;
-}fileBounds; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 33D0.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-    char unk6[0x5E];
-    s16 unk64;
-    char unk66[0xE];
-    u16 unk74;
-    char unk76[0xA0];
-    s16 unk116;
-    s8 unk118;
-}unkBAB8; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 33D0.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-}unk69fcs; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 33D0.c */
-typedef struct unk_3f5c_s{
-    char unk0[0x18];
-    f32 unk18;
-    f32 unk1C;
-    f32 unk20;
-    char unk24[0x3C];
-    u16 unk60;
-}unk3f5cs; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
-/* 33D0.c */
-typedef struct unk_3f5c_s2{
-    s16 unk0;
-    s16 unk2;
-    u16 unk4;
-}unk3f5cs2; /* unused (a view of a shared type); kept: removing it moves IDO's .bss order */
 /* 33D0.c */
 typedef struct {
     u16 map;
@@ -1160,65 +747,6 @@ typedef struct {
     f32 z;
     f32 yrot;
 }RespawnLocation;
-/* 33D0.c */
-typedef struct unkStruct4 {
-    char unk00[4];
-    u16 unk4;
-    u16 unk6;
-    u16 unk8;
-    u16 unkA;
-    u16 unkC;
-    u16 unkE;
-    s32 unk10;
-} unkStruct4;
-/* 33D0.c */
-typedef struct unkStruct3 {
-    char unk00[0x64];
-    unkStruct4* unk64;
-} unkStruct3;
-/* 33D0.c */
-typedef struct ElementLevels {
-    u8 fire;
-    u8 earth;
-    u8 water;
-    u8 wind;
-} ElementLevels;
-/* 33D0.c */
-typedef struct unkStruct2 {
-    char unk_00[0x24];
-    ElementLevels elements;
-    u16 unk28;
-    u16 unk2A;
-    u16 unk2C;
-    u16 unk2E;
-    u8 unk30;
-    u8 unk31;
-    u8 unk32;
-    u8 unk33;
-    u8 unk34;
-} unkStruct2;
-/* 33D0.c */
-typedef struct unkStruct {
-    u16 unk0;
-    char unk_02[6];
-    u16 unk8;
-    char unk_0A[6];
-    unkStruct2* unk10;
-
-    
-    
-} unkStruct;
-/* 33D0.c */
-typedef struct {
-     u8 unk_000[0x56];
-     s16 unk_056;           /* frames of state 3, Brian dodging an attack that missed him (StartBrianDodge) */
-     u8 unk_058[0xA];
-     s16 unk_062;           /* frames of state 5, Brian hit by an enemy (DamageBrian) */
-     u8 unk_064[0x76];
-     s16 unk_0DA;           /* Brian's timer when a battle starts (SetupBrianForBattle) */
-     u8 unk_0DC[0x3A];
-     s16 unk_116;           /* frames of state 0xC (StartBrianUseItem) */
-} struct_80053D00;  /* unused: its fields are entries 7, 8, 18 and 23's frames in Brian's AnimEntry table (gBrianAnims is AnimEntry*[]); kept for the declaration count, which sets the .bss order */
 /* 8650.c */
 typedef struct {
     f32 x;
@@ -1250,26 +778,21 @@ typedef struct {
     s32* dlistFrames;               /* 0x18: per-frame display list indices, or NULL */
     u16 dlistFrameCount;            /* 0x1C: dlistFrames' length (DrawModelPart) */
     char unk1E[2];                  /* 0x1E: no code reads them; 0 in every boss part */
-} ModelPart;                        /* 0x20: one part of a model's animation (also a camera path, ending.c) (the Quest recomp's Unk8) */
+} ModelPart;                        /* 0x20: one part of a model's animation (also a camera path, staff_credits.c) (the Quest recomp's Unk8) */
 typedef struct {                    /* 0xC: one animation of a model's table (Brian's: ApplyBrianMovement's anims; an enemy's: gMonsterAnims[model]) (Quest's StrangeAnimPair; the recomp's Unk9) */
     s16 count;                      /* parts' length (DrawModel) */
     s16 frames;                     /* 0x02: its length, which a state takes as its timer */
     ModelPart* parts;
     Gfx** dlists;                   /* 0x08: the model's display-list table, which a part's dlist indexes */
 } AnimEntry;
-typedef struct {
-    s16 unk0;
-    s16 unk2;               /* frames standing between walks (times 1-2, UpdateNPCs) */
-    char unk4[0xA];
-    s16 unkE;               /* frames per walk (times 1-2) */
-}unk8948s3;
 /* 8650.c */
 typedef struct {
     u16 submap;               /* the submap it appears in */
-    u16 talkType;               /* its kind? 6: after talking to it Brian is sent to map gCurrentMap/C0 (BrianState_TalkEnd) */
-    u8 kind;
-    u8 flags;                /* bit 0: transform.stateFlags = NPC_WIDE_TALK at spawn; bit 1: doesn't turn to face Brian */
-    u16 talkParam;               /* kind 5: a flag (IsStoryFlagSet); kind 2: the low byte is an item (StartNPCTalk) */
+    u16 talkType;               /* NPC_TALK_ (below the struct): what talking to it does (StartNPCTalk) */
+    u8 kind;                 /* NPC_KIND_WANDERS, or a value no code tells apart */
+    u8 flags;                /* NPC_REC_ (below the struct) */
+    u16 talkParam;               /* NPC_TALK_BOSS_FLAG: the boss whose flag IsStoryFlagSet tests; NPC_TALK_ITEM: the
+                                    item, in its low byte (StartNPCTalk) */
     u16 message;               /* the text when talked to (StartNPCText) */
     u16 altMessage;               /* the other text: item already taken / flag set (StartNPCTalk) */
     s32 unkC;
@@ -1281,52 +804,38 @@ typedef struct {
     f32 z;
     f32 yrot;
     f32 scale;              /* 0x28 */
-}NpcRecord;                 /* a map object's record, 0x2C (the map header's list, SpawnNPCs) */
-/* 8650.c */
-typedef struct unk_1d8b0_s
-{
-    char unk0[0x52];
-    s16 unk52;
-    s16 unk54;
-    s16 unk56;
-    s16 unk58;
-    s16 unk5A;
-    s16 unk5C;
-    s16 unk5E;
-    u16 unk60;
-}unk1d8b0s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
+}NpcRecord;                 /* an NPC's record, 0x2C (the map header's NPC list, SpawnNPCs) */
+/* NpcRecord.talkType: what talking to the NPC does (StartNPCTalk). The 169 records use 1, 2, 5 and 6 */
+#define NPC_TALK_MESSAGE    1  /* its message (a value the switch does not name does the same) */
+#define NPC_TALK_ITEM       2  /* gives the item talkParam each time Brian holds none of it (CountItem): message
+                                  then, altMessage while he holds one; PLAYER_ITEM_GIVEN plays its sound when the talk ends */
+#define NPC_TALK_BOSS_FLAG  5  /* message until the boss talkParam is beaten (IsStoryFlagSet), altMessage after; with
+                                  LAST_BOSS it would also restart the game (GAME_STATE_RESTART), but no record has it */
+#define NPC_TALK_INN        6  /* the inn: its message with a Yes / No (GAME_STATE_INN_CHOICE); Yes rests Brian and opens
+                                  the save (BrianState_TalkEnd) */
+/* NpcRecord.flags */
+#define NPC_REC_WIDE_TALK   0x1  /* can be talked to from 25 units, not 15 (NPC_WIDE_TALK at spawn) */
+#define NPC_REC_NO_TURN     0x2  /* does not turn to face Brian when talked to */
+/* NpcRecord.kind */
+#define NPC_KIND_WANDERS    2  /* walks about between stands (UpdateNPCs, ResumeNpcAfterTalk); no code tells the other
+                                  values (0, 1, 3) apart */
 /* 8650.c */
 typedef struct {
-    u16 state;               /* state: 0 stand, 1 walk, 2 turn to Brian, 3 turn back (UpdateNPCs) */
+    u16 state;               /* NPC_STATE_ (below the struct) */
     u16 timer;               /* frames left in the state */
     f32 spawnX;               /* the record's x, z and yrot at spawn */
     f32 spawnZ;
     f32 spawnYaw;
-    f32 turnLeft;              /* the turn still to make toward Brian when talked to (StartNPCTalk) */
+    f32 turnLeft;              /* the whole turn toward Brian when talked to (StartNPCTalk), made in 15 equal steps */
     ActorTransform transform;   /* 0x14 */
     char unk7C[4];
     NpcRecord* record;       /* its record */
-}Npc;                  /* a map object, 0x84 (gNpcs[]) */
-/* 8650.c */
-typedef struct {
-    s32 start;
-    s32 end;
-}NPCFile; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 97B0.c */
-typedef struct {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-    s16 unk6;
-    u16 unk8;
-}unk202e4s3; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* 97B0.c */
-typedef struct {
-    char unk0[0x12];
-    u8 unk12[7];
-    char unk19[0x2B];
-    unk202e4s3* unk44[4];
-}unk202e4s2; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
+}Npc;                  /* an NPC, 0x84 (gNpcs[]) */
+/* Npc.state (UpdateNPCs) */
+#define NPC_STATE_STAND      0  /* stands; a NPC_KIND_WANDERS one sets off when its timer runs out */
+#define NPC_STATE_WALK       1  /* walks, then stands again */
+#define NPC_STATE_TALK       2  /* talked to: turns to Brian (StartNPCTalk) and holds until the talk ends */
+#define NPC_STATE_TURN_BACK  3  /* turns back to its own facing (ResumeNpcAfterTalk), then stands */
 /* 97B0.c */
 /* 97B0.c */
 typedef struct {
@@ -1350,7 +859,7 @@ typedef struct {
 typedef struct {
     s16 model;
     u16 color;
-    u16 duration;
+    u16 flags;
     u16 unk6;
     f32 size_x;
     f32 size_y;
@@ -1363,21 +872,6 @@ typedef struct {
     MonsterBaseData* baseStats; 
     u8** namePtr;           /* the set's enemy names, by monsterID (LoadMonsterSet makes it gEnemyNames) */
 }MonsterSet; 
-/* 97B0.c */
-typedef struct {
-    f32 unk0;
-    char unk4[0x4];
-    f32 unk8;
-    char unkC[0x4];
-    f32 unk10;
-}unka3f4s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* C120.c */
-typedef struct {
-    char unk0[0x24];
-    f32 bossX;
-    f32 bossY;
-    f32 bossZ;
-}unkD_7D1A8s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* C120.c */
 typedef struct {
      u16 bossMap;
@@ -1398,10 +892,10 @@ typedef struct {
 typedef struct unk_db38_s 
 {
     s32 timer;
-    s32 unkDoorState;
-    s32 unkCurrDoorAnimFrame;
-    s32 unkDoorFlag; 
-    void* position; 
+    s32 state;
+    s32 frame;
+    s32 doorFlags; 
+    void* model;     /* the door's model (its ModelTransform: StartDoorAnimation; FindDoorAnim matches it) */
     f32 xSlideOffset;
     f32 yRotation;
 }DoorAnimData;
@@ -1442,95 +936,41 @@ typedef struct unk_11170_s {
     s32* lightLoop;
     s32* dirs;      /* 0x2C: the light directions StepLightAnim gives SetupLights; NULL = gLightDirections */
 }LightAnim;
-/* camera.c */
-typedef struct unk_23df4_s
-{
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
-    f32 unk18;
-    f32 unk1C;
-    f32 unk20;
-    f32 unk24;
-    f32 unk28;
-}unk23df4s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* hud.c */
-typedef struct STRUCT_D_803A8DD8 {
-    char unk00[10];
-} STRUCT_D_803A8DD8;
-/* hud.c */
-typedef struct VEC4_MEM {
-    float unk0;
-    float unk4;
-    float unk8;
-    float unkC;
-} VEC4_MEM; /* unused (gHudVector is an OddVector); kept: the header typedef count orders IDO .bss */
 /* hud.c */
 typedef struct StatusFxDef {
     s16 model;      /* into gStatusFxModels */
     s16 color;
-    u16 flags;      /* also the duration argument; 0x100 = at mid-body */
+    u16 flags;      /* SpawnEffectObject's flags argument (ProjSlot.flags); 0x100 = at mid-body */
     f32 sizeX;
     f32 sizeY;
 } StatusFxDef;
 /* inventory.c */
-typedef struct unk_22260_s{
-    char unk0[0x64];
-    s32 unk64;
-}unk22260s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* inventory.c */
-typedef struct unk_2260c_s{
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-}unk2260cs; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* inventory.c */
 typedef struct {
-    char unk0[4];
-    u16 unk4;
-    u16 unk6;    
-}unk2234c4; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* inventory.c */
-typedef struct {
-    f32 width;
-    f32 height;
-    f32 unk8;
-}ItemLightRingData; /* unused (gItemLightRingSize is an OddVector); kept: the header typedef count orders IDO .bss */
-/* inventory.c */
-typedef struct {
-    s16 unk0;
-    u16 unk2;
-    u16 healItemLightColor;
+    s16 healLightModel;
+    u16 healLightColour;
+    u16 healLightFlags;
     char unk6[2];
     f32 healItemLightWidth;
     f32 healItemLightHeight;
-    s16 unk10;
-    u16 unk12;
-    u16 wingLightColor;
+    s16 wingLightModel;
+    u16 wingLightColour;
+    u16 wingLightFlags;
     char unk16[2];
     f32 wingLightWidth;
     f32 wingLightHeight;
-}BaseItemLightRingData;
-/* inventory.c */
-typedef struct {
-    u16 unk0;
-    u16 unk2;
-    u16 unk4;
-    u16 unk6;
-    char unk8[2];
-}unk2234c3; /* unused (EffectSpawnDef has this layout: gItemEffectModels); kept: the header typedef count orders IDO .bss */
+}BaseItemLightRingData;           /* the item lights (UseHealingItem, UseWings): each an effect model
+                                     (gItemEffectModels), the colour and the flags SpawnEffectObject takes, and
+                                     its size */
 /* inventory.c */
 typedef struct {
     s32 map;
     s32 submap;
     s32 entrance;
-    u16 doorFlags;           /* the entrance kind: bits 8-11 how Brian arrives, bit 2 / bit 0 flags (StartBrianArrival, read with lhu) */
+    u16 doorFlags;           /* the door's flags (MapDoor.flags, DOOR_): how Brian leaves (StartBrianDeparture, read
+                                with lhu); SpawnBrian reads them again from gArrivalFlags for his arrival */
     char unkE[2];
     s32 door;          /* the door: index into gMapModels */
-    f32 yaw;          /* Brian's facing on arrival */
+    f32 yaw;          /* the door's angle (SetDoorWarp): the way Brian faces as he leaves through it */
 }PendingWarp;
 /* inventory.c */
 typedef struct {
@@ -1539,7 +979,7 @@ typedef struct {
     f32 xpos;
     f32 zpos;
     f32 yrot;
-}unk803a9190s;
+}WingDest;                /* a Wings destination (gWingData[itemArg1], UseWings): the map, the submap and Brian's place */
 /* shadow.c */
 typedef struct {
     Mtx list[3];        /* the frame's matrices from the start, the draw functions' mtxList: [0] the projection and
@@ -1563,13 +1003,13 @@ typedef struct {                   /* one frame's graphics task (Quest unk111Cs,
 } GfxFrame;
 /* shadow.c */
 typedef struct unk_Shadow_s{
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
-    f32 unk18;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 xrot;
+    f32 yrot;
+    f32 zrot;
+    f32 size;
 }ShadowRec;
 /* initialize.c */
 typedef struct
@@ -1579,32 +1019,6 @@ typedef struct
     unsigned int inst3;
     unsigned int inst4;
 } __osExceptionVector;
-/* DA68F0.c */
-typedef struct {
-    s16 unk0;
-    u16 unk2;
-    f32 unk4;
-    f32 unk8;
-}unkTitleScreen; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
-/* DC1620.c */
-typedef struct {
-    char unk0[4];
-    s16 unk4;
-    s16 unk6;
-    char unk8[0x14];
-    f32 unk1C;
-    f32 unk20;
-    s16 unk24;
-    s16 unk26;
-    s16 unk28;
-    s16 unk2A;
-    s16 unk2C;
-    char unk2E[0x6];
-    s16 unk34;
-    char unk36[2];
-    s32 unk38;
-    u8 pad3C[0x14];
-}unkOvl2s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */
 /* ---- from Quest src/1BCD0.c (Eltale dust.c): one puff of dust / one particle (0x40) ---- */
 typedef struct {
 /*0x00*/ u16 frames;
@@ -1640,7 +1054,7 @@ typedef struct {
 typedef struct {
     u16 count;
     NpcRecord* list;
-} sMapList;                 /* a map's objects: SetupNPCs hands them to SpawnNPCs */
+} sMapList;                 /* a map's NPC records: SetupNPCs hands them to SpawnNPCs */
 typedef struct {
     Gfx* setup;             /* drawn once before the first visible prop of this type */
     Gfx* model;             /* drawn for each visible prop */
@@ -1740,8 +1154,7 @@ typedef struct {
     s32 group_count;
 } NavMeshData;
 typedef struct map_data_s{
-    u16 flags;               /* flags: & 7 = load the extra block (2 = also D_851F0..D_C8DE0), 4 = set the return
-                               point on entry, 8 = set the exit point on leaving */
+    u16 flags;               /* MAP_ (below the struct); copied to gMapFlags */
     char unk2[2];
     u8* romStart;               /* the map's ROM block */
     u8* romEnd;               /* its end */
@@ -1755,11 +1168,24 @@ typedef struct map_data_s{
     NavMeshData* cameraNavmesh;              /* wall navmesh, camera (gWallNavmeshCamera) */
     NavMeshData* actorNavmesh;              /* wall navmesh, actors (gWallNavmeshActors) */
     s32 encounters;              /* encounter tables, 8 bytes per submap */
-    s32 unk34;              /* 0x10 bytes per submap */
+    struct EncounterSet* encounterSets; /* the submaps' encounter sets, one EncounterSet each (include/map_format.h) */
     sMapList* npcList;      /* the NPC records and their count (SetupNPCs) */
     s32 regionBlock;        /* the region block loaded with the map (gRegionBlocks[]) */
-    char unk40[4];
+    char unk40[4];          /* the last byte is the number of submaps the data gives the map; no code reads it */
 }sMapData;                  /* 0x44: a map's header (gMapTable[map]; the current one is gMapHeader) */
+/* sMapData.flags (gMapFlags): the kind of place. gMapTable gives 0x1 to maps 0, 1, 4, 6 and 8, 0x2 to maps 13 to 25,
+   0x4 to maps 2, 3, 5, 7 and 9 to 12, 0x8 to maps 26 to 35; the names say what each holds and what the code does
+   with it */
+#define MAP_TOWN       0x01  /* a town: time passes (UpdateTimeOfDay); leaving it for a MAP_FIELD sets the Return
+                                point (LoadMap); the compass is drawn */
+#define MAP_INTERIOR   0x02  /* buildings and rooms: LoadMap also loads the interiors' shared block; the Wings do
+                                nothing here */
+#define MAP_FIELD      0x04  /* the open land: time passes, the Return spell works only where the flags are exactly
+                                MAP_FIELD, the compass is drawn */
+#define MAP_DUNGEON    0x08  /* entering it sets the Exit point (LoadMap); the Exit spell works here (but in maps 30
+                                and 34), the Wings do not; the compass is drawn */
+#define MAP_FOG_SKY    0x80  /* the screen behind the scene takes the fog colour, not black (StepLightAnim): map 0,
+                                maps 26 to 29 and map 35 */
 /* ---- from collision.c: what a floor poll (PollWorldCollision) returns ---- */
 typedef struct {
     f32 x;
@@ -1776,25 +1202,27 @@ typedef struct {
 typedef struct {
     s16 model;      /* 0x00: index into gEffectModels, < 0 = none */
     u16 color;      /* 0x02 */
-    u16 duration;   /* 0x04 */
+    u16 flags;   /* 0x04: SpawnEffectObject's flags argument for the effect (ProjSlot.flags) */
     u16 unk6;
     f32 size_x;     /* 0x08 */
     f32 size_y;     /* 0x0C */
-    s16 trail_model;    /* 0x10: the trail stage (see SpellAnimStages) */
-    u16 trail_rate;     /* 0x12: also the trail piece's colour argument (SpawnSpellTrail) */
-    u16 trail_flags;    /* 0x14: also its duration argument; 0x10 = turn by lifetime x pi / 10 */
+    s16 trail_model;    /* 0x10: the trail stage (each stage laid out as a SpellAnimStage) */
+    u16 trail_rate;     /* 0x12: its high byte the frames between two trail pieces (UpdateSpells); the
+                           whole value is also the piece's colour argument (SpawnSpellTrail), whose low byte
+                           SpawnEffectObject keeps */
+    u16 trail_flags;    /* 0x14: its flags argument (ProjSlot.flags); 0x10 = turn by lifetime x pi / 10 */
     u16 unk16;
     f32 trail_size_x;   /* 0x18 */
     f32 trail_size_y;   /* 0x1C */
     s16 land_model;     /* 0x20: the landing stage (StartSpellLandVisual), < 0 = none */
     u16 land_color;     /* 0x22 */
-    u16 land_duration;  /* 0x24 */
+    u16 land_flags;  /* 0x24: the landing effect's flags argument */
     u16 unk26;
     f32 land_size_x;    /* 0x28 */
     f32 land_size_y;    /* 0x2C */
     s16 hit_model;      /* 0x30: the hit stage (StartSpellHitVisual), < 0 = none */
     u16 hit_color;      /* 0x32 */
-    u16 hit_flags;      /* 0x34: also its duration argument; 0x40 = on the caster, 0x100 = at mid-body */
+    u16 hit_flags;      /* 0x34: its flags argument; 0x40 = on the caster, 0x100 = at mid-body */
     u16 unk36;
     f32 hit_size_x;     /* 0x38 */
     f32 hit_size_y;     /* 0x3C */
@@ -1812,9 +1240,9 @@ typedef struct {
     f32 x;
     f32 y;
     f32 z;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
+    f32 yrot;
+    f32 xrot;
+    f32 zrot;
     f32 scaleX;
     f32 scaleY;
     f32 scaleZ;
@@ -1827,16 +1255,6 @@ typedef struct {
     s8 status;                      /* 0x12: 0 ok, -1 no response, -2 not a standard pad, -3 no controller */
     u8 freePages;                   /* 0x13: free pak pages (ScanControllerPak), 0xFF before a scan */
 } PakNoteExts;                      /* 0x14 per controller (gPakNotes) */
-
-/* ---- from map.c ---- */
-typedef struct {
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 shadow;                     /* index into gShadowSizes, stored as a float */
-    f32 scale;
-    s16 type;                       /* selects gMapHeader->propGfx[type] */
-} MapProp;                          /* a map prop drawn by DrawMapProps */
 
 /* ---- from collision.c / lighting.c ---- */
 
@@ -1860,13 +1278,14 @@ typedef struct {
     f32 x;                          /* 0x00 */
     f32 z;
     f32 yrot;
-    f32 unkC;                       /* -> transform.rootMoveX */
-    f32 unk10;                      /* -> transform.rootMoveZ */
-    f32 unk14;                      /* -> transform.yspeed */
-    f32 unk18;                      /* -> transform.xspeed */
-    f32 unk1C;                      /* -> transform.zspeed */
-    u8 flags;                       /* 0x20: -> transform.unk62; IsMapObjectOpened picks the animation from it */
-    u8 unk21;                       /* -> transform.modelID */
+    f32 useX;                       /* -> transform.rootMoveX: the use point (FindMapObjectInFront: Brian within 300 of it, squared) */
+    f32 useZ;                      /* -> transform.rootMoveZ */
+    f32 useYaw;                      /* -> transform.yspeed: the facing Brian needs, within 45 degrees, and the use box's angle */
+    f32 useHalfWidth;                      /* -> transform.xspeed: the use box's half width; zspeed its half depth */
+    f32 useHalfDepth;                      /* -> transform.zspeed */
+    u8 openedFlagId;                       /* 0x20: -> transform.floorFlags, the id of its opened flag; IsMapObjectOpened picks the animation
+                                       from it */
+    u8 item;                       /* -> transform.modelID: the item Brian takes when he opens it (UpdateBrian) */
     char unk22[2];
 } MapObjRec;                        /* 0x24: one placed object of a submap (SpawnMapObjects) */
 typedef struct {
@@ -1878,20 +1297,15 @@ typedef struct {
     MapObjList* submaps;
 } MapObjTable;                      /* gMapObjectTable[19]: the maps that place these objects */
 typedef struct {
-    char unk0[0x10];
-    u8* texture;                    /* 0x10: the frame (0x100 bytes each in gSparkleFrames) */
-    char unk14[4];
-    Vec3f pos;                      /* 0x18 */
-} unk8004E658s; /* unused (nothing references it); kept: the header typedef count orders IDO .bss */                     /* the spirit sparkle drawn by SpawnDust */
-typedef struct {
     char unk0[0x1C];
-    u16 unk1C;                      /* offset into D_D37700 of the 0x20 bytes for gSpeakerName */
-    u16 unk1E;                      /* offset of the 0x200 bytes for gTextBuffer */
-} SignText;
+    u16 nameOffset;                      /* offset into D_D37700 of the 0x20 bytes for gSpeakerName */
+    u16 textOffset;                      /* offset of the 0x200 bytes for gTextBuffer */
+} SignText;                       /* a SignObject as LoadSignText reads it: its name and text offsets */
 typedef struct {
-    SignText* unk0;
-    f32 unk4;
-} SignRef;                        /* what gSignTarget points to (player.c's UpdateBrian passes it) */
+    SignText* text;
+    f32 readYaw;
+} SignRef;                        /* a SignSlot as LoadSignText reads it (UpdateBrian passes gSignTarget): text is
+                                     SignSlot.sign seen as a SignText, readYaw is SignSlot.angle */
 
 /* ---- NPC records: shared by spirits.c and signs.c ---- */
 typedef struct {
@@ -1913,14 +1327,20 @@ typedef struct {
     f32 z;
     f32 yaw;                        /* 0x10 */
     f32 radius;                     /* 0x14: talk range */
-    s32 flags;                      /* 0x18: bit 0 = can be talked to from any side */
-    s32 unk1C;
+    s32 flags;                      /* 0x18: SIGN_ */
+    u16 name;                       /* 0x1C: its name, an offset from D_D37700 (LoadSignText: 0x20 bytes) */
+    u16 text;                       /* 0x1E: its text, an offset from D_D37700 (0x200 bytes; SignText reads both) */
 } SignObject;                   /* 0x20; 38 of them at gSigns */
+/* SignObject.flags */
+#define SIGN_ANY_SIDE  0x1  /* can be read from any side, not only from its front (FindSignTarget); no sign has it */
+#define SIGN_NO_POSE   0x2  /* Brian does not take the reading pose: BRIAN_ANIM_NO_TARGET instead of SIGN_START, and no
+                               SIGN_END after the message (UpdateBrian, PLAYER_SIGN_NO_POSE); one sign has it, a
+                               signpost on map 28 */
 typedef struct {
-    SignObject* npc;
-    f32 angle;                      /* Brian's yaw minus the direction to the NPC, set when found */
+    SignObject* sign;
+    f32 angle;                      /* Brian's yaw minus the direction to the sign, set when found (SignRef.readYaw) */
     s32 unk8;
-} SignSlot;                     /* 0xC */
+} SignSlot;                     /* 0xC: a sign in the room (gRoomSigns); LoadSignText reads it as a SignRef */
 
 /* ---- floor / navigation mesh data: shared by collision.c and lighting.c ---- */
 typedef struct {
@@ -1930,13 +1350,6 @@ typedef struct {
 } DayPeriod;                     /* 0xC: one period of the day (4 at gDayPalettePeriods) */
 /* Area collision mesh (names from vbhayden's Quest 64 scratches) */
 
-/* ---- the save data block: shared by sound.c and save_menu.c ---- */
-typedef struct {
-    u8 spirits[0x20];               /* 0x00: the spirit flags (gObjectsOpened) */
-    u8 flags[0x10];                 /* 0x20: gSpiritsFound's flags */
-    u8 items[0x97];                 /* 0x30: the inventory (gInventory gInventory and the byte after it) */
-    u8 story;                       /* 0xC7: the boss flags (gStoryFlags) */
-} SaveData;                     /* 0xC8: the save data block (copied out of the 0xE0-byte pak read buffer) */
 
 /* effect objects (moved here from spells.c) */
 /* spell effect spawn parameters (names from vbhayden's Quest 64 scratches) */

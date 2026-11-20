@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/main.h"
 #include "game/audio.h"
 #include "game/boss.h"
@@ -9,7 +10,7 @@
 #include "game/dust.h"
 #include "game/effects.h"
 #include "game/encounter.h"
-#include "game/ending.h"
+#include "game/staff_credits.h"
 #include "game/ending_text.h"
 #include "game/enemy.h"
 #include "game/hud.h"
@@ -20,8 +21,10 @@
 #include "game/message.h"
 #include "game/model.h"
 #include "game/overlay.h"
+#include "game/pak_menu.h"
 #include "game/player.h"
 #include "game/save_menu.h"
+#include "game/save_format.h"
 #include "game/screen_fade.h"
 #include "game/shadow.h"
 #include "game/signs.h"
@@ -32,49 +35,15 @@
 #include "game/text.h"
 #include "game/title.h"
 #include "sched/nnsched.h"
-extern s8 gRespawnOnExit;
-extern PendingWarp gPendingWarp;
-extern u64 gspF3DEXDataStart[];
-extern u8 gGfxFifoBuffer[];
-extern u64 gRspDramStack[];           /* the RSP's DRAM stack */
-extern u64 gRspYieldBuffer[];           /* its yield buffer */
-extern s32 gNextMap;               /* next map */
+#include "segment_symbols.h"
 /* the main thread (mainproc; Quest func_80000C50, Quest64-Decomp's mainproc) */
-extern s32 gGameState;   /* game state flags */
-extern OSMesgQueue gSiMesgQueue;       /* the SI queue */
-extern s32 gCurrentMap;               /* current map */
-extern s32 gNextSubmap;               /* next submap */
-extern s32 gReturnDest;
-extern s32 gExitDest;
-extern u8 instrument_ctl_ROM_START[];                /* instrument bank, its table, the sound effect bank and table (ROM) */
-extern u8 instrument_tbl_ROM_START[];
-extern u8 sequence_bank_ROM_START[];
-extern u8 sfx_ctl_ROM_START[];
-extern u8 sfx_tbl_ROM_START[];
-extern u8 pak_menu_module_ROM_START[];                /* the code loaded at 0x80100000 */
-extern u8 pak_menu_module_ROM_END[];
-extern u8 D_80100000[];
-void func_801009EC(OSMesgQueue* siQueue, OSMesgQueue* retraceQueue);                /* in the code at 0x80100000 */
 
-extern u8 instrument_ctl_ROM_END[];              /* the end of the instrument bank (its table starts at the same address) */
-extern u8 sequence_bank_ROM_END[];
-extern u8 sfx_ctl_ROM_END[];
-extern f32 gBrianSpawnX;               /* Brian's spawn x */
-extern f32 gBrianSpawnZ;
-extern f32 gBrianSpawnYaw;
-extern s32 gArrivalFlags;
-extern u16 gSavedMap;               /* saved map */
-extern u16 gSavedSubmap;               /* saved submap */
-extern u16 gSavedEntrance;
-extern s8 gMusicPlaying;                /* the music playing, -1 = none */
-extern PlayerState gPlayerState;
-extern u16 gLoadedSkyRecord;
 /* ---- main.c's .bss (0x8007A170-0x8007A8C0), in address order; the three OSTime timers
    at its end are defined before their only user, FieldLoop. The 0x10 before it is nnsched.c's (nnsched's frame
    counter gRetraceCount). The D_ names marked unreferenced are space no code addresses (unknown variables).
-   IDO 5.3 lays a variable out by its FIRST declaration, and those first declared among the file's first 32
-   declarations (typedefs and variables, externs too; not prototypes) after all the others: this block sits
-   past them, so it comes out in order. Declaring any of these variables above it moves them. ---- */
+   IDO 5.3 lays a unit's .bss out by its variables' block numbers, so a declaration added or removed before them, in
+   a header too, can change their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix`
+   recomputes it (docs/DECLARATIONS.md). ---- */
 u16 gGameMode;                         /* game mode (read with lhu by TitleLoop) */
 u16 gFieldMode;
 s32 gModeCountdown;                         /* the mode's countdown */
@@ -96,7 +65,7 @@ OSMesgQueue gDmaQueue;
 OSMesg gDmaMesgBuf[1];
 s32 gSpareLightAnim;                      /* a light animator allocated with the other two, never used */
 s32 gMapLightAnim;                        /* the map and sky light animator (an index into gLightAnims) */
-u8 D_8007A1CC;
+u8 gTitleChoice;
 u8 D_8007A1CD;
 s32 gFrameCount;                         /* frames sent since the loop started */
 s32 gLongestDisplayList;                         /* the longest display list so far */
@@ -124,7 +93,7 @@ void mainproc(s32 arg) {
     osViBlack(1);
     dma_write(pak_menu_module_ROM_START, D_80100000, pak_menu_module_ROM_END - pak_menu_module_ROM_START);
     loadTextTextureAndPal();
-    func_801009EC(&gSiMesgQueue, &gScheduler.retraceMQ);
+    ControllerPakMenu(&gSiMesgQueue, &gScheduler.retraceMQ);
     osViBlack(1);
     osViSetSpecialFeatures(0x5A);
     nnScStartScheduler(&gScheduler);
@@ -146,8 +115,8 @@ void mainproc(s32 arg) {
         InitNewGame();
         InitStartMenu();
         while (1) {
-            gGameState &= ~3;
-            if (gGameMode == 0) {
+            gGameState &= ~(GAME_STATE_ITEM_MENU | GAME_STATE_MESSAGE);
+            if (gGameMode == MODE_NONE) {
                 gGameMode = MODE_GAMEPLAY;
             }
             switch (gGameMode) {
@@ -157,11 +126,11 @@ void mainproc(s32 arg) {
                 case MODE_ENDING:
                     EndingLoop();
                     break;
-                case MODE_AFTER_CREDITS:
-                    AfterCreditsLoop();
+                case MODE_STAFF_CREDITS:
+                    StaffCreditsLoop();
                     break;
-                case MODE_PAUSED:
-                    SaveModeLoop();
+                case MODE_MENU:
+                    MenuLoop();
                     break;
                 case MODE_TITLE:
                     TitleLoop();
@@ -169,33 +138,27 @@ void mainproc(s32 arg) {
                 case MODE_SPLASH:
                     IntroLoop();
                     break;
-                case MODE_CREDITS:
-                    CreditsLoop();
+                case MODE_EPILOGUE:
+                    EpilogueLoop();
                     break;
             }
-            if (gGameState & 0x8000) {
+            if (gGameState & GAME_STATE_RESTART) {
                 break;
             }
         }
     }
 }
-extern u16 gPlayTime;
-extern Camera gCamera;
-extern u16 gItemBarSlide;
-extern u16 gHudSlideState;
-extern u16 gHudHpBarWidth;
-extern u16 gHudMpBarWidth;
 void InitNewGame(void) {
-    gGameState &= 0x20000;
-    gGameState |= 0x160;
+    gGameState &= GAME_STATE_CLEARED;
+    gGameState |= GAME_STATE_FADE_IN | GAME_STATE_LOAD_NEXT | GAME_STATE_MAP_MUSIC;
     gGameMode = MODE_SPLASH;
     gCurrentMap = -1;
     gReturnDest = -1;
     gExitDest = -1;
     gLoadedSkyRecord = 0xFFFF;
-    gCamera.unk84 = 0.0f;
+    gCamera.arrivalYaw = 0.0f;
     gPlayTime = 0;
-    gNextMap = 0xD;
+    gNextMap = 0xD;   /* a new game starts in map 13 (Melrode Monastery), submap 17 */
     gNextSubmap = 0x11;
     gPendingWarp.entrance = -1;
     gSavedMap = 0xD;
@@ -204,27 +167,16 @@ void InitNewGame(void) {
     gBrianSpawnX = -26.0f;
     gBrianSpawnZ = 0.0f;
     gBrianSpawnYaw = 1.5707964f;
-    gArrivalFlags = 0x108;
+    gArrivalFlags = WARP_ARRIVAL;
     gPlayerState.animCue = 0;
     gHudSlideState = 1;
     gItemBarSlide = 0xC;
     gHudHpBarWidth = gHudMpBarWidth = 0;
-    gFieldMode = 1;
-    gTransitionStyle = 0;
-    D_8007A1CC = 0;
+    gFieldMode = FIELD_MODE_NEW_GAME;
+    gTransitionStyle = TRANSITION_BLACK;
+    gTitleChoice = 0;
     D_8007A1CD = 0;
 }
-extern u8 segment1_gfx_ROM_START[];
-extern u8 segment1_gfx_ROM_END[];
-extern u8 spell_bank_ROM_START[];
-extern u8 cutscene_bank_ROM_START[];
-extern u8 cutscene_bank_ROM_END[];
-extern u8 gSegment1Gfx[];
-extern u8 gEffectsBlock[];
-extern u8 gNumberPalette[];
-extern GfxFrame gFrames[2];       /* the two frames' graphics tasks */
-extern u16 gFramebuffer0[320 * 240];    /* framebuffer 0 */
-extern u16 gFramebuffer1[320 * 240];    /* framebuffer 1 */
 void InitGraphics(void) {
     s32 i;
     u16* fb0;
@@ -251,7 +203,6 @@ void InitGraphics(void) {
         fb1++;
     }
 }
-extern u64 gspF3DEXTextStart[];     /* the graphics microcode (its data says F3DEX 1.23): text at the address where the boot code ends */
 void InitFrameTask(GfxFrame* frame) {
     frame->task.list.t.type = M_GFXTASK;
     frame->task.list.t.flags = 0;
@@ -273,16 +224,9 @@ void InitFrameTask(GfxFrame* frame) {
     frame->task.framebuffer = frame->framebuffer;
 }
 /* building a frame's display list (BuildFrame; Quest func_800011DC) */
-extern s32 gDisplayListLength;               /* this frame's display list length */
-extern s32 gActorLightAnim;
-extern u16 gLightRecordFlags;               /* the light record's flags */
-extern s8 D_8006CC80;
-extern u16 gDepthBuffer[];             /* the depth buffer */
-extern Gfx D_1000010[];
-extern Mtx D_2000000[];
-s32 func_8020C15C(void);                           /* the ending overlay */
+s32 func_8020C15C(void);                           /* the epilogue overlay's frame: 0 once it has ended */
 void BuildFrame(GfxFrame* frame) {
-    s32 len;                         /* also the ending overlay's result */
+    s32 len;                         /* also the epilogue overlay's result */
     FrameDynamic* dyn = &frame->dyn;
     s32 one = 1;                     /* a third local: the -g3 frame has its slot (Quest's twin has it too) */
 
@@ -299,7 +243,7 @@ void BuildFrame(GfxFrame* frame) {
     gDPFillRectangle(gDisplayListHead++, 8, 8, 311, 231);
     gDPPipeSync(gDisplayListHead++);
     gDPSetColorImage(gDisplayListHead++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 320, osVirtualToPhysical(frame->framebuffer));
-    if (gGameMode == MODE_GAMEPLAY || gGameMode == MODE_ENDING || gGameMode == MODE_AFTER_CREDITS) {
+    if (gGameMode == MODE_GAMEPLAY || gGameMode == MODE_ENDING || gGameMode == MODE_STAFF_CREDITS) {
         gDPSetFillColor(gDisplayListHead++, (GPACK_RGBA5551(gSkyFillR, gSkyFillG, gSkyFillB, 1) << 16) |
                                           GPACK_RGBA5551(gSkyFillR, gSkyFillG, gSkyFillB, 1));
         gDPFillRectangle(gDisplayListHead++, 8, 8, 311, 231);
@@ -310,7 +254,7 @@ void BuildFrame(GfxFrame* frame) {
     gDPPipeSync(gDisplayListHead++);
     gDPSetCycleType(gDisplayListHead++, G_CYC_2CYCLE);
 
-    if (gGameMode == MODE_GAMEPLAY || gGameMode == MODE_ENDING || gGameMode == MODE_AFTER_CREDITS) {
+    if (gGameMode == MODE_GAMEPLAY || gGameMode == MODE_ENDING || gGameMode == MODE_STAFF_CREDITS) {
         UpdateCamera(dyn);
         UpdateFrameLights();
         if (gLightRecordFlags & 4) {
@@ -319,7 +263,7 @@ void BuildFrame(GfxFrame* frame) {
         }
         StepLightAnim(gMapLightAnim);
         DrawMapFrame(&dyn->mtx);
-        if (!(gGameState & 0x10000)) {
+        if (!(gGameState & GAME_STATE_HIDE_BRIAN)) {
             DrawBrian(dyn->mtx.list);
         }
         DrawNPCs(dyn->mtx.list);
@@ -333,35 +277,35 @@ void BuildFrame(GfxFrame* frame) {
         DrawDust(&dyn->mtx);
         UpdateEffects(&dyn->mtx);
         DrawScreenFade(&dyn->mtx);
-        if (gGameState & 2) {
+        if (gGameState & GAME_STATE_MESSAGE) {
             DrawDialogueBox();
         }
-        if (!(gGameState & 0x4000) && (gFieldMode != 4)) {
+        if (!(gGameState & GAME_STATE_UNSET_4000) && (gFieldMode != FIELD_MODE_LAST_BOSS)) {
             DrawHUD(&dyn->mtx);
         }
-        if (gGameState & 1) {
+        if (gGameState & GAME_STATE_ITEM_MENU) {
             ItemMenu();
         }
-        if (gGameMode == MODE_AFTER_CREDITS) {
+        if (gGameMode == MODE_STAFF_CREDITS) {
             DrawCreditImages();
         }
-    } else if (gGameMode == MODE_PAUSED) {
+    } else if (gGameMode == MODE_MENU) {
         StartMenu(&dyn->mtx);
     } else if (gGameMode == MODE_TITLE) {
         switch (TitleScreen_Update()) {
             case 0:
-                switch (D_8007A1CC & 0xF0) {
-                    case 0x10:
+                switch (gTitleChoice & TITLE_CHOICE_MASK) {
+                    case TITLE_CHOICE_NEW_GAME:
                         gGameMode = MODE_GAMEPLAY;
-                        gGameState &= ~0x400;
+                        gGameState &= ~GAME_STATE_SAVE_MENU;
                         break;
-                    case 0x20:
-                        gGameState |= 0x400;
-                        EnterSaveMode(0);
+                    case TITLE_CHOICE_CONTINUE:
+                        gGameState |= GAME_STATE_SAVE_MENU;
+                        EnterSaveMode(SAVE_MODE_LOAD);
                         break;
-                    case 0x30:
-                        gGameState |= 0x400;
-                        EnterSaveMode(8);
+                    case TITLE_CHOICE_DELETE:
+                        gGameState |= GAME_STATE_SAVE_MENU;
+                        EnterSaveMode(SAVE_MODE_DELETE);
                         break;
                     default:
                         gGameMode = MODE_GAMEPLAY;
@@ -385,11 +329,11 @@ void BuildFrame(GfxFrame* frame) {
             default:
                 D_8006CC80 = 0;
         }
-    } else if (gGameMode == MODE_CREDITS) {
+    } else if (gGameMode == MODE_EPILOGUE) {
         len = func_8020C15C();
         DrawScreenFade(&dyn->mtx);
         if (len == 0) {
-            gGameMode = MODE_AFTER_CREDITS;
+            gGameMode = MODE_STAFF_CREDITS;
         }
     }
     gDPFullSync(gDisplayListHead++);
@@ -406,24 +350,7 @@ void BuildFrame(GfxFrame* frame) {
     frame->task.list.t.data_size = (gDisplayListHead - dyn->glist) * sizeof(Gfx);
 }
 /* the mode loops (EndingLoop and on) */
-extern s8 gControllerChannel;   /* the controller channel */
-extern u16 gRetraceCount;               /* retraces since the last frame */
-extern s32 gTimeOfDay;               /* time of day */
-extern LightAnim gLightAnims[];       /* light records (lighting.c) */
-extern u16 gScreenFadeFlags;   /* screen fade flags (screen_fade.c) */
-extern s32 gEnvTimersAdded;
-extern u8 event_blob_a_ROM_START[];                /* the ending's data, not code (mode 6; loaded at 0x801C0000): its text, NPC records, timed text pages and the 7 EndingScene records at D_801C14E4 */
-extern u8 event_blob_b_ROM_START[];
-extern u8 gEventBlob[];
-extern u8 gSoundVolume;
 /* the field / battle loop (FieldLoop) */
-extern s32 gCurrentSubmap;               /* current submap */
-extern u16 gSubmapFlags;               /* the submap's flags (bit 0: random battles and monsters here (FieldLoop, ResetEnemies; SetupNPCs only without it)) */
-extern u16 gBattleState;               /* battle state */
-extern u16 gButtonsHeld;               /* buttons (sound.c) */
-extern u16 gButtonsPressed;
-extern s32 gPendingSound;               /* a sound waiting to start, -1 = none */
-extern s32 gMessageWindowsOpen;               /* message windows opened (message.c) */
 u64 gLastFrameTime;                      /* osGetTime() when the last frame went out */
 u64 gFrameTime;                      /* osGetTime() this frame */
 u64 gFrameDeltaMicros;                      /* the microseconds in between */
@@ -434,8 +361,8 @@ void FieldLoop(void) {
     gFrameCount = 0;
     gModeCountdown = 0;
     msg = NULL;
-    if (gGameState & 0x40) {
-        if (gGameState & 0x800) {
+    if (gGameState & GAME_STATE_LOAD_NEXT) {
+        if (gGameState & GAME_STATE_RESPAWN) {
             gCurrentMap = gSavedMap;
             gCurrentSubmap = gSavedSubmap;
             RespawnAtSavePoint();
@@ -463,33 +390,33 @@ void FieldLoop(void) {
         ResetDust();
         BuildColourRamp();
         ResetHUD();
-        gGameState &= ~0x840;
+        gGameState &= ~(GAME_STATE_LOAD_NEXT | GAME_STATE_RESPAWN);
     }
-    if (gGameState & 0x400) {
-        SetAnimation(&gPlayerState.brian.transform, 0, 1, 0, 1, 1);
+    if (gGameState & GAME_STATE_SAVE_MENU) {
+        SetAnimation(&gPlayerState.brian.transform, BRIAN_ANIM_STAND, 1, BRIAN_ANIM_STAND, 1, 1);
     }
-    if (gGameState & 0x20) {
-        gGameState &= ~0x20;
+    if (gGameState & GAME_STATE_FADE_IN) {
+        gGameState &= ~GAME_STATE_FADE_IN;
         FadeScreenIn();
     }
-    if (gGameState & 0x100) {
+    if (gGameState & GAME_STATE_MAP_MUSIC) {
         FindMapBGM(gCurrentMap, gCurrentSubmap, 0);
-        gGameState &= ~0x100;
+        gGameState &= ~GAME_STATE_MAP_MUSIC;
     }
-    gGameState &= ~0x480;
-    gTransitionStyle = 0;
+    gGameState &= ~(GAME_STATE_SAVE_MENU | GAME_STATE_MAP_CHANGE);
+    gTransitionStyle = TRANSITION_BLACK;
     gFadeOutAt = 0x12;
-    gFieldMode = 0;
+    gFieldMode = FIELD_MODE_NORMAL;
     while (gGameMode == MODE_GAMEPLAY) {
         ReadController(gControllerChannel);
         gMatrixHead = 0;
         gEnvTimersAdded = 0;
         ResetShadows();
-        if (gSubmapFlags & 1) {
+        if (gSubmapFlags & SUBMAP_ENCOUNTERS) {
             RollRandomEncounter();
         }
-        if (gBattleState & 1) {
-            if (gBattleState & 0x200) {
+        if (gBattleState & BATTLE_ACTIVE) {
+            if (gBattleState & BATTLE_INTRO) {
                 BattleStartCamera();
             } else {
                 StepBattleRound();
@@ -504,32 +431,32 @@ void FieldLoop(void) {
         UpdateDoorAnimations();
         BuildFrame(&gFrames[gCurrentFrame]);
         frame = &gFrames[gCurrentFrame];
-        if (!(gGameState & 0x87)) {
+        if (!(gGameState & (GAME_STATE_ITEM_MENU | GAME_STATE_MESSAGE | GAME_STATE_SPELL_INPUT | GAME_STATE_MAP_CHANGE))) {
             if (!(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) &&
                 CheckDoorTriggers(gPlayerState.brian.transform.pos.x, gPlayerState.brian.transform.pos.z, gPlayerState.brian.transform.yrot) != 0) {
-                gGameState |= 0x80;
+                gGameState |= GAME_STATE_MAP_CHANGE;
                 ClampCameraToTarget();
-                StartBrianArrival();
-                gTransitionStyle = 0;
-            } else if (!(gGameState & 0x1000) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && (gButtonsPressed & START_BUTTON) &&
-                       !(gBattleState & 1) && !(gButtonsHeld & Z_TRIG) && !(gGameState & 1)) {
-                gGameMode = MODE_PAUSED;
+                StartBrianDeparture();
+                gTransitionStyle = TRANSITION_BLACK;
+            } else if (!(gGameState & GAME_STATE_UNSET_1000) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && (gButtonsPressed & START_BUTTON) &&
+                       !(gBattleState & BATTLE_ACTIVE) && !(gButtonsHeld & Z_TRIG) && !(gGameState & GAME_STATE_ITEM_MENU)) {
+                gGameMode = MODE_MENU;
                 PlaySound(0, 1, 0xFF);
             }
-        } else if ((gGameState & 0x80) && !(gGameState & 2)) {
+        } else if ((gGameState & GAME_STATE_MAP_CHANGE) && !(gGameState & GAME_STATE_MESSAGE)) {
             if (--gModeCountdown == 0) {
-                if (gFieldMode == 4) {
+                if (gFieldMode == FIELD_MODE_LAST_BOSS) {
                     gGameMode = MODE_ENDING;
                 } else {
-                    gGameMode = 0;
+                    gGameMode = MODE_NONE;
                 }
-                gGameState |= 0x20;
-                if (!(gGameState & 0x400)) {
-                    gGameState |= 0x40;
+                gGameState |= GAME_STATE_FADE_IN;
+                if (!(gGameState & GAME_STATE_SAVE_MENU)) {
+                    gGameState |= GAME_STATE_LOAD_NEXT;
                 }
                 gNextMap = gPendingWarp.map;
                 gNextSubmap = gPendingWarp.submap;
-                if (gGameState & 0x400) {
+                if (gGameState & GAME_STATE_SAVE_MENU) {        /* the inn's rest */
                     gPlayerState.stats->currHP = gPlayerState.stats->maxHP;
                     gPlayerState.stats->currMP = gPlayerState.stats->maxMP;
                     gTimeOfDay += 9000;
@@ -537,9 +464,9 @@ void FieldLoop(void) {
                     gSavedMap = gCurrentMap;
                     gSavedSubmap = gCurrentSubmap;
                     gSavedEntrance = gPendingWarp.entrance;
-                    gTransitionStyle = 2;
+                    gTransitionStyle = TRANSITION_BLACK_SLOW;
                 }
-                gGameState |= 0x100;
+                gGameState |= GAME_STATE_MAP_MUSIC;
                 StopLoopingSounds();
             } else if (gModeCountdown == gFadeOutAt) {
                 FadeScreenOut();
@@ -567,17 +494,17 @@ void FieldLoop(void) {
         gCurrentFrame ^= 1;
         gLastFrameTime = osGetTime();
     }
-    if (gGameState & 0x200) {
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
         StopMusicSlot(0);
     }
     WaitForScheduler(2);
-    if (gGameState & 0x200) {
-        gGameState &= ~0x200;
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
+        gGameState &= ~GAME_STATE_STOP_MUSIC;
         while (GetMusicSlotState(0) != 0) {
         }
     }
-    if (gGameState & 0x400) {
-        EnterSaveMode(4);
+    if (gGameState & GAME_STATE_SAVE_MENU) {
+        EnterSaveMode(SAVE_MODE_SAVE);
     }
 }
 
@@ -590,10 +517,10 @@ void EndingLoop(void) {
     msg = NULL;
     dma_write(event_blob_a_ROM_START, gEventBlob, event_blob_b_ROM_START - event_blob_a_ROM_START);
     gModeCountdown = 0;
-    gTransitionStyle = 3;
+    gTransitionStyle = TRANSITION_WHITE_SLOW;
     gTimeOfDay = 0x41EB;
     while (gGameMode == MODE_ENDING) {
-        if (gGameState & 0x40) {
+        if (gGameState & GAME_STATE_LOAD_NEXT) {
             gFrameCount = 0;
             LoadEndingScene(scene++);
             InitDayPalette();
@@ -602,12 +529,12 @@ void EndingLoop(void) {
             gActorLightAnim = AllocLightAnim();
             gLightAnims[gActorLightAnim].mode = 2;
             BuildColourRamp();
-            gScreenFadeFlags |= 8;
-            if (gGameState & 0x20) {
-                gGameState &= ~0x20;
+            gScreenFadeFlags |= FADE_SETUP;
+            if (gGameState & GAME_STATE_FADE_IN) {
+                gGameState &= ~GAME_STATE_FADE_IN;
                 FadeScreenIn();
             }
-            gGameState &= ~0x1C0;
+            gGameState &= ~(GAME_STATE_LOAD_NEXT | GAME_STATE_MAP_CHANGE | GAME_STATE_MAP_MUSIC);
         }
         ReadController(gControllerChannel);
         gMatrixHead = 0;
@@ -620,14 +547,14 @@ void EndingLoop(void) {
         UpdateLavaPalette();
         BuildFrame(&gFrames[gCurrentFrame]);
         frame = &gFrames[gCurrentFrame];
-        if (gGameState & 0x80) {
+        if (gGameState & GAME_STATE_MAP_CHANGE) {
             if (--gModeCountdown == 0) {
                 StopLoopingSounds();
                 if (scene >= 7) {
-                    gGameMode = MODE_CREDITS;
-                    gGameState |= 0x160;
+                    gGameMode = MODE_EPILOGUE;
+                    gGameState |= GAME_STATE_FADE_IN | GAME_STATE_LOAD_NEXT | GAME_STATE_MAP_MUSIC;
                 } else {
-                    gGameState |= 0x160;
+                    gGameState |= GAME_STATE_FADE_IN | GAME_STATE_LOAD_NEXT | GAME_STATE_MAP_MUSIC;
                 }
             } else if (gModeCountdown == gFadeOutAt) {
                 FadeScreenOut();
@@ -646,21 +573,21 @@ void EndingLoop(void) {
         osSendMesg(gGfxTaskQueue, frame, OS_MESG_BLOCK);
         gRetraceCount = 0;
         gCurrentFrame ^= 1;
-        if (gGameState & 0x40) {
+        if (gGameState & GAME_STATE_LOAD_NEXT) {
             WaitForScheduler(2);
             gFrameCount = 0;
         }
     }
-    if (gGameState & 0x200) {
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
         StopMusicSlot(0);
     }
-    if (gGameState & 0x200) {
-        gGameState &= ~0x200;
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
+        gGameState &= ~GAME_STATE_STOP_MUSIC;
         while (GetMusicSlotState(0) != 0) {
         }
     }
 }
-void AfterCreditsLoop(void) {
+void StaffCreditsLoop(void) {
     GfxFrame* frame;
     OSMesg msg;
 #ifdef MATCHING_HACK_IDO
@@ -670,39 +597,39 @@ void AfterCreditsLoop(void) {
     msg = NULL;
     dma_write(event_blob_b_ROM_START, gEventBlob, instrument_ctl_ROM_START - event_blob_b_ROM_START);
     gModeCountdown = 0;
-    gTransitionStyle = 2;
+    gTransitionStyle = TRANSITION_BLACK_SLOW;
     gSoundVolume = 0;
-    ResetEndingScenes();
-    while (gGameMode == MODE_AFTER_CREDITS) {
-        if (gGameState & 0x40) {
+    ResetSceneSequence();
+    while (gGameMode == MODE_STAFF_CREDITS) {
+        if (gGameState & GAME_STATE_LOAD_NEXT) {
             gFrameCount = 0;
-            StartScene();
+            StartSequenceScene();
             InitDayPalette();
             gMapLightAnim = AllocLightAnim();
             gSpareLightAnim = AllocLightAnim();
             gActorLightAnim = AllocLightAnim();
             gLightAnims[gActorLightAnim].mode = 2;
             BuildColourRamp();
-            gScreenFadeFlags |= 8;
-            if (gGameState & 0x20) {
-                gGameState &= ~0x20;
+            gScreenFadeFlags |= FADE_SETUP;
+            if (gGameState & GAME_STATE_FADE_IN) {
+                gGameState &= ~GAME_STATE_FADE_IN;
                 FadeScreenIn();
             }
-            gGameState &= ~0xC0;
+            gGameState &= ~(GAME_STATE_LOAD_NEXT | GAME_STATE_MAP_CHANGE);
         }
         ReadController(gControllerChannel);
         gMatrixHead = 0;
         gEnvTimersAdded = 0;
         ResetShadows();
-        StepEndingScene();
+        StepSequenceScene();
         UpdateTimeOfDay();
         UpdateLavaPalette();
         BuildFrame(&gFrames[gCurrentFrame]);
         frame = &gFrames[gCurrentFrame];
-        if (gGameState & 0x80) {
+        if (gGameState & GAME_STATE_MAP_CHANGE) {
             if (--gModeCountdown == 0) {
                 StopLoopingSounds();
-                EndEndingScene();
+                EndSequenceScene();
             } else if (gModeCountdown == gFadeOutAt) {
                 FadeScreenOut();
             }
@@ -720,32 +647,32 @@ void AfterCreditsLoop(void) {
         osSendMesg(gGfxTaskQueue, frame, OS_MESG_BLOCK);
         gRetraceCount = 0;
         gCurrentFrame ^= 1;
-        if (gGameState & 0x40) {
+        if (gGameState & GAME_STATE_LOAD_NEXT) {
             WaitForScheduler(2);
             gFrameCount = 0;
         }
     }
-    if (gGameState & 0x200) {
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
         StopMusicSlot(0);
     }
-    if (gGameState & 0x200) {
-        gGameState &= ~0x200;
+    if (gGameState & GAME_STATE_STOP_MUSIC) {
+        gGameState &= ~GAME_STATE_STOP_MUSIC;
         while (GetMusicSlotState(0) != 0) {
         }
     }
-    gGameState |= 0x20000;
+    gGameState |= GAME_STATE_CLEARED;
 }
 void func_8020C0D0(void);            /* the loaded overlay's entry */
-void SaveModeLoop(void) {
+void MenuLoop(void) {
     GfxFrame* frame;
-    s16 fieldMode = 2;                  /* the field mode a respawn sets; read only there */
+    s16 fieldMode = FIELD_MODE_LOADED;                  /* the field mode a respawn sets; read only there */
 
     gFrameCount = 0;
     gRespawnOnExit = 0;
-    if (gGameState & 0x400) {
+    if (gGameState & GAME_STATE_SAVE_MENU) {
         RequestMusic(0x13);
     }
-    while (gGameMode == MODE_PAUSED) {
+    while (gGameMode == MODE_MENU) {
         ReadController(gControllerChannel);
         gMatrixHead = 0;
         BuildFrame(&gFrames[gCurrentFrame]);
@@ -760,7 +687,7 @@ void SaveModeLoop(void) {
         osSendMesg(gGfxTaskQueue, frame, OS_MESG_BLOCK);
         gCurrentFrame ^= 1;
     }
-    if (gGameState & 0x400) {
+    if (gGameState & GAME_STATE_SAVE_MENU) {
         RequestMusic(-1);
         while (gMusicPlaying != -1) {
             UpdateSound();
@@ -769,7 +696,7 @@ void SaveModeLoop(void) {
     if (gRespawnOnExit != 0) {
         RespawnAtSavePoint();
         gFieldMode = fieldMode;
-        gGameState &= ~0x400;
+        gGameState &= ~GAME_STATE_SAVE_MENU;
     }
     SetBGMVolume();
     WaitForScheduler(2);
@@ -822,16 +749,16 @@ void IntroLoop(void) {
     UpdateSound();
     WaitForScheduler(2);
 }
-void CreditsLoop(void) {
+void EpilogueLoop(void) {
     GfxFrame* frame;
 
     gFrameCount = 0;
-    LoadOvl_Ending();
+    LoadOvl_Epilogue();
     func_8020C0D0();
     BuildColourRamp();
-    gScreenFadeFlags |= 8;
+    gScreenFadeFlags |= FADE_SETUP;
     UpdateBGMDelay(0x14, 0x3C);
-    while (gGameMode == MODE_CREDITS) {
+    while (gGameMode == MODE_EPILOGUE) {
         ReadController(gControllerChannel);
         gMatrixHead = 0;
         UpdateSound();
@@ -855,46 +782,41 @@ void WaitForScheduler(s16 type) {
         osRecvMesg(&gSchedDoneQueue, (OSMesg*)&msg, OS_MESG_BLOCK);
     } while (*msg != type);
 }
-extern u8 gFadeRamp[256][4];
-extern u8 gFadeRampBlack16[16][4];
-extern u8 gFadeRampWhite16[16][4];
-extern u8 gFadeRampBlack32[32][4];
-extern u8 gFadeRampWhite32[32][4];
 void FadeScreenIn(void) {
     switch (gTransitionStyle) {
-        case 0:
-            StartScreenFade(0x10, 4, gFadeRampBlack16[15]);
+        case TRANSITION_BLACK:
+            StartScreenFade(0x10, FADE_BRIGHTEN, gFadeRampBlack16[15]);
             break;
-        case 1:
-            StartScreenFade(0x10, 4, gFadeRampWhite16[15]);
+        case TRANSITION_WHITE:
+            StartScreenFade(0x10, FADE_BRIGHTEN, gFadeRampWhite16[15]);
             break;
-        case 2:
-            StartScreenFade(0x20, 4, gFadeRampBlack32[31]);
+        case TRANSITION_BLACK_SLOW:
+            StartScreenFade(0x20, FADE_BRIGHTEN, gFadeRampBlack32[31]);
             break;
-        case 3:
-            StartScreenFade(0x20, 4, gFadeRampWhite32[31]);
+        case TRANSITION_WHITE_SLOW:
+            StartScreenFade(0x20, FADE_BRIGHTEN, gFadeRampWhite32[31]);
             break;
-        case 4:
-            StartScreenFade(0x100, 4, gFadeRamp[255]);
+        case TRANSITION_GREY_SLOW:
+            StartScreenFade(0x100, FADE_BRIGHTEN, gFadeRamp[255]);
             break;
     }
 }
 void FadeScreenOut(void) {
     switch (gTransitionStyle) {
-        case 0:
-            StartScreenFade(0xF, 2, gFadeRampBlack16);
+        case TRANSITION_BLACK:
+            StartScreenFade(0xF, FADE_HOLD, gFadeRampBlack16);
             break;
-        case 1:
-            StartScreenFade(0xF, 2, gFadeRampWhite16);
+        case TRANSITION_WHITE:
+            StartScreenFade(0xF, FADE_HOLD, gFadeRampWhite16);
             break;
-        case 2:
-            StartScreenFade(0x1F, 2, gFadeRampBlack32);
+        case TRANSITION_BLACK_SLOW:
+            StartScreenFade(0x1F, FADE_HOLD, gFadeRampBlack32);
             break;
-        case 3:
-            StartScreenFade(0x1F, 2, gFadeRampWhite32);
+        case TRANSITION_WHITE_SLOW:
+            StartScreenFade(0x1F, FADE_HOLD, gFadeRampWhite32);
             break;
-        case 4:
-            StartScreenFade(0xFF, 2, gFadeRamp);
+        case TRANSITION_GREY_SLOW:
+            StartScreenFade(0xFF, FADE_HOLD, gFadeRamp);
             break;
     }
 }

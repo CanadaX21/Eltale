@@ -1,72 +1,24 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/start_menu.h"
 #include "game/dma.h"
 #include "game/save_menu.h"
+#include "game/save_format.h"
 #include "game/sound.h"
 #include "game/text.h"
+#include "game/controller.h"
+#include "game/main.h"
+#include "game/map.h"
+#include "game/player.h"
+#include "segment_symbols.h"
+BSS_ORDER_PAD(114)
 /* The Start menu (InitStartMenu to MapCursorToWorld): its own file after the music functions of sound.c. Its .data
    (0x80060CB0-0x80061650) opens with the menu's tables, defined before DrawMapPage, whose static follows them. */
-extern Gfx* gDisplayListHead;
-extern Gfx gMenuRenderDL[];
-extern u16 gGameMode;               /* the game mode (u16 as in main.c) */
-extern u16 gSaveMenuState;
-typedef struct {
-    u8 w;
-    u8 h;
-} SpriteSize;
-extern SpriteSize gMenuSpriteSizes[];      /* the menu sprite sheet: size per kind */
-extern u8* gMenuDigitTextures[];             /* its pixels per kind (CI8) */
-extern Gfx gMenuSpriteSetup[];             /* the menu sprite render setup */
-extern Gfx gMenuSpriteSetupEnvAlpha[];             /* the same, using the env colour's alpha */
-extern u16 gMenuSheetPalette[];             /* the menu sheet's palette (256 RGBA16) */
-typedef struct {
-    s32 v[4];
-} MenuBgRows;                        /* per background strip (four): a row count */
-typedef struct {
-    u8* p[4];
-} MenuBgTextures;                    /* per background strip: its CI8 texture (64 wide) */
-extern u16 gBackgroundPalette[];             /* the background's palette */
-typedef struct {
-    u16* p[4];
-} GaugePalettes;                     /* the Elements gauge: a palette per layer */
-typedef struct {
-    u8* p[4][2];
-} GaugeTextures;                     /* its two halves per layer */
-typedef struct {
-    u8 k[3];
-} SliderKinds;                       /* the Environment page: the knob's sprite kinds */
-typedef struct {
-    s16 x;
-    s16 kind;                        /* index into SliderKinds */
-} SliderStop;
-extern SliderKinds gSliderKinds;
-extern SliderStop gMessageSpeedStops[5];     /* message speed: the knob's five stops */
-extern SliderStop gMusicVolumeStops[5];     /* music volume: the knob's five stops */
-extern s8 gMessageSpeed;                /* the message speed (the page shows 4 - it) */
-extern s8 gArrowBobOffsets[];              /* arrow bob offsets */
-extern BrianData1 gBrianStats;        /* Brian's stats */
-extern u32 gSpiritExpTable[];             /* exp needed per level */
-extern s8 gStickX;                /* stick x */
-extern u16 gButtonsHeld;               /* buttons held */
-typedef struct {
-    void* ram;
-    u8* romStart;
-    u8* romEnd;
-} MapPageImage;                         /* a Map page image or card: where it loads, its ROM block */
-extern MapPageImage gMapPageImages[];   /* the six region maps, then the four cards */
-extern s32 D_8007A9E0;               /* gBrianStats.exp: a link name, as DrawElementsPage loads this and the level on separate high halves (members share one; a pointer local takes a stack word the frame lacks) */
-extern u8 D_8007AA04;                /* gBrianStats.spiritLevel: the same */
-extern s8 gMapLocationTable[][2];
-extern PlayerState gPlayerState;
-extern u16 gXPTable[];               /* XP needed per stat level */
-typedef struct {
-    u8 c[5];
-} DigitText;                          /* a one-glyph text: the glyph code at c[3] */
 u64 __ull_div(u64 a, u64 b);      /* libultra __ull_div */
-extern s8 gMusicVolumeSetting;             /* the music volume setting (sound.c) */
 
-/* ---- this file's .bss (0x8008FB30-0x8008FB6F), in address order. IDO 5.3 lays a variable out by its first
-   declaration, so nothing above declares these. DrawEnvironmentPage's knob (0x8008FB58) is a static in that
+/* ---- this file's .bss (0x8008FB30-0x8008FB6F), in address order. IDO 5.3 lays a unit's .bss out by its variables' block numbers, so a declaration added or removed before them, in a
+   header too, can change their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix`
+   recomputes it (docs/DECLARATIONS.md). DrawEnvironmentPage's knob (0x8008FB58) is a static in that
    function, and the map cursor values after it are defined after that function. ---- */
 s32 gPageTurnLeftX;               /* page turn: the x of the page on the left */
 s32 gPageTurnRightX;               /* and of the page on the right */
@@ -80,24 +32,23 @@ f32 gCompassTargetZ;
 s32 gMapPageImageId;
 s32 gMapPageMarker;
 void InitStartMenu(void) {
-    gMenuState = 0x8000;
+    gMenuState = MENU_OPEN;
     gSaveMenuState = 0;
     gMapFreeCursor = 0;
 }
 void CloseStartMenu(void) {
-    gMenuState = (gMenuState & 3) | 0x8000;
+    gMenuState = (gMenuState & 3) | MENU_OPEN;
     gSaveMenuState = 0;
     gMapFreeCursor = 0;
 }
-extern u16 gButtonsPressed;               /* buttons pressed this frame */
 void StartMenu(mkst* dyn) {
     gSPDisplayList(gDisplayListHead++, gMenuRenderDL);
     gDPSetTextureLUT(gDisplayListHead++, G_TT_RGBA16);
     DrawMenuBackground();
     gMenuFrame++;
-    if (gMenuState & 0x4000) {
+    if (gMenuState & MENU_SAVE) {
         SaveMenu();
-    } else if (gMenuState & 0x2000) {
+    } else if (gMenuState & MENU_TURNING_PAGE) {
         TurnMenuPage();
     } else {
         switch ((u16)(gMenuState & 3)) {
@@ -119,13 +70,13 @@ void StartMenu(mkst* dyn) {
     gDPSetTextureLUT(gDisplayListHead++, G_TT_NONE);
     gDPSetBlendColor(gDisplayListHead++, 0, 0, 0, 1);
     if ((gButtonsPressed & (B_BUTTON | START_BUTTON)) && !(gMenuState & 0x6020)) {
-        gMenuState &= ~0x8000;
+        gMenuState &= ~MENU_OPEN;
         PlaySound(0, 1, 0xFF);
     }
-    if (!(gMenuState & 0x8000)) {
-        if (gMenuState & 0x4000) {
-            switch ((u16)(gMenuState & 0xC)) {
-                case 0:
+    if (!(gMenuState & MENU_OPEN)) {
+        if (gMenuState & MENU_SAVE) {
+            switch ((u16)(gMenuState & SAVE_MODE_MASK)) {
+                case SAVE_MODE_LOAD:
                     if (gSaveMenuState & 0x80) {
                         gGameMode = MODE_GAMEPLAY;
                         gRespawnOnExit = 1;
@@ -134,10 +85,10 @@ void StartMenu(mkst* dyn) {
                         gRespawnOnExit = 0;
                     }
                     break;
-                case 8:
+                case SAVE_MODE_DELETE:
                     gGameMode = MODE_TITLE;
                     break;
-                case 4:
+                case SAVE_MODE_SAVE:
                     gGameMode = MODE_GAMEPLAY;
                     break;
             }
@@ -210,7 +161,7 @@ void TurnMenuPage(void) {
             break;
     }
     if (dir != 0) {
-        gMenuState &= ~0x2000;
+        gMenuState &= ~MENU_TURNING_PAGE;
         gMenuState &= ~0x1000;
         page += dir;
         gMenuState &= ~3;
@@ -282,19 +233,19 @@ void DrawStatusPage(s32 arg0) {
     n = gXPTable[stats->HPLevel];
     DrawMenuNumber(3, arg0 + 0xDA, 0x3B, stats->HPXP * 100 / n, 0xA);
     n = gXPTable[stats->MPLevel];
-    if (state->flags & 0x4000) {
+    if (state->flags & PLAYER_AT_50(ELEMENT_WATER)) {
         n *= 3;
     } else {
         n *= 4;
     }
     DrawMenuNumber(3, arg0 + 0xDA, 0x5C, stats->MPXP * 100 / n, 0xA);
     n = gXPTable[stats->defLevel];
-    if (state->flags & 0x2000) {
+    if (state->flags & PLAYER_AT_50(ELEMENT_EARTH)) {
         n = (f32)n * 0.8;
     }
     DrawMenuNumber(3, arg0 + 0xDA, 0x7D, stats->defXP * 100 / n, 0xA);
     n = gXPTable[stats->agiLevel];
-    if (state->flags & 0x8000) {
+    if (state->flags & PLAYER_AT_50(ELEMENT_WIND)) {
         n = (f32)n * 0.8;
     }
     DrawMenuNumber(3, arg0 + 0xDA, 0x9E, stats->agiXP * 100 / n, 0xA);
@@ -319,9 +270,9 @@ void DrawStatusPage(s32 arg0) {
     DrawMenuSprite(0x15, arg0 + 0xF6, 0x7D, 8, 0xA);
     DrawMenuSprite(0x15, arg0 + 0xF6, 0x9E, 8, 0xA);
     DrawMenuSprite(0x1A, arg0 + 0x77, 0x19, 0x52, 0xD);
-    if (!(gMenuState & 0x2000)) {
+    if (!(gMenuState & MENU_TURNING_PAGE)) {
         if ((gStickX > 20) || (gButtonsHeld & R_TRIG)) {
-            gMenuState |= 0x2000;
+            gMenuState |= MENU_TURNING_PAGE;
             gPageTurnFrames = 0x1F;
             PlaySound(0, 0, 0xFF);
         } else if ((gStickX < -20) || (gButtonsHeld & Z_TRIG)) {
@@ -332,7 +283,6 @@ void DrawStatusPage(s32 arg0) {
     }
 }
 
-extern s8 gStickY;
 void DrawEnvironmentPage(s32 arg0) {
     static s32 gEnvKnobX;       /* the moving knob's x */
     s32 bob;
@@ -389,13 +339,13 @@ void DrawEnvironmentPage(s32 arg0) {
         DrawMenuSprite(kinds.k[gMusicVolumeStops[gMusicVolumeSetting].kind], gMusicVolumeStops[gMusicVolumeSetting].x + arg0, 0x67, 8, 0xB);
         DrawMenuSprite(kinds.k[gMessageSpeedStops[gMessageSpeed].kind], gMessageSpeedStops[gMessageSpeed].x + arg0, 0x39, 8, 0xB);
     }
-    if (gMenuState & 0x2000) {
+    if (gMenuState & MENU_TURNING_PAGE) {
         gMessageSpeed = 4 - gMessageSpeed;
         return;
     }
     if (!(gMenuState & 0x800)) {
         if ((gStickX > 20) || (gButtonsHeld & 0x10)) {
-            gMenuState |= 0x2000;
+            gMenuState |= MENU_TURNING_PAGE;
             gPageTurnFrames = 0x1F;
             PlaySound(0, 0, 0xFF);
         } else if ((gStickX < -20) || (gButtonsHeld & 0x2000)) {
@@ -547,34 +497,12 @@ void DrawEnvironmentPage(s32 arg0) {
     }
     gMessageSpeed = 4 - gMessageSpeed;
 }
-extern s16 gMapPageOrigin[2][6];
-extern f32 gMapCursorX;
-extern f32 gMapCursorY;
-extern s16 gMapPageMarkers[][9][2];
-extern u16* gMapPagePalettes[];
-extern u8* gMapPageStrips[][24];
-extern s16 gMapPageScale[2][6];
-extern u16* gMapCardPalettes[];
-extern u8* gMapCardImages[][2];
-extern u8 gMapCardSizes[][3];
-extern s16 gMapCardPositions[][2];
 /* the Start menu .bss after DrawEnvironmentPage's static (0x8008FB58): the map cursor saved by DrawMapPage */
 f32 gMapCursorSavedX;
 f32 gMapCursorSavedY;
-extern u8 map_image_0_ROM_START[], map_image_0_ROM_END[];
-extern u8 map_image_1_ROM_START[], map_image_1_ROM_END[];
-extern u8 map_image_2_ROM_START[], map_image_2_ROM_END[];
-extern u8 map_image_3_ROM_START[], map_image_3_ROM_END[];
-extern u8 map_image_4_ROM_START[], map_image_4_ROM_END[];
-extern u8 map_image_5_ROM_START[], map_image_5_ROM_END[];
-extern u8 map_card_jp_6_ROM_START[], map_card_jp_6_ROM_END[];
-extern u8 map_card_jp_7_ROM_START[], map_card_jp_7_ROM_END[];
-extern u8 map_card_jp_8_ROM_START[], map_card_jp_8_ROM_END[];
-extern u8 map_card_jp_9_ROM_START[], map_card_jp_9_ROM_END[];
 
 /* ---- this file's .data (0x80060CB0-0x80061650) starts with the menu's tables, defined here because DrawMapPage's
    static (0x800615E0) follows them; the .bss above is all declared first, so these declarations move none of it ---- */
-extern u8 gMenuSheetPixels[];       /* the menu sprite sheet's pixels (CI8), in main's data after this file's */
 s8 gMusicVolumeSetting = 2;          /* the music volume setting: an index into gMusicVolumeLevels (sound.c) */
 SpriteSize gMenuSpriteSizes[88] = {  /* the menu sprite sheet: width, height per kind */
     { 16, 16 }, { 16, 13 }, { 16, 16 }, { 16, 16 }, { 12, 12 }, { 8, 8 }, { 16, 11 }, { 16, 11 },
@@ -945,10 +873,10 @@ void DrawMapPage(s32 arg0) {
             DrawMenuSprite(4, arg0 + gMapCursorX + 39.0f - 2.0f, gMapCursorY + 29.0f - 12.0f + y, 0xC, 0xC);
         }
     }
-    if (!(gMenuState & 0x2000)) {
+    if (!(gMenuState & MENU_TURNING_PAGE)) {
         if (!gMapFreeCursor) {
             if ((gStickX > 20) || (gButtonsHeld & R_TRIG)) {
-                gMenuState |= 0x2000;
+                gMenuState |= MENU_TURNING_PAGE;
                 gPageTurnFrames = 0x1F;
                 PlaySound(0, 0, 0xFF);
             } else if ((gStickX < -20) || (gButtonsHeld & Z_TRIG)) {
@@ -977,22 +905,6 @@ void DrawMapPage(s32 arg0) {
 
 /* ---- the rest of this file's .data (0x800615E4-0x80061650), after DrawMapPage's static at 0x800615E0: the
    definitions keep this place in the text, so nothing above declares them. */
-extern u16 D_80068EB0[];
-extern u16 D_8006A8F0[];
-extern u16 D_8006B4D8[];
-extern u16 D_80069A98[];
-extern u8 D_800690B8[];
-extern u8 D_800695A8[];
-extern u8 D_8006AAF8[];
-extern u8 D_8006AFE8[];
-extern u8 D_8006B6E0[];
-extern u8 D_8006BBD0[];
-extern u8 D_80069CA0[];
-extern u8 D_8006A2C8[];
-extern u8 D_80067090[];
-extern u8 D_80067898[];
-extern u8 D_800680A0[];
-extern u8 D_800688A8[];
 GaugePalettes gGaugePalettes = { { D_80068EB0, D_8006A8F0, D_8006B4D8, D_80069A98 } };
 GaugeTextures gGaugeTextures = { { { D_800690B8, D_800695A8 }, { D_8006AAF8, D_8006AFE8 }, { D_8006B6E0, D_8006BBD0 }, { D_80069CA0, D_8006A2C8 } } };
 MenuBgRows gStripTexHeights = { { 32, 32, 32, 24 } };        /* the strips' texture heights */
@@ -1078,10 +990,10 @@ void DrawElementsPage(s32 x) {
     }
     DrawMenuNumber(3, x + 0x91, 0x92, n, 0xA);
     DrawElementGauge(n, x);
-    if (!(gMenuState & 0x2000)) {
+    if (!(gMenuState & MENU_TURNING_PAGE)) {
         stick = gStickX;
         if ((stick > 20) || (gButtonsHeld & R_TRIG)) {
-            gMenuState |= 0x2000;
+            gMenuState |= MENU_TURNING_PAGE;
             gPageTurnFrames = 0x1F;
             PlaySound(0, 0, 0xFF);
         } else if ((stick < -20) || (gButtonsHeld & Z_TRIG)) {
@@ -1473,8 +1385,6 @@ void DrawMenuDigits(s32 digits, s32 x, s32 y, u32 value) {
         x += 10;
     }
 }
-extern s32 gCurrentMap;
-extern s32 gCurrentSubmap;
 void MapCursorToWorld(void) {
     f32 dx;
     f32 dz;

@@ -1,13 +1,16 @@
 /*Same as 1BCD0.c in Quest64*/
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/dust.h"
 #include "game/math.h"
+#include "game/camera.h"
+#include "game/main.h"
 
 
-extern s32 gDustCount;
-extern Dust gDust[0x100];
-extern Gfx* gDisplayListHead;
-extern u8 gTexMaskSides[7]; /* texture side lengths 2, 4 .. 128: a side of up to gTexMaskSides[i] texels gets mask i + 1 */
+/* ---- dust.c's .bss (0x80087E30-0x8008BE40): the dust particles. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more. ---- */
+s32 gDustCount;
+Dust gDust[0x100];                       /* ResetDust and SpawnDust walk 0x100 */
 
 
 //#pragma GLOBAL_ASM("asm/nonmatchings/game/dust/ResetDust.s")
@@ -43,10 +46,6 @@ Dust* SpawnDust(Dust* tmpl) {
     return ret;
 }
 
-extern s32 gMatrixHead;
-extern Mtx D_2000000[];
-extern Camera gCamera;
-extern Gfx gDustDefaultGfx[];
 void DrawDust(mkst* dyn) {
     s32 n;
     u8* tex;

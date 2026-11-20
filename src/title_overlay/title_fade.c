@@ -1,5 +1,6 @@
 #include "common.h"
 #include "game/title.h"
+#include "game/main.h"
 
 /*
  * The title screen's fade, the third of the overlay's three source files (title_screen.c describes the overlay):
@@ -7,17 +8,8 @@
  * frames. The .bss is not cleared by the loader (title_screen.c).
  */
 
-typedef struct TitleFade {
-    s16 active;     /* -1 while a fade runs */
-    u16 framesLeft;
-    f32 step;       /* alpha change per frame: 255 / the fade's length */
-    f32 alpha;
-} TitleFade;
 
-extern Gfx* gDisplayListHead;
-extern Gfx gTitleFadeDL[]; /* title_menu.c */
 
-void TitleScreen_DrawFade(TitleFade* fade);
 
 /* ---- .data ---- */
 s32 gTitleFadeKind = 0; /* the fade's kind: 0 none, 1 to black, 2 from black, 3 to white, 4 from white */

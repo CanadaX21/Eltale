@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "quest_types.h"
 #include "variables.h"
+#include "bss_order.h"
 
 /* The number of elements of an array. */
 #define ARRAY_COUNT(arr) (s32)(sizeof(arr) / sizeof((arr)[0]))

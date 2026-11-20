@@ -1,23 +1,17 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/camera.h"
 #include "game/collision.h"
 #include "game/math.h"
+#include "game/controller.h"
+#include "game/encounter.h"
+#include "game/enemy.h"
+#include "game/hud.h"
+#include "game/main.h"
+#include "game/map.h"
+#include "game/player.h"
+#include "map_format.h"
 /* camera state, 0x88 (Quest tempstruct1) */
-extern Submap* gSubmapHeader;          /* the current submap */
-/* ---- camera.c's .bss (0x80085B80-0x80085F90), in address order. IDO 5.3 lays out the
-   variables first declared among a file's first 32 declarations (typedefs and variables, externs too) after all
-   later ones; this block is all inside those 32 and the file declares no other .bss, so it keeps its order.
-   Declaring any of these variables above it, or adding declarations above it (headers included: recount
-   the declarations above this block after a header edit), moves them. The D_ names marked
-   unreferenced are space no code addresses (unknown variables). ---- */
-typedef struct {                        /* laid out like MonsterBattleData's first 0x6C bytes */
-    Vec3f pos;
-    char unkC[0x18];
-    f32 scale;                          /* 0x24 */
-    char unk28[0x3C];
-    MonsterBaseData* unk64;
-    ActorStats* unk68;
-} CameraTarget;                         /* the spell camera's target (SnapSpellCamera copies an enemy into it) */
 Camera gDefaultCamera;                 /* default camera (Quest D_80086B00) */
 s32 gCameraSetupCount;                         /* camera setups in the map's table */
 s32 D_80085C0C;                         /* unreferenced */
@@ -33,7 +27,7 @@ s32 gCameraBob;                         /* set when the map / submap is in gCame
 s32 D_80085CBC;                         /* unreferenced */
 u8 D_80085CC0[0x188];                   /* unreferenced */
 Camera gCamera;               /* the camera */
-MtxF gProjectionMtxF;                        /* UpdateCamera passes it with &gPerspNorm (a perspective's mf, perspNorm?) */
+MtxF gProjectionMtxF;                        /* the projection matrix: UpdateCamera builds it with guPerspectiveF, which writes gPerspNorm too */
 MtxF gViewMtxF;                        /* the view matrix */
 f32 gViewConeHalf;                         /* half the view cone, in degrees */
 f32 gNearPlane;                         /* near plane distance */
@@ -45,28 +39,15 @@ CameraTransition gCameraTransition;
 f32 gBattleCameraYawOffset;                         /* battle camera yaw offset, +45 deg per press (Quest D_80086EFC) */
 u16 gPerspNorm;
 /* names from vbhayden's Quest 64 scratches */
-extern s32 gNpcsDrawn;             /* NPCs drawn this frame (Quest D_8007BCE8) */
-extern ActorTransform* gNpcsDrawnList[]; /* the drawn NPCs' transforms (Quest D_8007BCF0) */
-extern f32 gBattleCenterX;          /* battle centre x (Quest D_8008C59C) */
-extern f32 gBattleCenterZ;          /* battle centre z (Quest D_8008C5A0) */
-extern u16 gButtonsPressed;          /* buttons pressed this frame (Quest D_80092876) */
-/* fixed-position camera view of the camera state (Quest RuntimeCameraData, camera mode 1) */
-extern u16 gBattleState;               /* battle state (gBattleState) */
-extern s32 gGameState;               /* game state flags */
-extern u16 gButtonsHeld;               /* buttons held */
 
-typedef struct {
-    s32 map;
-    s32 submap;
-} MapRef;
 /* the camera setups of a map without its own table (InitRoomCamera) */
 CameraSetup gDefaultCameraSetups[] = {
     { 0, 0.0f, 0.0f, 0.0f, 11.0f, 15.0f, 65.0f, 0.0f, 0.0f, 0.0f, 0.0f, { 25.0f, 15.0f, 2500.0f } },
     { 0, 0.0f, 0.0f, 0.0f, 11.0f, 72.0f, 144.0f, 0.0f, 0.0f, 0.0f, 0.0f, { 25.0f, 15.0f, 2500.0f } },
     { 0, 0.0f, 0.0f, 0.0f, 11.0f, 20.0f, 55.0f, 0.0f, 0.0f, 0.0f, 0.0f, { 25.0f, 15.0f, 2500.0f } },
 };
-/* the camera mode handlers, by mode (UpdateCamera). Declared without a prototype: modes 1 and 3 take the
-   FixedCamera view of the camera state. */
+/* the camera mode handlers, by mode (UpdateCamera). Declared without a prototype (an empty parameter
+   list); every handler takes the Camera. */
 void (*gCameraModeHandlers[])() = {
     CameraMode_Field, CameraMode_Fixed, CameraMode_Field, AimFixedCamera, CameraMode_Battle, CameraMode_AfterBattle,
 };
@@ -75,17 +56,6 @@ MapRef gCameraBobRooms[] = {
     { 25, 2 }, { 25, 3 }, { 25, 4 }, { 25, 5 }, { 25, 8 }, { 25, 9 }, { 12, 2 },
 };
 f32 gCameraShakeOffsets[] = { 0.0f, -0.1f, 0.0f, -0.05f, 0.1f, -0.1f, -0.05f, 0.08f };   /* pairs of floats (StartCameraShake) */
-typedef struct {
-    CameraSetup* setups;
-    u16 count;
-} MapCameras;                           /* 8 bytes: a submap's camera table (sMapData +0x24, one per submap) */
-extern f32 gBrianSpawnYaw;                  /* Brian's spawn yaw */
-extern PlayerState gPlayerState;          /* Brian's state block (player.c) */
-extern sMapData* gMapHeader;            /* the current map's header */
-extern s32 gCurrentMap;                  /* the current map */
-extern s32 gCurrentSubmap;                  /* and submap */
-extern PendingWarp gPendingWarp;
-extern GfxFrame gFrames[2];       /* the two frames' graphics tasks */
 
 void InitRoomCamera(void) {
     Camera* cam;
@@ -100,7 +70,7 @@ void InitRoomCamera(void) {
     guOrtho(&gFrames[0].dyn.mtx.list[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
     guOrtho(&gFrames[1].dyn.mtx.list[1], -159.0f, 159.0f, 119.0f, -119.0f, 10.0f, 200.0f, 1.0f);
     if (gPendingWarp.entrance < 0) {
-        cam->unk84 = 3.1415927f;
+        cam->arrivalYaw = 3.1415927f;
     }
     gCameraSetupIndex = (gPlayerState.brian.transform.floorFlags >> 1) & 7;
     map = gMapHeader;
@@ -131,7 +101,7 @@ void InitRoomCamera(void) {
             gCameraOffset.x = 0.0f;
             gCameraOffset.y = cam->ideal_planar_distance * 0.8;
             cam->cam_y = brian->pos.y + setup->local_camera_height;
-            rotateCoordinatesByAngle(cam->unk84 + gBrianSpawnYaw, &gCameraOffset);
+            rotateCoordinatesByAngle(cam->arrivalYaw + gBrianSpawnYaw, &gCameraOffset);
             cam->cam_x = brian->pos.x - gCameraOffset.x;
             cam->cam_z = brian->pos.z - gCameraOffset.y;
             cam->orbit_yaw = 0.0f;
@@ -171,13 +141,6 @@ void InitRoomCamera(void) {
         }
     }
 }
-extern s32 gFieldFreeze;
-extern Gfx* gDisplayListHead;
-extern s32 gMatrixHead;                 /* matrices used this frame */
-extern Mtx D_2000000[];                /* segment 2: the frame's matrices */
-extern Mtx D_2000080;
-extern Light D_2008A40;                /* segment 2: FrameDynamic.lookat, its x and y halves */
-extern Light D_2008A50;
 void UpdateCamera(FrameDynamic* dyn) {
     /* The camera's frame: Brian's camera preset on maps with flag 2, the mode's handler, L cycles the map's camera
        setups, the bob, the projection (gViewConeHalf degrees, 4:3) and view into the frame's matrices, the screen
@@ -189,14 +152,14 @@ void UpdateCamera(FrameDynamic* dyn) {
     LookAt* look;
 
     cam = &gCamera;
-    if ((gSubmapHeader->flags & 2) && !(gBattleState & 1) && cam->mode != 3) {
+    if ((gSubmapHeader->flags & SUBMAP_FLOOR_CAMERAS) && !(gBattleState & BATTLE_ACTIVE) && cam->mode != 3) {
         next = (gPlayerState.brian.transform.floorFlags >> 1) & 7;
         if (next != gCameraSetupIndex) {
             LoadCameraSetup(next);
         }
     }
     gCameraModeHandlers[cam->mode](cam);
-    if (!(gGameState & 0x82) && gFieldFreeze == 0 && !(gBattleState & 1) && !(gSubmapHeader->flags & 2) &&
+    if (!(gGameState & (GAME_STATE_MESSAGE | GAME_STATE_MAP_CHANGE)) && gFieldFreeze == 0 && !(gBattleState & BATTLE_ACTIVE) && !(gSubmapHeader->flags & SUBMAP_FLOOR_CAMERAS) &&
         (gButtonsPressed & L_TRIG) && gCameraSetupCount >= 2) {
         gCameraSetupIndex++;
         if (gCameraSetupIndex >= gCameraSetupCount) {
@@ -248,7 +211,7 @@ void CameraMode_Field(Camera* cam) {
 
     target = cam->target_transform;
     func_80015B88(cam);
-    if (!(gGameState & 0x82) && !(gBattleState & 0x200) && !(cam->flags & 0x40)) {
+    if (!(gGameState & (GAME_STATE_MESSAGE | GAME_STATE_MAP_CHANGE)) && !(gBattleState & BATTLE_INTRO) && !(cam->flags & 0x40)) {
         if ((gButtonsHeld & B_BUTTON) || cam->mode == 2) {
             cam->flags |= 0x24;
         } else {
@@ -281,7 +244,7 @@ void CameraMode_Field(Camera* cam) {
     cam->cam_speed_x *= cam->drag;
     cam->cam_speed_z *= cam->drag;
     behind = 0;
-    if (dist < 25.0f && !(gGameState & 0x80)) {
+    if (dist < 25.0f && !(gGameState & GAME_STATE_MAP_CHANGE)) {
         diff = target->yrot - cam->target_yaw;
         if (diff > 3.141592653589793) {
             diff -= 6.283185307179586;
@@ -316,7 +279,7 @@ void CameraMode_Field(Camera* cam) {
         dy = target->pos.y + cam->local_camera_height;
     }
     dz = CameraAboveNpcs(cam, dy);
-    if ((gBattleState & 1) && dz < gPlayerState.brian.transform.pos.y) {
+    if ((gBattleState & BATTLE_ACTIVE) && dz < gPlayerState.brian.transform.pos.y) {
         dz = gPlayerState.brian.transform.pos.y;
     }
     dy = dz - cam->cam_y;
@@ -572,7 +535,7 @@ void SnapSpellCamera(s32 duration, MonsterBattleData* caster) {
     f32 cam_dist;
     MonsterBaseData* caster_attrs;
 
-    if (gBattleState & 1) {
+    if (gBattleState & BATTLE_ACTIVE) {
         if (!(gCamera.flags & 0x40)) {
             gDefaultCamera = gCamera;
         }
@@ -589,8 +552,8 @@ void SnapSpellCamera(s32 duration, MonsterBattleData* caster) {
         }
 
         gSpellCameraTarget.scale = caster->transform.scale;
-        gSpellCameraTarget.unk64 = caster->transform.base.monster;
-        gSpellCameraTarget.unk68 = caster->stats;
+        gSpellCameraTarget.monster = caster->transform.base.monster;
+        gSpellCameraTarget.stats = caster->stats;
 
         if (caster->transform.actorFlags & 4) {
             cam_dist = caster->transform.base.monster->height * caster->transform.scale + 40.0;
@@ -698,7 +661,7 @@ void ClampCameraToTarget(void) {
     } else if (yaw > 3.141592653589793) {
         yaw -= 6.283185307179586;
     }
-    gCamera.unk84 = yaw;
+    gCamera.arrivalYaw = yaw;
     gCamera.orbit_yaw = gPendingWarp.yaw + 3.141592653589793;
     if (gCamera.orbit_yaw > 3.141592653589793) {
         gCamera.orbit_yaw -= 6.283185307179586;

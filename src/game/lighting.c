@@ -1,15 +1,18 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/lighting.h"
 #include "game/math.h"
+#include "game/camera.h"
+#include "game/encounter.h"
+#include "game/hud.h"
+#include "game/main.h"
+#include "game/map.h"
 /* split from collision.c: the original was separate files (each IDO object pads its .rodata to 16;
-   the zero words before this file's first literal mark the boundary). Declarations copied from collision.c. */
-/* ---- lighting.c's .bss (0x80084330-0x80084B80), in address order. IDO 5.3 lays out the
-   variables first declared among a file's first 32 declarations (typedefs and variables, externs too) after
-   all later ones; this block is all inside those 32 (one to spare) and the file declares no other .bss, so it
-   keeps its order. Adding declarations above it, or declaring these variables there, moves them; so do
-   typedefs / externs added to or removed from the headers (they count too: recount the declarations
-   above this block after a header edit).
-   D_8008434C is space no code addresses (an unknown variable). ---- */
+   the zero words before this file's first literal mark the boundary). */
+/* ---- lighting.c's .bss (0x80084330-0x80084B80), in address order. IDO 5.3 lays a unit's .bss
+   out by its variables' block numbers, so a declaration added or removed before them, in a header too, can change
+   their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix` recomputes it
+   (docs/DECLARATIONS.md). D_8008434C is space no code addresses (an unknown variable). ---- */
 s32 gNextDayPeriod;                         /* the next period */
 s32 gFirstDayPeriodEnd;                         /* the first period's end */
 u16 gPlayTimeTicks;                         /* ticks toward the next play-time minute (1501 each) */
@@ -41,15 +44,7 @@ s32 gFogColourR;                         /* (effects.c) */
 s32 gFogColourG;
 s32 gFogColourB;
 FogRange gFogNow;                      /* and fog range */
-extern u16 gLightRecordFlags;   /* bit 0: the sun follows the time of day */
-extern u16 gBattleState;
-extern DayPeriod gDayPalettePeriods[];   /* the day's palette periods */
-extern u16 gMapFlags;
-extern s32 gFieldFreeze;
-extern s32 D_8008C164;
-extern u16 gSkyPalettes[];             /* the sky palettes, 256 colours each */
-extern u16 gFadingPalette[];             /* the palette being faded */
-extern s32 gGameState;               /* game state flags */
+DayPeriod gDayPalettePeriods[4] = { { 5625, 0, 128 }, { 9000, 1, 128 }, { 19125, 2, 128 }, { 21375, 3, 128 } };   /* the day's palette periods: the frame of the day each starts, its palette, the fade's frames (lighting.c's .data; where the extern stood, so the declarations keep their count) */
 void ResetTimeOfDay(void) {
     s32 i;
 
@@ -137,8 +132,8 @@ void UpdateTimeOfDay(void) {
             }
         }
     }
-    if (gMapFlags & 5) {
-        if (!(gBattleState & 1) && !(gGameState & 3) && gFieldFreeze == 0) {
+    if (gMapFlags & (MAP_TOWN | MAP_FIELD)) {
+        if (!(gBattleState & BATTLE_ACTIVE) && !(gGameState & (GAME_STATE_ITEM_MENU | GAME_STATE_MESSAGE)) && gFieldFreeze == 0) {
             gTimeOfDay++;
             if (gTimeOfDay >= gDayLength) {
                 gTimeOfDay -= gDayLength;
@@ -217,10 +212,6 @@ void UpdateMapLights(s32 time, MapLight* lights) {
     gFogNow.far = (prev->fog.far * rest + key->fog.far * into) / span;
 }
 
-extern s32 gCurrentFrame;               /* which frame is current */
-extern Gfx* gDisplayListHead;
-extern s16 gFogNear;               /* fog near */
-extern s16 gFogFar;               /* fog far */
 void UpdateLightDirections();   /* RULE-EXCEPTION R25: unprototyped; the call below passes lights (left in a0
                                  * for SetupLights), the definition takes no arguments */
 void UpdateFrameLights(void) {
@@ -238,7 +229,6 @@ void UpdateFrameLights(void) {
     gSPFogPosition(gDisplayListHead++, gFogNear, gFogFar);
     gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, 0xFF);
 }
-extern MtxF gViewMtxF;              /* the view matrix */
 void UpdateLightDirections(void) {
     f32 angle;
     f32 ox;
@@ -365,9 +355,6 @@ void SetLightAnimLights(s32 n, s32 mode, s32 count, s32* keys) {
 void SetLightAnimDirections(s32 n, s32* dirs) {
     gLightAnims[n].dirs = dirs;
 }
-extern s32 gSkyFillR;
-extern s32 gSkyFillG;
-extern u32 gSkyFillB;
 void StepLightAnim(s32 index) {
     LightAnim* anim;
     s32* key;
@@ -487,7 +474,7 @@ void StepLightAnim(s32 index) {
     SetupLights(lights, colours, dirs);
     gSPSetLights3(gDisplayListHead++, (*lights));
     gDPSetFogColor(gDisplayListHead++, colours[9], colours[10], colours[11], 0xFF);
-    if (gMapFlags & 0x80) {
+    if (gMapFlags & MAP_FOG_SKY) {
         gSkyFillR = colours[9];
         gSkyFillG = colours[10];
         gSkyFillB = colours[11];

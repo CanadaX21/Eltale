@@ -1,7 +1,8 @@
 """c_layout.py: the layout of the project's C struct types, read from its headers.
 
 The project's C types are the one definition of the records the build emits as typed data (tools/splat_ext/anim.py); the
-ROM map checks its readers' offsets against this module's reading of the same headers. It reads `typedef struct` and
+project's ROM map (a research tool outside this repository) checks its readers' offsets against this
+module's reading of the same headers. It reads `typedef struct` and
 `typedef union` definitions (tagged or not) and lays them out as IDO does for the N64's o32 ABI: each scalar aligned to
 its size, an aggregate to its widest member, its size rounded up to that alignment. Plain char is signed: the build
 compiles with -signed (configure.py; IDO's own default is unsigned).

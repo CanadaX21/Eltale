@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/map.h"
 #include "game/audio.h"
 #include "game/collision.h"
@@ -9,81 +10,19 @@
 #include "game/shadow.h"
 #include "game/sound.h"
 #include "game/spline.h"
-/* float view of the same 0x1C-byte record (AddSpinningProp; Quest func_8000E418) */
-typedef struct {
-    s32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;  /* angle */
-    s32 unk18;  /* id */
-} unke3c4f;  /* unused (SpinningProp has these member types); kept for the declaration count */
-extern s32 gCurrentFrame;  /* which buffer is current (Quest D_8007B2F4) */
-extern Gfx* gDisplayListHead;
-extern MapLight* gSubmapLight;         /* the submap's light record */
+#include "game/camera.h"
+#include "game/lighting.h"
+#include "game/main.h"
+#include "game/player.h"
+#include "segment_symbols.h"
+#include "maps.h"
+BSS_ORDER_PAD(92)
 /* the map loader (LoadMap; Quest func_8000BD10, names from vbhayden's scratch) */
-extern sMapData gMapTable[];        /* every map's header */
-extern u8* gRegionBlocks[];                /* extra ROM blocks, 3 words each: start, end, RAM (sMapData.unk3C; Quest D_800558A0) */
-extern SkyRecord gSkyRecords[];
-extern ModelTransform gZeroModelTransform;
-extern Dust gMapDustTemplate;              /* the map dust template (map.c's .data, defined after SkyPaletteKey) */
-extern Dust gDustEmitterTemplate;              /* the second dust template */
-extern PlayerState gPlayerState;      /* Brian's state block */
-extern f32 gFloatingSwayDivX[4];            /* the floating models' sway sizes (x, y, z) */
-extern f32 gFloatingSwayDivY[4];
-extern f32 gFloatingSwayDivZ[4];
-extern s8 gTileOffsets0[];               /* tile neighbourhoods: (dx, dz) pairs, one table per tile mode */
-extern u16 gLavaPalette[];                /* a palette map 0x1D loads, rotated here */
-extern MapPropGfx gFlameModelLists[];     /* the flame kinds' setup / model lists (kinds 0x11, 0x12) */
-extern u8** gFlameFrameTables[];            /* their 8 texture frames */
-extern u16 gFlameTexWidths[2];
-extern u8 gFlameAlphas[4];
-extern PendingWarp gPendingWarp;
-extern f32 gBrianSpawnX;               /* Brian's spawn x / z / angle */
-extern f32 gBrianSpawnZ;
-extern f32 gBrianSpawnYaw;
-extern s32 gEntranceDoorModel;
-extern u8 gameplay_common_ROM_START[];
-extern u8 gameplay_common_ROM_END[];               /* the end of the gameplay_common_ROM_START block (undefined_syms.jp.txt; the next block starts here) */
-extern u8 interiors_common_ROM_START[];
-extern u8 interiors_common_ROM_END[];
-extern u8 sky_palettes_ROM_START[];
-extern u8 rotating_palette_ROM_START[];
-extern u8 field_shared_ROM_START[];
-extern u8 field_shared_ROM_END[];
-extern u8 D_80100000[];
-extern u8 D_8010FE00[];
-extern u8 D_801E0000[];
 
-/* other units' data */
-extern s8 gTileOffsets1[];
-extern s8 gTileOffsets2[];
-extern s8 gTileOffsets3[];
-extern s8 gTileOffsets4[];
-extern ModelPart gMapModelPaths[];        /* the animated models' animations */
-extern Gfx D_10000E8[];
-extern s16 gFogNear;
-extern s16 gFogFar;
-extern s32 gMatrixHead;
-extern Mtx D_2000000[];
-extern Camera gCamera;
-extern u8 gPropAlpha[];               /* per map: the props' alpha */
-extern s32 gSkyColour;               /* the sky colour */
-extern s32 gSkyColourG;
-extern s32 gSkyColourB;
-extern ModelPart gDoorAnimTable;         /* door animations */
-extern ModelPart gDoorAnimAlt;
-extern ModelPart gDoorAnim4;
-extern u8 gMapDustTextures[];   /* the map dust textures (0x400 each) */
-extern Gfx gMapDustGfx[];              /* their display list */
-extern u8 gDustTexture2[];              /* the second dust texture */
-extern Gfx gDustGfx2[];              /* its display list */
 
-/* ---- map.c's .bss (0x8007C280-0x800842F0). IDO 5.3 orders a file's .bss by where each
-   variable is first declared, counted through the file (headers included) modulo 256: these come in address order,
-   no extern of them may sit above the block, and FadeSkyPalette's four statics fall between the prop arrays at their
-   place in that count (the externs of other units' data above the block keep it). Names inside a block (D_8007C990 / D_8007C998 in the map's loaded
+/* ---- map.c's .bss (0x8007C280-0x800842F0). Defined in address order, the order game/map.h declares
+   them in: IDO 5.3 lays the unit's .bss out by those declarations, and FadeSkyPalette's four
+   statics fall between the prop arrays by the second BSS_ORDER_PAD (include/bss_order.h). Names inside a block (D_8007C990 / D_8007C998 in the map's loaded
    data) are link names or offsets in the regenerated asm. ---- */
 u16 gLightRecordFlags;                  /* the light record's flags */
 u16 gLoadedSkyRecord;                   /* the sky record loaded now */
@@ -140,7 +79,7 @@ u16 gLavaFrames;
 f32 gMusicSourceDistance;               /* the nearest music source's distance */
 s32 gMusicSourceSong;                   /* its music */
 s32 gMusicSourceLastSong;                         /* the music playing last frame */
-u16 gMapFlags;                          /* the map's flags (sMapData.unk0) */
+u16 gMapFlags;                          /* the map's flags (sMapData.flags): MAP_ */
 s32 gCurrentMap;                        /* current map */
 s32 gCurrentSubmap;                     /* current submap */
 s32 gNextMap;                           /* next map */
@@ -152,7 +91,7 @@ s32 gReturnEntrance;
 s32 gExitDest;                          /* Exit destination map / submap / entrance */
 s32 gExitRoom;
 s32 gExitEntrance;
-u16 gSubmapFlags;                       /* the submap's flags (Submap.unk14) */
+u16 gSubmapFlags;                       /* the submap's flags (Submap.flags): SUBMAP_ */
 
 void LoadMap(void) {
     s32 count;
@@ -180,11 +119,11 @@ void LoadMap(void) {
             gReturnDest = gNextMap;
             gReturnRoom = gNextSubmap;
             gReturnEntrance = gPendingWarp.entrance;
-        } else if ((gMapFlags & 1) && (gMapHeader->flags & 4)) {
+        } else if ((gMapFlags & MAP_TOWN) && (gMapHeader->flags & MAP_FIELD)) {
             gReturnDest = gNextMap;
             gReturnRoom = gNextSubmap;
             gReturnEntrance = gPendingWarp.entrance;
-        } else if ((gNextMap != gCurrentMap) && (gMapHeader->flags & 8)) {
+        } else if ((gNextMap != gCurrentMap) && (gMapHeader->flags & MAP_DUNGEON)) {
             gExitDest = gNextMap;
             gExitRoom = gNextSubmap;
             gExitEntrance = gPendingWarp.entrance;
@@ -203,8 +142,8 @@ void LoadMap(void) {
         gPreviousMap = gCurrentMap;
         gCurrentMap = gNextMap;
         gMapFlags = gMapHeader->flags;
-        if (gMapFlags & 7) {
-            if (gMapFlags & 2) {
+        if (gMapFlags & (MAP_TOWN | MAP_INTERIOR | MAP_FIELD)) {
+            if (gMapFlags & MAP_INTERIOR) {
                 dma_write(interiors_common_ROM_START, D_8010FE00, interiors_common_ROM_END - interiors_common_ROM_START);
             }
             block = &gRegionBlocks[gMapHeader->regionBlock * 3];
@@ -251,7 +190,7 @@ void LoadMap(void) {
         gBrianSpawnX = entrance->x;
         gBrianSpawnZ = entrance->z;
         gBrianSpawnYaw = entrance->yrot;
-        gEntranceDoorModel = entrance->unkE;
+        gEntranceDoorModel = entrance->doorModel;
     }
     count = gMapModelData->transform_count;
     model = gMapModels;
@@ -297,7 +236,7 @@ void UpdateLavaPalette(void) {
     u16 last;
 
     gSpinningPropsAdded = 0;
-    if (gCurrentMap == 0x1D) {
+    if (gCurrentMap == 0x1D) {   /* map 29, Boil Hole */
         i = 18;
         colour = gLavaPalette + i;
         last = *colour;
@@ -311,16 +250,6 @@ void UpdateLavaPalette(void) {
     }
 }
 
-extern ModelKey gDoorKeySample;
-extern Coordinates2D gDustPuffOffset;
-extern ModelTransform* gDrawList[];  /* this frame's animated models */
-extern ModelTransform* gLateDrawList[];  /* the plain ones */
-extern ModelTransform* gBillboardProps[];
-extern ModelTransform* gFlameProps[];
-extern ModelTransform* gScrollingProps[];
-extern s32 gPropsDrawn;
-extern u16 gFloatingSwaySpeeds[][2];   /* texture scroll speeds, (s, t) pairs */
-extern s32 gMusicSourceSounds[];              /* the music of each sound source */
 void DrawMapFrame(mkst* arg0) {
     Camera* cam = &gCamera;
     s8* offs;
@@ -510,8 +439,9 @@ s32 gMusicSourceSounds[4] = { 25, 27, 30, 32 };
 ModelTransform gZeroModelTransform = { { 0 } };    /* the empty entry gFloatingRests[] is reset from */
 void DrawMapBillboards(mkst* dyn) {
     static u16 sScroll = 0;          /* the scrolling props' texture offset, in rows */
-    static u8* sTextures[5] = {      /* the scrolling props' textures by kind - 0x40 (RGBA16, 32 wide) */
-        (u8*)0x801093B0, (u8*)0x8010A3B0, (u8*)0x80129D10, (u8*)0x80160B30, (u8*)0x8014DA40,
+    static u8* sTextures[5] = {      /* the scrolling props' textures by kind - 0x40 (RGBA16, 32 wide): two in
+                                        gameplay_common, then in maps 32, 17 and 27 as loaded (only one map has each) */
+        (u8*)0x801093B0, (u8*)0x8010A3B0, (u8*)gMap32Tex_18, (u8*)gMap17Tex_06, (u8*)gMap27Tex_17,
     };
     static u16 sHeights[6] = { 0x40, 0x40, 0x20, 0x40, 0x20, 0 };   /* their heights */
     ModelTransform* t;
@@ -676,7 +606,7 @@ s32 FindDoorAnim(void* target) {
     DoorAnimData* door = gDoorAnims;
     
     while (i != 0) {
-        if ((door->timer != 0) && (target == door->position)) {
+        if ((door->timer != 0) && (target == door->model)) {
             i = 5 - i;
             break;
         }
@@ -685,7 +615,7 @@ s32 FindDoorAnim(void* target) {
     }
     return i;
 }
-void StartDoorAnimation(s32 state, s32 frame, s32 flag, void* position) {
+void StartDoorAnimation(s32 state, s32 frame, s32 flag, void* doorModel) {
     s32 i;
     DoorAnimData* door;
     ModelPart* anim;
@@ -696,17 +626,17 @@ void StartDoorAnimation(s32 state, s32 frame, s32 flag, void* position) {
         i--;
         door++;
     }
-    door->unkDoorState = state;
-    door->unkCurrDoorAnimFrame = frame;
-    door->unkDoorFlag = flag;
-    door->position = position;
+    door->state = state;
+    door->frame = frame;
+    door->doorFlags = flag;
+    door->model = doorModel;
     door->yRotation = 0.0f;
     door->xSlideOffset = 0.0f;
     if (state != 0) {
         switch ((flag >> 8) & 0xF) {
             case 2:
             case 3:
-                if (door->unkDoorFlag & 1) {
+                if (door->doorFlags & 1) {
                     anim = &gDoorAnimAlt;
                 } else {
                     anim = &gDoorAnimTable;
@@ -730,20 +660,20 @@ void UpdateDoorAnimations(void) {
     door = gDoorAnims;
     while (i != 0) {
         if (door->timer != 0) {
-            switch (door->unkDoorState) {
+            switch (door->state) {
                 case 0:
                     door->timer--;
                     if (door->timer == 0) {
                         door->timer = 0x50;
-                        door->unkDoorState++;
+                        door->state++;
                     }
                     break;
                 case 1:
                     door->timer--;
-                    switch ((door->unkDoorFlag >> 8) & 0xF) {
+                    switch ((door->doorFlags >> 8) & 0xF) {
                         case 2:
                         case 3:
-                            if (door->unkDoorFlag & 1) {
+                            if (door->doorFlags & 1) {
                                 anim = &gDoorAnimAlt;
                             } else {
                                 anim = &gDoorAnimTable;
@@ -753,9 +683,9 @@ void UpdateDoorAnimations(void) {
                             anim = &gDoorAnim4;
                             break;
                     }
-                    SampleSpline(anim, &gDoorKeySample, door->unkCurrDoorAnimFrame++);
+                    SampleSpline(anim, &gDoorKeySample, door->frame++);
                     door->xSlideOffset = gDoorKeySample.x;
-                    door->yRotation = gDoorKeySample.unkC;
+                    door->yRotation = gDoorKeySample.yrot;
                     break;
             }
         }
@@ -763,7 +693,6 @@ void UpdateDoorAnimations(void) {
         door++;
     }
 }
-extern f32 gViewConeHalf;              /* half the view cone, in degrees */
 void DrawMapProps(mkst* dyn, s32 count, s32 type, ModelTransform** props) {
     ModelTransform* prop;
     s32 drawn;
@@ -1002,10 +931,11 @@ void DrawFlames(mkst* dyn, s32 count, s32 kind, ModelTransform** list) {
         }
     }
 }
-extern s32 gTimeOfDay;
 void FadeSkyPalette(void) {
     static s32 gSkyPaletteWanted = 0;   /* the palette the time of day asks for */
     static s32 gSkyFadeLeft = 1;        /* fade steps left */
+    /* gSkyFadeTotal to gSkyFadeOut keep their order and spacing: in the .bss they sit among game/map.h's
+       gLateDrawList .. gSpinningProps0 and tie with their block numbers (docs/DECLARATIONS.md) */
     static s32 gSkyFadeTotal;           /* the fade's length in steps */
     static s32 gSkyPaletteCurrent = 1;  /* the palette shown */
     static SkyPaletteKey gSkyPaletteKeys[6] = {

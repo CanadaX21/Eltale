@@ -1,0 +1,682 @@
+{
+ "about": "The HUD font's text encoding: what each byte of a HUD string does, and which character each cell of the HUD font sheet draws. The monsters', bosses' and spells' names and the placeholder for a spell not yet learned are HUD strings, drawn by DrawHUDText (the battle's monster card, the spell banner and the spell cross); the dialogue, signs and menus use the other encoding, text/encoding.json. Read from the matched C (DrawHUDText, GetHUDTextWidth) and the original ROM's sheet, cell by cell. tools/text_codec.py (HudEncoding) reads it.",
+ "font": {
+  "symbol": "gHudFontImage",
+  "type": "HudImage",
+  "loaded with": "the cutscene bank (InitGraphics), resident from boot",
+  "drawn by": "DrawHUDText",
+  "format": "CI4",
+  "width": 144,
+  "height": 45,
+  "cell width": 8,
+  "cell height": 9,
+  "columns": 18,
+  "rows": 5,
+  "columns a byte reaches": 16,
+  "palettes": "gHudFontPalettes, chosen by DrawHUDText's colour argument (the spell labels' by availability)"
+ },
+ "codes": [
+  {
+   "bytes": "0x00-0x7F",
+   "kind": "glyph",
+   "source text": "the glyph table's character, or {R,C} for a cell the table gives no character",
+   "evidence": "DrawHUDText draws the cell in row (byte & 0x70) >> 4, column byte & 0x0F, and moves the pen 8 texels; GetHUDTextWidth counts 8"
+  },
+  {
+   "bytes": "0x80",
+   "kind": "voiced mark",
+   "source text": "the voiced kana: the glyph before it with the mark (ガ is カ then 0x80)",
+   "evidence": "DrawHUDText draws column 15 of the last glyph's row two texels left of the pen and one up, then moves the pen 1; GetHUDTextWidth counts 1"
+  },
+  {
+   "bytes": "0x81",
+   "kind": "semi-voiced mark",
+   "source text": "the semi-voiced kana: the glyph before it with the mark (パ is ハ then 0x81)",
+   "evidence": "as 0x80, from column 16 of the last glyph's row"
+  },
+  {
+   "bytes": "0x82",
+   "kind": "half space",
+   "source text": "a space",
+   "evidence": "DrawHUDText moves the pen 4 texels; GetHUDTextWidth counts 4"
+  },
+  {
+   "bytes": "0xFF",
+   "kind": "end",
+   "source text": "implicit",
+   "evidence": "DrawHUDText and GetHUDTextWidth stop at it"
+  },
+  {
+   "bytes": "0x83-0xFE",
+   "kind": "unused",
+   "source text": "{code XX}",
+   "evidence": "DrawHUDText would draw the cell of the byte with bit 0x80 cleared while GetHUDTextWidth counts 0; no string of the original uses them"
+  }
+ ],
+ "marks": "Rows 0 to 2 hold the two voicing marks in columns 15 and 16, the same bitmap in each row. A mark after a glyph of row 3 or 4 would draw that row's column 15 or 16 instead (the digit 3, or nothing): the encoder refuses it, and the decoder writes such a byte as {code 80} or {code 81}.",
+ "grades": {
+  "verified": "the cell's bitmap read, and its character confirmed by use: the original's HUD strings that use the cell decode as words with it",
+  "read": "the cell's bitmap read; no string of the original uses the cell",
+  "mark": "a voicing mark: the 0x80 and 0x81 codes draw it over the glyph before them; no byte draws it as a glyph",
+  "empty": "no texel set"
+ },
+ "counts": {
+  "verified": 59,
+  "mark": 6,
+  "empty": 18,
+  "read": 7
+ },
+ "sources": [
+  {
+   "name": "the original ROM",
+   "about": "every cell read from its bitmap in the original Japanese ROM (rendered at 12x, and by palette index to tell the strokes from their shading); no outside table, tool or translation was used. The monsters', bosses' and spells' names in other localizations played no part."
+  }
+ ],
+ "glyphs": [
+  {
+   "row": 0,
+   "column": 0,
+   "code": "0x00",
+   "char": "ア",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 1,
+   "code": "0x01",
+   "char": "イ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 2,
+   "code": "0x02",
+   "char": "ウ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 3,
+   "code": "0x03",
+   "char": "エ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 4,
+   "code": "0x04",
+   "char": "オ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 5,
+   "code": "0x05",
+   "char": "カ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 6,
+   "code": "0x06",
+   "char": "キ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 7,
+   "code": "0x07",
+   "char": "ク",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 8,
+   "code": "0x08",
+   "char": "ケ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 9,
+   "code": "0x09",
+   "char": "コ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 10,
+   "code": "0x0A",
+   "char": "サ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 11,
+   "code": "0x0B",
+   "char": "シ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 12,
+   "code": "0x0C",
+   "char": "ス",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 13,
+   "code": "0x0D",
+   "char": "セ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 14,
+   "code": "0x0E",
+   "char": "ソ",
+   "grade": "verified"
+  },
+  {
+   "row": 0,
+   "column": 15,
+   "code": "0x0F",
+   "mark": "voiced (0x80)",
+   "grade": "mark"
+  },
+  {
+   "row": 0,
+   "column": 16,
+   "mark": "semi-voiced (0x81)",
+   "grade": "mark"
+  },
+  {
+   "row": 0,
+   "column": 17,
+   "grade": "empty"
+  },
+  {
+   "row": 1,
+   "column": 0,
+   "code": "0x10",
+   "char": "タ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 1,
+   "code": "0x11",
+   "char": "チ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 2,
+   "code": "0x12",
+   "char": "ツ",
+   "grade": "read"
+  },
+  {
+   "row": 1,
+   "column": 3,
+   "code": "0x13",
+   "char": "テ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 4,
+   "code": "0x14",
+   "char": "ト",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 5,
+   "code": "0x15",
+   "char": "ナ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 6,
+   "code": "0x16",
+   "char": "ニ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 7,
+   "code": "0x17",
+   "char": "ヌ",
+   "grade": "read"
+  },
+  {
+   "row": 1,
+   "column": 8,
+   "code": "0x18",
+   "char": "ネ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 9,
+   "code": "0x19",
+   "char": "ノ",
+   "grade": "read"
+  },
+  {
+   "row": 1,
+   "column": 10,
+   "code": "0x1A",
+   "char": "ハ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 11,
+   "code": "0x1B",
+   "char": "ヒ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 12,
+   "code": "0x1C",
+   "char": "フ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 13,
+   "code": "0x1D",
+   "char": "ヘ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 14,
+   "code": "0x1E",
+   "char": "ホ",
+   "grade": "verified"
+  },
+  {
+   "row": 1,
+   "column": 15,
+   "code": "0x1F",
+   "mark": "voiced (0x80)",
+   "grade": "mark"
+  },
+  {
+   "row": 1,
+   "column": 16,
+   "mark": "semi-voiced (0x81)",
+   "grade": "mark"
+  },
+  {
+   "row": 1,
+   "column": 17,
+   "grade": "empty"
+  },
+  {
+   "row": 2,
+   "column": 0,
+   "code": "0x20",
+   "char": "マ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 1,
+   "code": "0x21",
+   "char": "ミ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 2,
+   "code": "0x22",
+   "char": "ム",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 3,
+   "code": "0x23",
+   "char": "メ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 4,
+   "code": "0x24",
+   "char": "モ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 5,
+   "code": "0x25",
+   "char": "ヤ",
+   "grade": "read"
+  },
+  {
+   "row": 2,
+   "column": 6,
+   "code": "0x26",
+   "char": "ユ",
+   "grade": "read"
+  },
+  {
+   "row": 2,
+   "column": 7,
+   "code": "0x27",
+   "char": "ヨ",
+   "grade": "read"
+  },
+  {
+   "row": 2,
+   "column": 8,
+   "code": "0x28",
+   "char": "ラ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 9,
+   "code": "0x29",
+   "char": "リ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 10,
+   "code": "0x2A",
+   "char": "ル",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 11,
+   "code": "0x2B",
+   "char": "レ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 12,
+   "code": "0x2C",
+   "char": "ロ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 13,
+   "code": "0x2D",
+   "char": "ワ",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 14,
+   "code": "0x2E",
+   "char": "ン",
+   "grade": "verified"
+  },
+  {
+   "row": 2,
+   "column": 15,
+   "code": "0x2F",
+   "mark": "voiced (0x80)",
+   "grade": "mark"
+  },
+  {
+   "row": 2,
+   "column": 16,
+   "mark": "semi-voiced (0x81)",
+   "grade": "mark"
+  },
+  {
+   "row": 2,
+   "column": 17,
+   "grade": "empty"
+  },
+  {
+   "row": 3,
+   "column": 0,
+   "code": "0x30",
+   "char": "ァ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 1,
+   "code": "0x31",
+   "char": "ィ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 2,
+   "code": "0x32",
+   "char": "ゥ",
+   "grade": "read"
+  },
+  {
+   "row": 3,
+   "column": 3,
+   "code": "0x33",
+   "char": "ェ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 4,
+   "code": "0x34",
+   "char": "ォ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 5,
+   "code": "0x35",
+   "char": "ャ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 6,
+   "code": "0x36",
+   "char": "ュ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 7,
+   "code": "0x37",
+   "char": "ョ",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 8,
+   "code": "0x38",
+   "char": "ッ",
+   "grade": "verified",
+   "note": "the small tsu"
+  },
+  {
+   "row": 3,
+   "column": 9,
+   "code": "0x39",
+   "char": "ー",
+   "grade": "verified",
+   "note": "the long-vowel mark"
+  },
+  {
+   "row": 3,
+   "column": 10,
+   "code": "0x3A",
+   "char": "・",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 11,
+   "code": "0x3B",
+   "char": "Lv",
+   "grade": "verified",
+   "note": "one cell drawing the two letters Lv; the spell names put it before their level digit"
+  },
+  {
+   "row": 3,
+   "column": 12,
+   "code": "0x3C",
+   "grade": "empty"
+  },
+  {
+   "row": 3,
+   "column": 13,
+   "code": "0x3D",
+   "char": "1",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 14,
+   "code": "0x3E",
+   "char": "2",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 15,
+   "code": "0x3F",
+   "char": "3",
+   "grade": "verified"
+  },
+  {
+   "row": 3,
+   "column": 16,
+   "grade": "empty"
+  },
+  {
+   "row": 3,
+   "column": 17,
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 0,
+   "code": "0x40",
+   "char": "つ",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 1,
+   "code": "0x41",
+   "char": "か",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 2,
+   "code": "0x42",
+   "char": "え",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 3,
+   "code": "0x43",
+   "char": "ま",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 4,
+   "code": "0x44",
+   "char": "せ",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 5,
+   "code": "0x45",
+   "char": "ん",
+   "grade": "verified"
+  },
+  {
+   "row": 4,
+   "column": 6,
+   "code": "0x46",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 7,
+   "code": "0x47",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 8,
+   "code": "0x48",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 9,
+   "code": "0x49",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 10,
+   "code": "0x4A",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 11,
+   "code": "0x4B",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 12,
+   "code": "0x4C",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 13,
+   "code": "0x4D",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 14,
+   "code": "0x4E",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 15,
+   "code": "0x4F",
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 16,
+   "grade": "empty"
+  },
+  {
+   "row": 4,
+   "column": 17,
+   "grade": "empty"
+  }
+ ]
+}

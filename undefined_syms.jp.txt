@@ -3,26 +3,11 @@
 
 gspF3DEXTextStart = _4C580_bin + 0xD0; /* the graphics microcode text (the boot code ends at the same address); 0x8004BA50 as built */
 gspF3DEXDataStart = main_VRAM + (main_tail_ROM_START - main_ROM_START) + 0x910; /* the F3DEX microcode data, 0x910 into main_tail, which the boot copies to RAM right after main's data (0x80070260 as built) */
-gPuffTexture = 0x800C3650; /* effects block: puff texture (effects.c data points at it) */
-gPuffGfx = 0x800C3790; /* effects block: puff display list (effects.c data points at it) */
-gFadingPuffGfx = 0x800C37E0; /* effects block: fading puff display list (effects.c data points at it) */
-gSparkleTexture = 0x800C3830; /* effects block: sparkle texture (effects.c data points at it) */
-gSparkleGfx = 0x800C4070; /* effects block: sparkle display list (effects.c data points at it) */
-D_800C3A30 = 0x800C3A30; /* effects block: sparkle frame (effects.c data points at it) */
-D_800C3C30 = 0x800C3C30; /* effects block: sparkle frame (effects.c data points at it) */
-D_800C3E30 = 0x800C3E30; /* effects block: sparkle frame (effects.c data points at it) */
-gBurstTexture = 0x800C4128; /* effects block: burst texture (effects.c data points at it) */
-gBurstGfx = 0x800C4268; /* effects block: burst display list (effects.c data points at it) */
-D_800CAE68 = 0x800CAE68; /* effects block: gProjPalettes image (effects.c data points at it) */
-D_800CB068 = 0x800CB068; /* effects block: gProjPalettes image (effects.c data points at it) */
-D_800CB268 = 0x800CB268; /* effects block: gProjPalettes image (effects.c data points at it) */
-D_800CB468 = 0x800CB468; /* effects block: gProjPalettes image (effects.c data points at it) */
 D_8007A9E0 = gBrianStats + 0x10; /* inside gBrianStats (player.c) */
 D_8007AA04 = gBrianStats + 0x34; /* inside gBrianStats (player.c) */
-gSparkleDisplayList = _4EAD0_bin + 0x338; /* the spirit sparkle display list (spirits.c's template points at it); 0x8004E208 as built */
 gMammonBaseData = 0x803AB9A8; /* Mammon's base data, boss 7 of gBossBaseData (= D_803AB9A8); SpawnBoss's second test names it so */
 gBossTalkRadii = 0x803AB490; /* the bosses' talk radii, [gBossLoaded - 1] (IsNearBoss; splat names the folded address D_803AB48C) */
-gLavaPalette = 0x80124E00; /* a palette map 0x1D loads (UpdateLavaPalette) */
+gLavaPalette = gMap29Pal_00; /* map 29's record at 0x80124E00, by name so that it follows the record (it was a fixed number): a palette map 0x1D loads (UpdateLavaPalette) */
 D_80068EB0 = _622F0_bin + 0x77C0; /* 0x80068EB0 as built */
 D_8006A8F0 = _622F0_bin + 0x9200; /* 0x8006A8F0 as built */
 D_8006B4D8 = _622F0_bin + 0x9DE8; /* 0x8006B4D8 as built */
@@ -51,18 +36,11 @@ gSaveChoiceYes = _4E910_bin + 0x0; /* 0x8004DD10 as built: in main's binary piec
 gSaveChoiceNo = _4E910_bin + 0x8; /* 0x8004DD18 as built: in main's binary piece at ROM 0x4E910 */
 gBossHpBonus = _4E940_bin + 0x10; /* 0x8004DD50 as built: in main's binary piece at ROM 0x4E910 */
 gBossMpBonus = _4E940_bin + 0x20; /* 0x8004DD60 as built: in main's binary piece at ROM 0x4E910 */
-gDayPalettePeriods = _4EAD0_bin + 0x0; /* 0x8004DED0 as built: in main's binary piece at ROM 0x4EAD0 */
-D_8004DEF4 = _4EAD0_bin + 0x24; /* 0x8004DEF4 as built: in main's binary piece at ROM 0x4EAD0 */
-gPickupMessageHead = _4EAD0_bin + 0x30; /* 0x8004DF00 as built: in main's binary piece at ROM 0x4EAD0 */
-gPickupMessageTail = _4EAD0_bin + 0x38; /* 0x8004DF08 as built: in main's binary piece at ROM 0x4EAD0 */
-gMapObjectTable = _4EAD0_bin + 0x4C; /* 0x8004DF1C as built: in main's binary piece at ROM 0x4EAD0 */
-gSubmapSpiritTable = _4EAD0_bin + 0xF0; /* 0x8004DFC0 as built: in main's binary piece at ROM 0x4EAD0 */
-gSparkleFrames = _4EE50_bin + 0x8; /* 0x8004E258 as built: in main's binary piece at ROM 0x4EAD0 */
-gSigns = _4F2A0_bin + 0x0; /* 0x8004E6A0 as built: in main's binary piece at ROM 0x4F2A0 */
-D_8004E6A4 = _4F2A0_bin + 0x4; /* 0x8004E6A4 as built: in main's binary piece at ROM 0x4F2A0 */
-D_8004E6C0 = _4F2A0_bin + 0x20; /* 0x8004E6C0 as built: in main's binary piece at ROM 0x4F2A0 */
-D_8004E6C4 = _4F2A0_bin + 0x24; /* 0x8004E6C4 as built: in main's binary piece at ROM 0x4F2A0 */
-D_8004E6E0 = _4F2A0_bin + 0x40; /* 0x8004E6E0 as built: in main's binary piece at ROM 0x4F2A0 */
+D_8004DEF4 = gDayPalettePeriods + 0x24; /* 0x8004DEF4 as built: gDayPalettePeriods[3], as the reference assembly names it */
+D_8004E6A4 = gSigns + 0x4; /* 0x8004E6A4 as built: inside gSigns (signs.c's .data) */
+D_8004E6C0 = gSigns + 0x20; /* 0x8004E6C0 as built: inside gSigns (signs.c's .data) */
+D_8004E6C4 = gSigns + 0x24; /* 0x8004E6C4 as built: inside gSigns (signs.c's .data) */
+D_8004E6E0 = gSigns + 0x40; /* 0x8004E6E0 as built: inside gSigns (signs.c's .data) */
 gSpellSpawnRadii = _4F940_bin + 0x14; /* 0x8004ED54 as built: in main's binary piece at ROM 0x4F890 */
 gSpellHomingStrength = _4F940_bin + 0x28; /* 0x8004ED68 as built: in main's binary piece at ROM 0x4F890 */
 gSpellSpeeds = _4F940_bin + 0x3C; /* 0x8004ED7C as built: in main's binary piece at ROM 0x4F890 */
@@ -107,14 +85,14 @@ D_800616B4 = _62250_bin + 0x64; /* 0x800616B4 as built: in main's binary piece a
 gQuillLift = _62250_bin + 0x68; /* 0x800616B8 as built: in main's binary piece at ROM 0x62250 */
 gQuillWidth = _62250_bin + 0x70; /* 0x800616C0 as built: in main's binary piece at ROM 0x62250 */
 gQuillShift = _62250_bin + 0x78; /* 0x800616C8 as built: in main's binary piece at ROM 0x62250 */
-gFontMetrics = _622F0_bin + 0x70; /* 0x80061760 as built: in main's binary piece at ROM 0x62250 */
-gMenuRenderDL = _622F0_bin + 0x80; /* 0x80061770 as built: in main's binary piece at ROM 0x62250 */
-gSaveNoteName = _622F0_bin + 0x120; /* 0x80061810 as built: in main's binary piece at ROM 0x62250 */
-gNewNoteExtName = _622F0_bin + 0x150; /* 0x80061840 as built: in main's binary piece at ROM 0x62250 */
-gSaveNoteExtName = _622F0_bin + 0x154; /* 0x80061844 as built: in main's binary piece at ROM 0x62250 */
-gQuillPalette = _622F0_bin + 0x160; /* 0x80061850 as built: in main's binary piece at ROM 0x62250 */
-gMenuSheetPalette = _622F0_bin + 0x7A8; /* 0x80061E98 as built: in main's binary piece at ROM 0x62250 */
-gBackgroundPalette = _622F0_bin + 0x5798; /* 0x80066E88 as built: in main's binary piece at ROM 0x62250 */
+gFontMetrics = _622F0_bin + 0x70; /* 0x80061760 as built: in main's binary piece at ROM 0x622F0 */
+gMenuRenderDL = _622F0_bin + 0x80; /* 0x80061770 as built: in main's binary piece at ROM 0x622F0 */
+gSaveNoteName = _622F0_bin + 0x120; /* 0x80061810 as built: in main's binary piece at ROM 0x622F0 */
+gNewNoteExtName = _622F0_bin + 0x150; /* 0x80061840 as built: in main's binary piece at ROM 0x622F0 */
+gSaveNoteExtName = _622F0_bin + 0x154; /* 0x80061844 as built: in main's binary piece at ROM 0x622F0 */
+gQuillPalette = _622F0_bin + 0x160; /* 0x80061850 as built: in main's binary piece at ROM 0x622F0 */
+gMenuSheetPalette = _622F0_bin + 0x7A8; /* 0x80061E98 as built: in main's binary piece at ROM 0x622F0 */
+gBackgroundPalette = _622F0_bin + 0x5798; /* 0x80066E88 as built: in main's binary piece at ROM 0x622F0 */
 gYesNoHandPositions = _6D600_bin + 0xC4; /* 0x8006CAC4 as built: in main's binary piece at ROM 0x62250 */
 D_8006CC80 = _6D870_bin + 0x10; /* 0x8006CC80 as built: in main's binary piece at ROM 0x62250 */
 gCreditImageGfx = _6D870_bin + 0x20; /* 0x8006CC90 as built: in main's binary piece at ROM 0x62250 */
@@ -165,7 +143,6 @@ main_bss_clear_size_hi = main_bss_clear_size >> 16;
    together may grow by 0x26A40 bytes; nothing else is loaded in that room. */
 ASSERT(gSegment1Gfx + (segment1_gfx_ROM_END - segment1_gfx_ROM_START) <= gEffectsBlock,
        "main has outgrown its RAM: segment 1 would be loaded over the spell bank (gEffectsBlock)");
-D_8004E1C8 = _4EAD0_bin + 0x2F8; /* 0x8004E1C8 as built: a vertex array a display list in a binary piece points at */
 D_8004F4D0 = _500C0_bin + 0x10; /* 0x8004F4D0 as built: a vertex array a display list in a binary piece points at */
 /* Names inside main's binary pieces, defined from the piece so they follow a layout change */
 D_8006CC74 = _6D870_bin + 0x4; /* 0x8006CC74 as built: in main's binary piece at ROM 0x62250 */
@@ -227,7 +204,7 @@ D_8006CBFC = _6D600_bin + 0x1FC; /* 0x8006CBFC as built: a place a pointer table
 D_8006CC08 = _6D600_bin + 0x208; /* 0x8006CC08 as built: a place a pointer table in the same piece points at */
 D_8006CC18 = _6D600_bin + 0x218; /* 0x8006CC18 as built: a place a pointer table in the same piece points at */
 /* A ROM offset inside a segment after main, defined from the segment so it follows a change in the ROM's layout */
-D_D37700 = dialogue_bank_ROM_START + 0x9410; /* the dialogue bank's sign messages: LoadSignText reads a sign's name and message at this + the sign record's offsets; 0xD37700 as built */
+D_D37700 = dialogue_bank_ROM_START + (gDialogueSigns - dialogue_bank_VRAM); /* the sign part's start, LoadSignText's base: its label in the bank as built (0xD37700 in the original) */
 /* boss_guilty: each texture's name at its image, a linker symbol of the segment; the file must end below the depth
    buffer, the first RAM above the boss buffer the game uses */
 gGuiltyTex_00 = boss_guilty_tex_00_rgba16_rgba16__png;
@@ -380,7 +357,8 @@ D_802152F0_DB4810 = title_overlay_art_bin + 0x5DE0; /* 0x802152F0 as built */
 D_80226AF8_DC6018 = title_overlay_art_bin + 0x175E8; /* 0x80226AF8 as built */
 D_80226D00_DC6220 = title_overlay_art_bin + 0x177F0; /* 0x80226D00 as built */
 D_80226D18_DC6238 = title_overlay_art_bin + 0x17808; /* 0x80226D18 as built */
-func_8020C0D0 = title_overlay_VRAM; /* the overlay slot, 0x8020C0D0: the title, intro and ending overlays and the NPC areas' held objects load there, and main calls the loaded mode overlay's first function as its entry (main's name; splat no longer defines it once the title's first function has its own) */
+func_8020C0D0 = title_overlay_VRAM; /* the overlay slot, 0x8020C0D0: the title, intro and epilogue overlays and the NPC areas' held objects load there, and main calls the loaded mode overlay's first function as its entry (main's name; splat no longer defines it once the title's first function has its own) */
+gOverlaySlot = title_overlay_VRAM; /* the overlay slot as the bytes a DMA fills (LoadOverlay_*, LoadNPCArea): the same address as func_8020C0D0, the code main.c calls */
 /* the title overlay, image and .bss, while it runs (game mode 3): main forms no fixed address between its end and
    the depth buffer except the field's NPC actor (0x802A0000) and boss buffer (0x802A7BC0), unused on the title
    screen; BuildFrame uses the depth buffer every frame */
@@ -1109,3 +1087,2903 @@ gMonSet5Tex_047 = monsters_5_tex_047_rgba16_rgba16__png;
 gMonSet5Tex_048 = monsters_5_tex_048_rgba16_rgba16__png;
 ASSERT(monsters_5_VRAM + (monsters_5_ROM_END - monsters_5_ROM_START) <= gShannonActorData,
        "monsters_5 has outgrown the monster buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+
+/* map_15: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap15Tex_00 = map_15_tex_00_rgba16_rgba16__png;
+gMap15Tex_01 = map_15_tex_01_rgba16_rgba16__png;
+gMap15Tex_02 = map_15_tex_02_rgba16_rgba16__png;
+gMap15Tex_03 = map_15_tex_03_rgba16_rgba16__png;
+gMap15Tex_04 = map_15_tex_04_rgba16_rgba16__png;
+gMap15Raw_0CBF0 = map_15_raw_0cbf0_bin;
+gMap15Tex_05 = map_15_tex_05_rgba16_rgba16__png;
+gMap15Tex_06 = map_15_tex_06_rgba16_rgba16__png;
+gMap15Tex_07 = map_15_tex_07_rgba16_rgba16__png;
+gMap15Tex_08 = map_15_tex_08_rgba16_rgba16__png;
+gMap15Tex_09 = map_15_tex_09_rgba16_rgba16__png;
+gMap15Tex_10 = map_15_tex_10_rgba16_rgba16__png;
+gMap15Tex_11 = map_15_tex_11_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gIntCommonTex_048C0 = interiors_common_VRAM + 0x48C0; /* map 14 */
+gIntCommonTex_04CC0 = interiors_common_VRAM + 0x4CC0; /* map 14 */
+gIntCommonTex_04EC0 = interiors_common_VRAM + 0x4EC0; /* map 21 */
+gIntCommonTex_054C0 = interiors_common_VRAM + 0x54C0; /* map 24 */
+gIntCommonTex_058C0 = interiors_common_VRAM + 0x58C0; /* maps 15 16 20 22 */
+gIntCommonTex_05AC0 = interiors_common_VRAM + 0x5AC0; /* map 25 */
+gIntCommonTex_067C0 = interiors_common_VRAM + 0x67C0; /* map 25 */
+gIntCommonTex_073C0 = interiors_common_VRAM + 0x73C0; /* map 25 */
+gIntCommonTex_087C0 = interiors_common_VRAM + 0x87C0; /* map 23 */
+gIntCommonTex_097C0 = interiors_common_VRAM + 0x97C0; /* maps 14 23 25 */
+gIntCommonTex_0A7C0 = interiors_common_VRAM + 0xA7C0; /* maps 14 23 25 */
+gIntCommonTex_0B7C0 = interiors_common_VRAM + 0xB7C0; /* maps 13 21 23 25 */
+gIntCommonTex_0C7C0 = interiors_common_VRAM + 0xC7C0; /* maps 13 14 21 25 */
+gIntCommonTex_0D7C0 = interiors_common_VRAM + 0xD7C0; /* map 23 */
+gIntCommonTex_0DBC0 = interiors_common_VRAM + 0xDBC0; /* maps 13 14 16 */
+gIntCommonTex_0DDC0 = interiors_common_VRAM + 0xDDC0; /* maps 13 22 23 */
+gIntCommonTex_0DFC0 = interiors_common_VRAM + 0xDFC0; /* map 14 */
+gIntCommonTex_0E1C0 = interiors_common_VRAM + 0xE1C0; /* map 21 */
+gIntCommonTex_0E3C0 = interiors_common_VRAM + 0xE3C0; /* maps 13 22 */
+gIntCommonTex_0EBC0 = interiors_common_VRAM + 0xEBC0; /* map 22 */
+gIntCommonTex_0F3C0 = interiors_common_VRAM + 0xF3C0; /* maps 18 19 */
+gIntCommonTex_10BC8 = interiors_common_VRAM + 0x10BC8; /* maps 22 23 */
+gIntCommonTex_10DC8 = interiors_common_VRAM + 0x10DC8; /* map 14 */
+gIntCommonTex_10EC8 = interiors_common_VRAM + 0x10EC8; /* maps 16 21 */
+gIntCommonTex_110C8 = interiors_common_VRAM + 0x110C8; /* map 18 */
+gIntCommonTex_120C8 = interiors_common_VRAM + 0x120C8; /* maps 18 19 */
+gIntCommonTex_128C8 = interiors_common_VRAM + 0x128C8; /* map 19 */
+gIntCommonTex_13548 = interiors_common_VRAM + 0x13548; /* maps 19 23 */
+gIntCommonTex_13F48 = interiors_common_VRAM + 0x13F48; /* maps 15 16 20 22 23 25 */
+gIntCommonTex_14F48 = interiors_common_VRAM + 0x14F48; /* maps 13 16 */
+gIntCommonTex_15F48 = interiors_common_VRAM + 0x15F48; /* maps 13 15 16 20 22 25 */
+gIntCommonTex_16348 = interiors_common_VRAM + 0x16348; /* maps 14 25 */
+gIntCommonTex_17B48 = interiors_common_VRAM + 0x17B48; /* map 25 */
+gIntCommonTex_1A748 = interiors_common_VRAM + 0x1A748; /* maps 15 16 20 22 */
+gIntCommonTex_1C748 = interiors_common_VRAM + 0x1C748; /* maps 18 19 */
+gIntCommonTex_1CB48 = interiors_common_VRAM + 0x1CB48; /* maps 13 18 23 */
+gIntCommonTex_1D348 = interiors_common_VRAM + 0x1D348; /* maps 19 25 */
+gIntCommonTex_1DB48 = interiors_common_VRAM + 0x1DB48; /* maps 14 24 25 */
+gIntCommonTex_1E348 = interiors_common_VRAM + 0x1E348; /* maps 13 14 15 16 17 18 19 20 21 22 25 */
+gIntCommonTex_1EB48 = interiors_common_VRAM + 0x1EB48; /* maps 13 14 15 16 17 18 19 20 21 22 23 25 */
+gIntCommonTex_1FB48 = interiors_common_VRAM + 0x1FB48; /* maps 13 14 15 16 17 19 20 21 22 23 25 */
+gIntCommonTex_1FF48 = interiors_common_VRAM + 0x1FF48; /* maps 13 14 15 16 17 18 19 20 21 22 23 25 */
+gIntCommonTex_20148 = interiors_common_VRAM + 0x20148; /* maps 19 23 */
+gIntCommonTex_20B48 = interiors_common_VRAM + 0x20B48; /* maps 14 20 24 25 */
+gIntCommonTex_21348 = interiors_common_VRAM + 0x21348; /* maps 16 20 22 */
+gIntCommonDL_21A40 = interiors_common_VRAM + 0x21A40; /* maps 16 22 */
+gIntCommonDL_21D80 = interiors_common_VRAM + 0x21D80; /* maps 15 16 18 20 22 */
+gIntCommonDL_22120 = interiors_common_VRAM + 0x22120; /* maps 14 15 16 18 22 23 25 */
+gIntCommonDL_22490 = interiors_common_VRAM + 0x22490; /* maps 18 22 23 */
+gIntCommonDL_22880 = interiors_common_VRAM + 0x22880; /* maps 13 14 15 17 */
+gIntCommonDL_22A30 = interiors_common_VRAM + 0x22A30; /* map 15 */
+gIntCommonDL_22C20 = interiors_common_VRAM + 0x22C20; /* maps 13 14 15 16 18 20 22 23 */
+gIntCommonDL_232F0 = interiors_common_VRAM + 0x232F0; /* map 21 */
+gIntCommonDL_23A00 = interiors_common_VRAM + 0x23A00; /* maps 14 15 16 20 22 23 */
+gIntCommonDL_24110 = interiors_common_VRAM + 0x24110; /* maps 17 18 20 22 25 */
+gIntCommonDL_25050 = interiors_common_VRAM + 0x25050; /* maps 14 15 16 18 20 22 23 */
+gIntCommonDL_25850 = interiors_common_VRAM + 0x25850; /* maps 15 16 17 18 20 22 23 25 */
+gIntCommonDL_26960 = interiors_common_VRAM + 0x26960; /* maps 14 21 */
+gIntCommonDL_26C80 = interiors_common_VRAM + 0x26C80; /* map 20 */
+gIntCommonDL_26F70 = interiors_common_VRAM + 0x26F70; /* maps 13 14 16 18 21 */
+gIntCommonDL_27E80 = interiors_common_VRAM + 0x27E80; /* maps 20 22 */
+gIntCommonDL_284E0 = interiors_common_VRAM + 0x284E0; /* maps 13 14 15 16 18 20 22 23 25 */
+gIntCommonDL_28BD0 = interiors_common_VRAM + 0x28BD0; /* maps 13 14 25 */
+gIntCommonDL_29320 = interiors_common_VRAM + 0x29320; /* maps 16 22 */
+gIntCommonDL_29F10 = interiors_common_VRAM + 0x29F10; /* maps 14 21 */
+gIntCommonDL_2A650 = interiors_common_VRAM + 0x2A650; /* maps 13 14 17 21 */
+gIntCommonDL_2AA80 = interiors_common_VRAM + 0x2AA80; /* maps 13 15 16 20 22 23 */
+gIntCommonDL_2AE70 = interiors_common_VRAM + 0x2AE70; /* maps 13 15 17 20 */
+gIntCommonDL_2B1F0 = interiors_common_VRAM + 0x2B1F0; /* maps 18 22 23 */
+gIntCommonDL_2B540 = interiors_common_VRAM + 0x2B540; /* maps 16 18 20 22 23 */
+gIntCommonDL_2B920 = interiors_common_VRAM + 0x2B920; /* maps 14 15 16 18 20 22 23 */
+gIntCommonDL_2BCB0 = interiors_common_VRAM + 0x2BCB0; /* maps 14 15 16 18 20 22 23 25 */
+gIntCommonDL_2D110 = interiors_common_VRAM + 0x2D110; /* maps 13 14 15 16 18 22 */
+gIntCommonDL_2DDB0 = interiors_common_VRAM + 0x2DDB0; /* map 22 */
+gIntCommonDL_2E240 = interiors_common_VRAM + 0x2E240; /* maps 14 19 22 */
+gIntCommonDL_2E4C0 = interiors_common_VRAM + 0x2E4C0; /* maps 15 20 23 */
+gIntCommonDL_2E7B0 = interiors_common_VRAM + 0x2E7B0; /* map 13 */
+gIntCommonDL_2F390 = interiors_common_VRAM + 0x2F390; /* maps 14 16 18 20 22 23 */
+gIntCommonDL_2F620 = interiors_common_VRAM + 0x2F620; /* map 15 */
+gIntCommonDL_2FC10 = interiors_common_VRAM + 0x2FC10; /* maps 15 18 20 22 23 */
+gIntCommonDL_301E0 = interiors_common_VRAM + 0x301E0; /* maps 14 16 18 20 22 23 */
+gIntCommonDL_30440 = interiors_common_VRAM + 0x30440; /* maps 13 15 16 17 20 22 23 */
+gIntCommonDL_30670 = interiors_common_VRAM + 0x30670; /* map 13 */
+gIntCommonDL_30CC0 = interiors_common_VRAM + 0x30CC0; /* maps 13 14 15 16 18 22 23 */
+gIntCommonDL_30FD0 = interiors_common_VRAM + 0x30FD0; /* maps 14 16 17 20 22 */
+gIntCommonDL_31200 = interiors_common_VRAM + 0x31200; /* maps 16 17 22 */
+gIntCommonDL_31650 = interiors_common_VRAM + 0x31650; /* maps 13 14 15 16 17 18 20 21 22 23 25 */
+gIntCommonDL_31BD0 = interiors_common_VRAM + 0x31BD0; /* maps 13 14 15 16 18 20 21 22 23 */
+gIntCommonDL_32140 = interiors_common_VRAM + 0x32140; /* maps 13 15 16 18 19 22 23 */
+gIntCommonDL_32440 = interiors_common_VRAM + 0x32440; /* maps 13 14 15 16 18 20 21 23 */
+gIntCommonDL_32960 = interiors_common_VRAM + 0x32960; /* maps 16 21 */
+gIntCommonDL_331D0 = interiors_common_VRAM + 0x331D0; /* maps 13 15 17 18 23 */
+gIntCommonDL_337A0 = interiors_common_VRAM + 0x337A0; /* maps 15 16 17 20 22 23 */
+gIntCommonDL_344B0 = interiors_common_VRAM + 0x344B0; /* maps 14 15 16 20 22 23 */
+gIntCommonDL_34920 = interiors_common_VRAM + 0x34920; /* maps 13 14 16 */
+gIntCommonDL_34CA0 = interiors_common_VRAM + 0x34CA0; /* map 13 */
+gIntCommonDL_35080 = interiors_common_VRAM + 0x35080; /* maps 14 15 16 17 18 20 21 22 23 */
+gIntCommonDL_35750 = interiors_common_VRAM + 0x35750; /* maps 15 20 22 25 */
+gIntCommonDL_35DB0 = interiors_common_VRAM + 0x35DB0; /* maps 13 14 */
+gIntCommonDL_36620 = interiors_common_VRAM + 0x36620; /* maps 14 21 */
+gIntCommonDL_36D90 = interiors_common_VRAM + 0x36D90; /* maps 13 14 15 16 17 20 22 23 */
+gIntCommonDL_37310 = interiors_common_VRAM + 0x37310; /* maps 15 16 17 20 22 23 */
+gIntCommonDL_37B30 = interiors_common_VRAM + 0x37B30; /* map 13 */
+gIntCommonDL_37FE0 = interiors_common_VRAM + 0x37FE0; /* maps 14 15 16 18 20 22 23 */
+gIntCommonDL_38270 = interiors_common_VRAM + 0x38270; /* maps 13 18 25 */
+gIntCommonDL_384C0 = interiors_common_VRAM + 0x384C0; /* maps 13 14 15 16 18 19 21 22 23 25 */
+gIntCommonDL_38740 = interiors_common_VRAM + 0x38740; /* maps 15 16 17 18 20 22 23 */
+gIntCommonDL_38C30 = interiors_common_VRAM + 0x38C30; /* maps 15 16 18 22 23 25 */
+gIntCommonDL_38FF0 = interiors_common_VRAM + 0x38FF0; /* maps 13 18 19 20 22 23 25 */
+gIntCommonDL_398A0 = interiors_common_VRAM + 0x398A0; /* maps 14 15 16 17 18 20 22 23 */
+gIntCommonDL_3B630 = interiors_common_VRAM + 0x3B630; /* maps 14 16 21 */
+gIntCommonDL_3BC90 = interiors_common_VRAM + 0x3BC90; /* maps 14 18 20 22 23 */
+gIntCommonDL_3C0B0 = interiors_common_VRAM + 0x3C0B0; /* maps 13 14 15 16 18 20 22 25 */
+gIntCommonDL_3C550 = interiors_common_VRAM + 0x3C550; /* maps 13 14 15 16 17 18 20 22 23 25 */
+gIntCommonDL_3CD10 = interiors_common_VRAM + 0x3CD10; /* map 18 */
+gIntCommonDL_3D120 = interiors_common_VRAM + 0x3D120; /* maps 14 16 */
+gIntCommonDL_3D490 = interiors_common_VRAM + 0x3D490; /* maps 13 15 16 17 18 20 23 */
+gIntCommonDL_3D7D0 = interiors_common_VRAM + 0x3D7D0; /* maps 18 22 23 */
+gIntCommonDL_3E7D0 = interiors_common_VRAM + 0x3E7D0; /* maps 15 16 22 */
+gIntCommonDL_3EF50 = interiors_common_VRAM + 0x3EF50; /* maps 13 14 15 16 18 19 20 22 23 */
+gIntCommonDL_3F2C0 = interiors_common_VRAM + 0x3F2C0; /* maps 13 14 15 16 18 19 20 22 23 */
+gIntCommonDL_3F730 = interiors_common_VRAM + 0x3F730; /* maps 14 15 16 18 20 22 */
+gIntCommonDL_3FCA0 = interiors_common_VRAM + 0x3FCA0; /* maps 16 22 23 */
+gIntCommonDL_40110 = interiors_common_VRAM + 0x40110; /* map 14 */
+gIntCommonDL_40360 = interiors_common_VRAM + 0x40360; /* maps 16 22 */
+gIntCommonDL_40530 = interiors_common_VRAM + 0x40530; /* maps 15 16 18 20 22 23 */
+gIntCommonDL_40760 = interiors_common_VRAM + 0x40760; /* map 14 */
+gIntCommonDL_412F0 = interiors_common_VRAM + 0x412F0; /* maps 15 16 18 20 22 */
+gIntCommonDL_41B50 = interiors_common_VRAM + 0x41B50; /* maps 15 22 */
+gIntCommonDL_41E40 = interiors_common_VRAM + 0x41E40; /* map 18 */
+gIntCommonDL_42070 = interiors_common_VRAM + 0x42070; /* maps 14 22 */
+gIntCommonDL_42900 = interiors_common_VRAM + 0x42900; /* maps 16 17 */
+gIntCommonDL_42F30 = interiors_common_VRAM + 0x42F30; /* maps 13 14 15 16 18 19 22 23 25 */
+gIntCommonDL_434B0 = interiors_common_VRAM + 0x434B0; /* maps 14 16 22 */
+gIntCommonDL_43A80 = interiors_common_VRAM + 0x43A80; /* maps 14 16 18 20 23 */
+gRegion0Tex_006B0 = region_0_VRAM + 0x6B0; /* map 0 */
+gRegion0Tex_026B0 = region_0_VRAM + 0x26B0; /* map 0 */
+gRegion0DL_06730 = region_0_VRAM + 0x6730; /* maps 0 15 */
+gRegion0DL_06850 = region_0_VRAM + 0x6850; /* maps 0 13 15 */
+gRegion0DL_06970 = region_0_VRAM + 0x6970; /* maps 0 15 */
+gRegion0DL_06BB0 = region_0_VRAM + 0x6BB0; /* maps 0 13 */
+gRegion0DL_06CD0 = region_0_VRAM + 0x6CD0; /* maps 0 13 */
+gRegion0DL_06E10 = region_0_VRAM + 0x6E10; /* map 13 */
+gRegion0DL_06F60 = region_0_VRAM + 0x6F60; /* map 13 */
+gRegion0DL_070B0 = region_0_VRAM + 0x70B0; /* map 13 */
+gRegion0DL_07240 = region_0_VRAM + 0x7240; /* map 13 */
+gRegion0DL_07390 = region_0_VRAM + 0x7390; /* map 0 */
+gRegion0DL_074B0 = region_0_VRAM + 0x74B0; /* map 0 */
+gRegion0DL_075D0 = region_0_VRAM + 0x75D0; /* map 0 */
+gRegion0DL_076F0 = region_0_VRAM + 0x76F0; /* map 0 */
+/* fixed addresses map 15's NPC records name in other binary files (not relocated) */
+/* the lock on interiors_common and region_0. interiors_common is loaded for maps 13-25 and region_0 for maps 0, 13
+   and 15; the maps name addresses inside them as the block's label and an offset into its one binary piece, so each
+   block must stay where LoadMap loads it, at its size: a build that moves or resizes one stops here */
+ASSERT(interiors_common_VRAM == D_8010FE00, "interiors_common is locked: LoadMap loads it at D_8010FE00, and the interior maps name addresses inside it");
+ASSERT(interiors_common_ROM_END - interiors_common_ROM_START == 0x43BF0, "interiors_common is locked: its size changed, and the interior maps name addresses inside it");
+ASSERT(region_0_VRAM == 0x801F8000, "region_0 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and maps 0 and 13 hold addresses inside it");
+ASSERT(region_0_ROM_END - region_0_ROM_START == 0x7790, "region_0 is locked: its size changed, and maps 0 and 13 hold addresses inside it");
+/* map 15's RAM ceiling: the lowest RAM above it the code loads anything to is the ending's data (gEventBlob,
+   0x801C0000), which LoadEndingScene keeps resident beside the map it loads (the ending's scenes name maps 30, 6,
+   17, 26, 1, 7 and 12; nothing in the code keeps map 15 out of them). By the game's data alone the bound would be
+   the region block at 0x801F8000. */
+ASSERT(map_15_VRAM + (map_15_ROM_END - map_15_ROM_START) <= gEventBlob, "map_15 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* spell_bank: each texture's name at its image and each raw piece's name at its bytes, linker symbols of
+   the segment; gEffectsBlock, the bank as InitGraphics reads it; the bank must end below the next RAM the code
+   loads to (0x80100000: segment 1 and the title data; no code or data names the RAM between) */
+gEffectsBlock = spell_bank_VRAM;
+gPuffTexture = spell_bank_tex_03650_i8_i8__png;
+gSparkleTexture = spell_bank_tex_03830_i4_i4__png;
+D_800C3A30 = spell_bank_tex_03A30_i4_i4__png;
+D_800C3C30 = spell_bank_tex_03C30_i4_i4__png;
+D_800C3E30 = spell_bank_tex_03E30_i4_i4__png;
+gSpellBankRaw_042C0 = spell_bank_raw_042C0_bin;
+gRingTexture = spell_bank_tex_047C0_i8_i8__png;
+gSpellBankRaw_052E0 = spell_bank_raw_052E0_bin;
+gSpellBankRaw_0B668 = spell_bank_raw_0B668_bin;
+gProjTex02 = spell_bank_tex_0B670_i8_i8__png;
+gProjTex06 = spell_bank_tex_0BE70_i8_i8__png;
+gProjTex05 = spell_bank_tex_0CE70_i8_i8__png;
+gSpellBankRaw_0DE70 = spell_bank_raw_0DE70_bin;
+gProjTex04 = spell_bank_tex_0DE78_i8_i8__png;
+gSpellBankRaw_0E278 = spell_bank_raw_0E278_bin;
+gProjTex17 = spell_bank_tex_0E280_i8_i8__png;
+gSpellBankRaw_0E680 = spell_bank_raw_0E680_bin;
+gProjTex07 = spell_bank_tex_0EA80_ci8_ci8__png;
+gProjTex38 = spell_bank_tex_0EE80_ci8_ci8__png;
+gProjTex19 = spell_bank_tex_0F680_ci8_ci8__png;
+gSpellBankRaw_0FA80 = spell_bank_raw_0FA80_bin;
+gProjTex36 = spell_bank_tex_0FA88_i8_i8__png;
+gProjTex18 = spell_bank_tex_0FE88_ci8_ci8__png;
+gProjTex23 = spell_bank_tex_10288_ci8_ci8__png;
+gSpellBankRaw_10688 = spell_bank_raw_10688_bin;
+gProjTex21 = spell_bank_tex_10A90_i8_i8__png;
+gProjTex22 = spell_bank_tex_10E90_ci8_ci8__png;
+gProjTex03 = spell_bank_tex_11290_ci8_ci8__png;
+gSpellBankRaw_11690 = spell_bank_raw_11690_bin;
+gProjTex09 = spell_bank_tex_11698_i8_i8__png;
+gSpellBankRaw_11A98 = spell_bank_raw_11A98_bin;
+gProjTex63 = spell_bank_tex_11AA0_i8_i8__png;
+gSpellBankRaw_11EA0 = spell_bank_raw_11EA0_bin;
+gProjTex64 = spell_bank_tex_11EA8_i8_i8__png;
+gProjTex29 = spell_bank_tex_122A8_ci8_ci8__png;
+gProjTex30 = spell_bank_tex_126A8_ci8_ci8__png;
+gSpellBankRaw_12AA8 = spell_bank_raw_12AA8_bin;
+gSpellBankRaw_12AB0 = spell_bank_raw_12AB0_bin;
+gProjTex31 = spell_bank_tex_12EB0_ci8_ci8__png;
+gProjTex32 = spell_bank_tex_132B0_ci8_ci8__png;
+gProjTex48 = spell_bank_tex_136B0_ci8_ci8__png;
+gProjTex66 = spell_bank_tex_13AB0_ci8_ci8__png;
+gProjTex44 = spell_bank_tex_13EB0_ci8_ci8__png;
+gProjTex59 = spell_bank_tex_142B0_ci8_ci8__png;
+gProjTex50 = spell_bank_tex_146B0_ci8_ci8__png;
+gProjTex51 = spell_bank_tex_14AB0_ci8_ci8__png;
+gProjTex52 = spell_bank_tex_14EB0_ci8_ci8__png;
+gProjTex53 = spell_bank_tex_152B0_ci8_ci8__png;
+gProjTex54 = spell_bank_tex_156B0_ci8_ci8__png;
+gSpellBankRaw_15AB0 = spell_bank_raw_15AB0_bin;
+gProjTex37 = spell_bank_tex_15BB8_i8_i8__png;
+gProjTex62 = spell_bank_tex_15FB8_ci8_ci8__png;
+gProjTex15 = spell_bank_tex_163B8_ci8_ci8__png;
+gSpellBankRaw_167B8 = spell_bank_raw_167B8_bin;
+gProjTex14 = spell_bank_tex_167C0_i8_i8__png;
+gProjTex43 = spell_bank_tex_16BC0_ci8_ci8__png;
+gProjTex13 = spell_bank_tex_16FC0_ci8_ci8__png;
+gSpellBankRaw_173C0 = spell_bank_raw_173C0_bin;
+gProjTex42 = spell_bank_tex_173C8_i8_i8__png;
+gSpellBankRaw_177C8 = spell_bank_raw_177C8_bin;
+gProjTex57 = spell_bank_tex_177D0_i8_i8__png;
+gProjTex55 = spell_bank_tex_17BD0_ci8_ci8__png;
+gProjTex56 = spell_bank_tex_17FD0_ci8_ci8__png;
+gSpellBankRaw_183D0 = spell_bank_raw_183D0_bin;
+gProjTex58 = spell_bank_tex_183D8_i8_i8__png;
+gSpellBankRaw_187D8 = spell_bank_raw_187D8_bin;
+gSpellBankRaw_18BE0 = spell_bank_raw_18BE0_bin;
+gProjTex20 = spell_bank_tex_18CE8_i8_i8__png;
+gProjTex24 = spell_bank_tex_190E8_ci8_ci8__png;
+gSpellBankRaw_194E8 = spell_bank_raw_194E8_bin;
+gProjTex26 = spell_bank_tex_194F0_i8_i8__png;
+gProjTex39 = spell_bank_tex_198F0_ci8_ci8__png;
+gProjTex47 = spell_bank_tex_19CF0_ci8_ci8__png;
+ASSERT(spell_bank_VRAM + (spell_bank_ROM_END - spell_bank_ROM_START) <= 0x80100000,
+       "the spell bank has outgrown its RAM: it would reach 0x80100000, where segment 1 and the title data load");
+/* fixed addresses the maps' NPC records name: in the NPC areas' files and Shannon's actor block, binary, not
+   relocated */
+
+/* map_12: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap12Tex_00 = map_12_tex_00_rgba16_rgba16__png;
+gMap12Tex_01 = map_12_tex_01_rgba16_rgba16__png;
+gMap12Tex_02 = map_12_tex_02_rgba16_rgba16__png;
+gMap12Tex_03 = map_12_tex_03_rgba16_rgba16__png;
+gMap12Tex_04 = map_12_tex_04_rgba16_rgba16__png;
+gMap12Tex_05 = map_12_tex_05_rgba16_rgba16__png;
+gMap12Tex_06 = map_12_tex_06_rgba16_rgba16__png;
+gMap12Tex_07 = map_12_tex_07_rgba16_rgba16__png;
+gMap12Tex_08 = map_12_tex_08_rgba16_rgba16__png;
+gMap12Tex_09 = map_12_tex_09_rgba16_rgba16__png;
+gMap12Tex_10 = map_12_tex_10_rgba16_rgba16__png;
+gMap12Tex_11 = map_12_tex_11_rgba16_rgba16__png;
+gMap12Tex_12 = map_12_tex_12_rgba16_rgba16__png;
+gMap12Tex_13 = map_12_tex_13_rgba16_rgba16__png;
+gMap12Tex_14 = map_12_tex_14_rgba16_rgba16__png;
+gMap12Tex_15 = map_12_tex_15_rgba16_rgba16__png;
+gMap12Tex_16 = map_12_tex_16_rgba16_rgba16__png;
+gMap12Raw_0FE40 = map_12_raw_0fe40_bin;
+gMap12Tex_17 = map_12_tex_17_ci8_ci8__png;
+gMap12Tex_18 = map_12_tex_18_rgba16_rgba16__png;
+gMap12Tex_19 = map_12_tex_19_rgba16_rgba16__png;
+gMap12Tex_20 = map_12_tex_20_rgba16_rgba16__png;
+gMap12Tex_21 = map_12_tex_21_rgba16_rgba16__png;
+gMap12Tex_22 = map_12_tex_22_rgba16_rgba16__png;
+gMap12Tex_23 = map_12_tex_23_rgba16_rgba16__png;
+gMap12Raw_13240 = map_12_raw_13240_bin;
+gMap12Tex_24 = map_12_tex_24_ci4_ci4__png;
+gMap12Raw_13748 = map_12_raw_13748_bin;
+gMap12Tex_25 = map_12_tex_25_rgba16_rgba16__png;
+gMap12Raw_14150 = map_12_raw_14150_bin;
+gMap12Tex_26 = map_12_tex_26_ci4_ci4__png;
+gMap12Raw_14658 = map_12_raw_14658_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gGameplayCommonTex_053B0 = gameplay_common_VRAM + 0x53B0; /* map 3 */
+gGameplayCommonTex_063B0 = gameplay_common_VRAM + 0x63B0; /* maps 2 3 5 7 */
+gGameplayCommonTex_073B0 = gameplay_common_VRAM + 0x73B0; /* maps 0 2 3 4 5 7 8 9 10 12 */
+gGameplayCommonTex_083B0 = gameplay_common_VRAM + 0x83B0; /* maps 0 2 3 5 */
+gGameplayCommonTex_08BB0 = gameplay_common_VRAM + 0x8BB0; /* maps 2 4 5 7 8 9 10 12 */
+gGameplayCommonTex_0B3B0 = gameplay_common_VRAM + 0xB3B0; /* maps 0 6 */
+gGameplayCommonDL_0B870 = gameplay_common_VRAM + 0xB870; /* maps 1 8 */
+gGameplayCommonDL_0BC60 = gameplay_common_VRAM + 0xBC60; /* maps 0 1 3 4 6 8 9 11 */
+gGameplayCommonDL_0C040 = gameplay_common_VRAM + 0xC040; /* maps 0 1 4 6 8 9 11 */
+gGameplayCommonDL_0C240 = gameplay_common_VRAM + 0xC240; /* maps 0 1 2 3 4 5 6 7 8 12 */
+gGameplayCommonDL_0C3F0 = gameplay_common_VRAM + 0xC3F0; /* maps 0 1 3 4 6 8 9 11 */
+gGameplayCommonDL_0C5D0 = gameplay_common_VRAM + 0xC5D0; /* maps 2 3 5 6 */
+gFieldSharedColVtx_00000 = field_shared_VRAM + 0x0; /* maps 3 5 7 12 */
+gFieldSharedFaces_00260 = field_shared_VRAM + 0x260; /* maps 3 5 7 12 */
+gFieldSharedColVtx_005A0 = field_shared_VRAM + 0x5A0; /* maps 3 5 7 12 */
+gFieldSharedFaces_00798 = field_shared_VRAM + 0x798; /* maps 3 5 7 12 */
+gFieldSharedColVtx_00B80 = field_shared_VRAM + 0xB80; /* maps 3 5 7 */
+gFieldSharedFaces_00DA0 = field_shared_VRAM + 0xDA0; /* maps 3 5 7 */
+gFieldSharedColVtx_00FD0 = field_shared_VRAM + 0xFD0; /* maps 3 5 7 12 */
+gFieldSharedFaces_01268 = field_shared_VRAM + 0x1268; /* maps 3 5 7 12 */
+gFieldSharedColVtx_01560 = field_shared_VRAM + 0x1560; /* maps 3 5 7 12 */
+gFieldSharedFaces_01580 = field_shared_VRAM + 0x1580; /* maps 3 5 7 12 */
+gFieldSharedColVtx_015A8 = field_shared_VRAM + 0x15A8; /* maps 3 5 7 12 */
+gFieldSharedFaces_015C8 = field_shared_VRAM + 0x15C8; /* maps 3 5 7 12 */
+gFieldSharedDL_0D750 = field_shared_VRAM + 0xD750; /* maps 3 5 7 12 */
+gFieldSharedDL_0E650 = field_shared_VRAM + 0xE650; /* maps 3 5 7 12 */
+gFieldSharedDL_0F0B0 = field_shared_VRAM + 0xF0B0; /* maps 3 5 7 */
+gFieldSharedDL_10190 = field_shared_VRAM + 0x10190; /* maps 3 5 7 12 */
+gFieldSharedDL_10800 = field_shared_VRAM + 0x10800; /* maps 3 5 7 12 */
+gFieldSharedDL_10950 = field_shared_VRAM + 0x10950; /* maps 3 5 7 12 */
+gFieldSharedDL_10A70 = field_shared_VRAM + 0x10A70; /* maps 3 5 7 12 */
+gRegion5DL_031C0 = region_5_VRAM + 0x31C0; /* maps 12 25 */
+gRegion5DL_032E0 = region_5_VRAM + 0x32E0; /* map 25 */
+gRegion5DL_03400 = region_5_VRAM + 0x3400; /* map 25 */
+/* fixed addresses map 12's NPC records name in other binary files (not relocated) */
+
+/* map_32: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap32Tex_00 = map_32_tex_00_rgba16_rgba16__png;
+gMap32Tex_01 = map_32_tex_01_rgba16_rgba16__png;
+gMap32Tex_02 = map_32_tex_02_rgba16_rgba16__png;
+gMap32Tex_03 = map_32_tex_03_rgba16_rgba16__png;
+gMap32Tex_04 = map_32_tex_04_rgba16_rgba16__png;
+gMap32Tex_05 = map_32_tex_05_rgba16_rgba16__png;
+gMap32Tex_06 = map_32_tex_06_rgba16_rgba16__png;
+gMap32Tex_07 = map_32_tex_07_rgba16_rgba16__png;
+gMap32Raw_13910 = map_32_raw_13910_bin;
+gMap32Tex_08 = map_32_tex_08_rgba16_rgba16__png;
+gMap32Tex_09 = map_32_tex_09_rgba16_rgba16__png;
+gMap32Tex_10 = map_32_tex_10_rgba16_rgba16__png;
+gMap32Tex_11 = map_32_tex_11_rgba16_rgba16__png;
+gMap32Tex_12 = map_32_tex_12_rgba16_rgba16__png;
+gMap32Tex_13 = map_32_tex_13_rgba16_rgba16__png;
+gMap32Tex_14 = map_32_tex_14_rgba16_rgba16__png;
+gMap32Tex_15 = map_32_tex_15_rgba16_rgba16__png;
+gMap32Tex_16 = map_32_tex_16_rgba16_rgba16__png;
+gMap32Tex_17 = map_32_tex_17_rgba16_rgba16__png;
+gMap32Tex_18 = map_32_tex_18_rgba16_rgba16__png;
+gMap32Tex_19 = map_32_tex_19_rgba16_rgba16__png;
+gMap32Tex_20 = map_32_tex_20_rgba16_rgba16__png;
+gMap32Tex_21 = map_32_tex_21_rgba16_rgba16__png;
+gMap32Tex_22 = map_32_tex_22_rgba16_rgba16__png;
+gMap32Tex_23 = map_32_tex_23_rgba16_rgba16__png;
+gMap32Tex_24 = map_32_tex_24_rgba16_rgba16__png;
+gMap32Tex_25 = map_32_tex_25_rgba16_rgba16__png;
+gMap32Tex_26 = map_32_tex_26_rgba16_rgba16__png;
+gMap32Tex_27 = map_32_tex_27_rgba16_rgba16__png;
+gMap32Tex_28 = map_32_tex_28_rgba16_rgba16__png;
+gMap32Tex_29 = map_32_tex_29_rgba16_rgba16__png;
+gMap32Tex_30 = map_32_tex_30_rgba16_rgba16__png;
+gMap32Tex_31 = map_32_tex_31_rgba16_rgba16__png;
+gMap32Tex_32 = map_32_tex_32_rgba16_rgba16__png;
+gMap32Tex_33 = map_32_tex_33_rgba16_rgba16__png;
+gMap32Tex_34 = map_32_tex_34_rgba16_rgba16__png;
+gMap32Tex_35 = map_32_tex_35_rgba16_rgba16__png;
+gMap32Tex_36 = map_32_tex_36_rgba16_rgba16__png;
+gMap32Tex_37 = map_32_tex_37_rgba16_rgba16__png;
+gMap32Tex_38 = map_32_tex_38_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 32's NPC records name in other binary files (not relocated) */
+/* the addresses LoadMap loads the shared blocks and the outdoor map blobs to, which map.c names and the locks assert:
+   splat lists each in undefined_syms_auto.txt only while nothing at it has a name of its own, and stops once a typed
+   map has a record or a name there (maps 12 and 32 start at 0x8010FE00; map 12 names field_shared's first bytes) */
+D_80100000 = 0x80100000;
+D_8010FE00 = 0x8010FE00;
+D_801E0000 = 0x801E0000;
+/* the lock on field_shared, region_5 and gameplay_common. field_shared is loaded for maps 3, 5, 7 and 12, region_5
+   for maps 12 and 25, gameplay_common for every map; the maps name addresses inside them as the block's label and an
+   offset into its one binary piece (DrawMapBillboards' first two textures are numbers into gameplay_common), so each
+   block must stay where LoadMap loads it, at its size: a build that moves or resizes one stops here */
+ASSERT(field_shared_VRAM == D_801E0000, "field_shared is locked: LoadMap loads it at D_801E0000, and maps 3, 5 and 7 hold addresses inside it");
+ASSERT(field_shared_ROM_END - field_shared_ROM_START == 0x10B10, "field_shared is locked: its size changed, and maps 3, 5 and 7 hold addresses inside it");
+ASSERT(region_5_VRAM == 0x801F8000, "region_5 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and map 25 holds addresses inside it");
+ASSERT(region_5_ROM_END - region_5_ROM_START == 0x34A0, "region_5 is locked: its size changed, and map 25 holds addresses inside it");
+ASSERT(gameplay_common_VRAM == D_80100000, "gameplay_common is locked: LoadMap loads it at D_80100000, and the maps and DrawMapBillboards name addresses inside it");
+ASSERT(gameplay_common_ROM_END - gameplay_common_ROM_START == 0xFE00, "gameplay_common is locked: its size changed, and the maps and DrawMapBillboards name addresses inside it");
+/* maps 12's and 32's RAM ceiling: as map 15's, the ending's data (gEventBlob, 0x801C0000), which LoadEndingScene keeps
+   resident beside the map it loads (the ending's scenes name maps 30, 6, 17, 26, 1, 7 and 12; nothing in the code keeps
+   map 32 out of them). By the game's data alone map 12's bound would be field_shared at 0x801E0000. */
+ASSERT(map_12_VRAM + (map_12_ROM_END - map_12_ROM_START) <= gEventBlob, "map_12 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_32_VRAM + (map_32_ROM_END - map_32_ROM_START) <= gEventBlob, "map_32 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* the lock on the region blocks 1-4: LoadMap loads the block a map's header names (gRegionBlocks) at
+   0x801F8000, and the maps that load it name addresses inside it (display lists, textures, vertices, collision):
+   each block must stay where it is loaded, at its size; a build that moves or resizes one stops here */
+ASSERT(region_1_VRAM == 0x801F8000, "region_1 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and maps 1, 2, 3, 14 and 16 name addresses inside it");
+ASSERT(region_1_ROM_END - region_1_ROM_START == 0x7A70, "region_1 is locked: its size changed, and maps 1, 2, 3, 14 and 16 name addresses inside it");
+ASSERT(region_2_VRAM == 0x801F8000, "region_2 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and maps 4, 5, 6, 17, 18, 19 and 20 name addresses inside it");
+ASSERT(region_2_ROM_END - region_2_ROM_START == 0x57B0, "region_2 is locked: its size changed, and maps 4, 5, 6, 17, 18, 19 and 20 name addresses inside it");
+ASSERT(region_3_VRAM == 0x801F8000, "region_3 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and maps 7, 8, 21 and 22 name addresses inside it");
+ASSERT(region_3_ROM_END - region_3_ROM_START == 0x7570, "region_3 is locked: its size changed, and maps 7, 8, 21 and 22 name addresses inside it");
+ASSERT(region_4_VRAM == 0x801F8000, "region_4 is locked: LoadMap loads every region block at 0x801F8000 (gRegionBlocks), and maps 9, 10, 11, 23 and 24 name addresses inside it");
+ASSERT(region_4_ROM_END - region_4_ROM_START == 0x70E0, "region_4 is locked: its size changed, and maps 9, 10, 11, 23 and 24 name addresses inside it");
+
+/* map_04: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap04Tex_00 = map_04_tex_00_rgba16_rgba16__png;
+gMap04Tex_01 = map_04_tex_01_rgba16_rgba16__png;
+gMap04Tex_02 = map_04_tex_02_rgba16_rgba16__png;
+gMap04Tex_03 = map_04_tex_03_rgba16_rgba16__png;
+gMap04Tex_04 = map_04_tex_04_rgba16_rgba16__png;
+gMap04Tex_05 = map_04_tex_05_rgba16_rgba16__png;
+gMap04Tex_06 = map_04_tex_06_rgba16_rgba16__png;
+gMap04Tex_07 = map_04_tex_07_rgba16_rgba16__png;
+gMap04Tex_08 = map_04_tex_08_rgba16_rgba16__png;
+gMap04Tex_09 = map_04_tex_09_rgba16_rgba16__png;
+gMap04Tex_10 = map_04_tex_10_rgba16_rgba16__png;
+gMap04Tex_11 = map_04_tex_11_rgba16_rgba16__png;
+gMap04Tex_12 = map_04_tex_12_rgba16_rgba16__png;
+gMap04Tex_13 = map_04_tex_13_rgba16_rgba16__png;
+gMap04Tex_14 = map_04_tex_14_rgba16_rgba16__png;
+gMap04Tex_15 = map_04_tex_15_rgba16_rgba16__png;
+gMap04Tex_16 = map_04_tex_16_rgba16_rgba16__png;
+gMap04Tex_17 = map_04_tex_17_rgba16_rgba16__png;
+gMap04Tex_18 = map_04_tex_18_rgba16_rgba16__png;
+gMap04Tex_19 = map_04_tex_19_rgba16_rgba16__png;
+gMap04Tex_20 = map_04_tex_20_rgba16_rgba16__png;
+gMap04Tex_21 = map_04_tex_21_rgba16_rgba16__png;
+gMap04Tex_22 = map_04_tex_22_rgba16_rgba16__png;
+gMap04Tex_23 = map_04_tex_23_rgba16_rgba16__png;
+gMap04Tex_24 = map_04_tex_24_rgba16_rgba16__png;
+gMap04Tex_25 = map_04_tex_25_rgba16_rgba16__png;
+gMap04Tex_26 = map_04_tex_26_rgba16_rgba16__png;
+gMap04Tex_27 = map_04_tex_27_rgba16_rgba16__png;
+gMap04Tex_28 = map_04_tex_28_rgba16_rgba16__png;
+gMap04Tex_29 = map_04_tex_29_rgba16_rgba16__png;
+gMap04Tex_30 = map_04_tex_30_rgba16_rgba16__png;
+gMap04Tex_31 = map_04_tex_31_rgba16_rgba16__png;
+gMap04Tex_32 = map_04_tex_32_rgba16_rgba16__png;
+gMap04Tex_33 = map_04_tex_33_rgba16_rgba16__png;
+gMap04Tex_34 = map_04_tex_34_rgba16_rgba16__png;
+gMap04Tex_35 = map_04_tex_35_rgba16_rgba16__png;
+gMap04Tex_36 = map_04_tex_36_rgba16_rgba16__png;
+gMap04Tex_37 = map_04_tex_37_rgba16_rgba16__png;
+gMap04Tex_38 = map_04_tex_38_rgba16_rgba16__png;
+gMap04Tex_39 = map_04_tex_39_rgba16_rgba16__png;
+gMap04Tex_40 = map_04_tex_40_rgba16_rgba16__png;
+gMap04Tex_41 = map_04_tex_41_rgba16_rgba16__png;
+gMap04Tex_42 = map_04_tex_42_rgba16_rgba16__png;
+gMap04Tex_43 = map_04_tex_43_rgba16_rgba16__png;
+gMap04Tex_44 = map_04_tex_44_rgba16_rgba16__png;
+gMap04Tex_45 = map_04_tex_45_rgba16_rgba16__png;
+gMap04Tex_46 = map_04_tex_46_rgba16_rgba16__png;
+gMap04Tex_47 = map_04_tex_47_rgba16_rgba16__png;
+gMap04Tex_48 = map_04_tex_48_rgba16_rgba16__png;
+gMap04Tex_49 = map_04_tex_49_rgba16_rgba16__png;
+gMap04Tex_50 = map_04_tex_50_rgba16_rgba16__png;
+gMap04Tex_51 = map_04_tex_51_rgba16_rgba16__png;
+gMap04Tex_52 = map_04_tex_52_ci4_ci4__png;
+gMap04Tex_53 = map_04_tex_53_rgba16_rgba16__png;
+gMap04Tex_54 = map_04_tex_54_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gRegion2Tex_00210 = region_2_VRAM + 0x210; /* map 4 */
+gRegion2Tex_02210 = region_2_VRAM + 0x2210; /* maps 4 5 */
+gRegion2Tex_03210 = region_2_VRAM + 0x3210; /* map 4 */
+gRegion2Tex_04210 = region_2_VRAM + 0x4210; /* map 4 */
+gRegion2DL_05290 = region_2_VRAM + 0x5290; /* maps 4 5 6 17 18 20 */
+gRegion2DL_053B0 = region_2_VRAM + 0x53B0; /* maps 17 20 */
+gRegion2DL_054D0 = region_2_VRAM + 0x54D0; /* maps 4 6 18 20 */
+gRegion2DL_055F0 = region_2_VRAM + 0x55F0; /* maps 4 5 6 17 18 20 */
+gRegion2DL_05710 = region_2_VRAM + 0x5710; /* maps 5 6 17 18 19 */
+/* fixed addresses map 4's NPC records name in other binary files (not relocated) */
+
+/* map_08: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap08Tex_00 = map_08_tex_00_rgba16_rgba16__png;
+gMap08Tex_01 = map_08_tex_01_rgba16_rgba16__png;
+gMap08Tex_02 = map_08_tex_02_rgba16_rgba16__png;
+gMap08Tex_03 = map_08_tex_03_rgba16_rgba16__png;
+gMap08Tex_04 = map_08_tex_04_rgba16_rgba16__png;
+gMap08Tex_05 = map_08_tex_05_rgba16_rgba16__png;
+gMap08Tex_06 = map_08_tex_06_rgba16_rgba16__png;
+gMap08Tex_07 = map_08_tex_07_rgba16_rgba16__png;
+gMap08Tex_08 = map_08_tex_08_rgba16_rgba16__png;
+gMap08Tex_09 = map_08_tex_09_rgba16_rgba16__png;
+gMap08Tex_10 = map_08_tex_10_rgba16_rgba16__png;
+gMap08Tex_11 = map_08_tex_11_rgba16_rgba16__png;
+gMap08Tex_12 = map_08_tex_12_rgba16_rgba16__png;
+gMap08Tex_13 = map_08_tex_13_rgba16_rgba16__png;
+gMap08Tex_14 = map_08_tex_14_rgba16_rgba16__png;
+gMap08Tex_15 = map_08_tex_15_rgba16_rgba16__png;
+gMap08Tex_16 = map_08_tex_16_rgba16_rgba16__png;
+gMap08Tex_17 = map_08_tex_17_rgba16_rgba16__png;
+gMap08Tex_18 = map_08_tex_18_rgba16_rgba16__png;
+gMap08Tex_19 = map_08_tex_19_rgba16_rgba16__png;
+gMap08Tex_20 = map_08_tex_20_rgba16_rgba16__png;
+gMap08Tex_21 = map_08_tex_21_rgba16_rgba16__png;
+gMap08Tex_22 = map_08_tex_22_rgba16_rgba16__png;
+gMap08Tex_23 = map_08_tex_23_rgba16_rgba16__png;
+gMap08Tex_24 = map_08_tex_24_rgba16_rgba16__png;
+gMap08Tex_25 = map_08_tex_25_rgba16_rgba16__png;
+gMap08Tex_26 = map_08_tex_26_rgba16_rgba16__png;
+gMap08Tex_27 = map_08_tex_27_rgba16_rgba16__png;
+gMap08Tex_28 = map_08_tex_28_rgba16_rgba16__png;
+gMap08Tex_29 = map_08_tex_29_rgba16_rgba16__png;
+gMap08Tex_30 = map_08_tex_30_rgba16_rgba16__png;
+gMap08Tex_31 = map_08_tex_31_rgba16_rgba16__png;
+gMap08Tex_32 = map_08_tex_32_rgba16_rgba16__png;
+gMap08Tex_33 = map_08_tex_33_rgba16_rgba16__png;
+gMap08Tex_34 = map_08_tex_34_rgba16_rgba16__png;
+gMap08Tex_35 = map_08_tex_35_rgba16_rgba16__png;
+gMap08Tex_36 = map_08_tex_36_rgba16_rgba16__png;
+gMap08Tex_37 = map_08_tex_37_rgba16_rgba16__png;
+gMap08Tex_38 = map_08_tex_38_rgba16_rgba16__png;
+gMap08Tex_39 = map_08_tex_39_rgba16_rgba16__png;
+gMap08Tex_40 = map_08_tex_40_rgba16_rgba16__png;
+gMap08Tex_41 = map_08_tex_41_rgba16_rgba16__png;
+gMap08Tex_42 = map_08_tex_42_rgba16_rgba16__png;
+gMap08Tex_43 = map_08_tex_43_rgba16_rgba16__png;
+gMap08Tex_44 = map_08_tex_44_rgba16_rgba16__png;
+gMap08Tex_45 = map_08_tex_45_rgba16_rgba16__png;
+gMap08Tex_46 = map_08_tex_46_rgba16_rgba16__png;
+gMap08Tex_47 = map_08_tex_47_rgba16_rgba16__png;
+gMap08Tex_48 = map_08_tex_48_rgba16_rgba16__png;
+gMap08Tex_49 = map_08_tex_49_rgba16_rgba16__png;
+gMap08Tex_50 = map_08_tex_50_rgba16_rgba16__png;
+gMap08Tex_51 = map_08_tex_51_rgba16_rgba16__png;
+gMap08Tex_52 = map_08_tex_52_rgba16_rgba16__png;
+gMap08Raw_345D0 = map_08_raw_345d0_bin;
+gMap08Tex_53 = map_08_tex_53_ci8_ci8__png;
+gMap08Raw_34BD0 = map_08_raw_34bd0_bin;
+gMap08Tex_54 = map_08_tex_54_ci8_ci8__png;
+gMap08Raw_351D0 = map_08_raw_351d0_bin;
+gMap08Tex_55 = map_08_tex_55_ci8_ci8__png;
+gMap08Tex_56 = map_08_tex_56_rgba16_rgba16__png;
+gMap08Tex_57 = map_08_tex_57_rgba16_rgba16__png;
+gMap08Tex_58 = map_08_tex_58_rgba16_rgba16__png;
+gMap08Tex_59 = map_08_tex_59_rgba16_rgba16__png;
+gMap08Tex_60 = map_08_tex_60_rgba16_rgba16__png;
+gMap08Tex_61 = map_08_tex_61_rgba16_rgba16__png;
+gMap08Tex_62 = map_08_tex_62_rgba16_rgba16__png;
+gMap08Tex_63 = map_08_tex_63_rgba16_rgba16__png;
+gMap08Tex_64 = map_08_tex_64_rgba16_rgba16__png;
+gMap08Tex_65 = map_08_tex_65_rgba16_rgba16__png;
+gMap08Tex_66 = map_08_tex_66_rgba16_rgba16__png;
+gMap08Tex_67 = map_08_tex_67_rgba16_rgba16__png;
+gMap08Tex_68 = map_08_tex_68_rgba16_rgba16__png;
+gMap08Tex_69 = map_08_tex_69_rgba16_rgba16__png;
+gMap08Tex_70 = map_08_tex_70_rgba16_rgba16__png;
+gMap08Tex_71 = map_08_tex_71_rgba16_rgba16__png;
+gMap08Tex_72 = map_08_tex_72_rgba16_rgba16__png;
+gMap08Tex_73 = map_08_tex_73_rgba16_rgba16__png;
+gMap08Tex_74 = map_08_tex_74_rgba16_rgba16__png;
+gMap08Tex_75 = map_08_tex_75_rgba16_rgba16__png;
+gMap08Tex_76 = map_08_tex_76_rgba16_rgba16__png;
+gMap08Tex_77 = map_08_tex_77_rgba16_rgba16__png;
+gMap08Tex_78 = map_08_tex_78_rgba16_rgba16__png;
+gMap08Tex_79 = map_08_tex_79_rgba16_rgba16__png;
+gMap08Tex_80 = map_08_tex_80_rgba16_rgba16__png;
+gMap08Tex_81 = map_08_tex_81_rgba16_rgba16__png;
+gMap08Tex_82 = map_08_tex_82_rgba16_rgba16__png;
+gMap08Tex_83 = map_08_tex_83_rgba16_rgba16__png;
+gMap08Tex_84 = map_08_tex_84_rgba16_rgba16__png;
+gMap08Raw_4ABD0 = map_08_raw_4abd0_bin;
+gMap08Tex_85 = map_08_tex_85_ci4_ci4__png;
+gMap08Raw_4B0D8 = map_08_raw_4b0d8_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gRegion3Tex_025D0 = region_3_VRAM + 0x25D0; /* map 8 */
+gRegion3DL_06650 = region_3_VRAM + 0x6650; /* maps 8 22 */
+gRegion3DL_06770 = region_3_VRAM + 0x6770; /* maps 7 8 22 */
+gRegion3DL_06890 = region_3_VRAM + 0x6890; /* maps 7 8 */
+gRegion3DL_069B0 = region_3_VRAM + 0x69B0; /* maps 7 8 */
+gRegion3DL_06B90 = region_3_VRAM + 0x6B90; /* map 8 */
+gRegion3DL_06DC0 = region_3_VRAM + 0x6DC0; /* map 8 */
+gRegion3DL_06F30 = region_3_VRAM + 0x6F30; /* maps 8 21 */
+gRegion3DL_07050 = region_3_VRAM + 0x7050; /* maps 8 21 */
+gRegion3DL_07170 = region_3_VRAM + 0x7170; /* map 21 */
+gRegion3DL_07290 = region_3_VRAM + 0x7290; /* map 21 */
+gRegion3DL_073B0 = region_3_VRAM + 0x73B0; /* map 21 */
+gRegion3DL_074D0 = region_3_VRAM + 0x74D0; /* map 21 */
+/* fixed addresses map 8's NPC records name in other binary files (not relocated) */
+
+/* map_09: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap09Tex_00 = map_09_tex_00_rgba16_rgba16__png;
+gMap09Tex_01 = map_09_tex_01_rgba16_rgba16__png;
+gMap09Tex_02 = map_09_tex_02_rgba16_rgba16__png;
+gMap09Tex_03 = map_09_tex_03_rgba16_rgba16__png;
+gMap09Tex_04 = map_09_tex_04_rgba16_rgba16__png;
+gMap09Tex_05 = map_09_tex_05_rgba16_rgba16__png;
+gMap09Tex_06 = map_09_tex_06_rgba16_rgba16__png;
+gMap09Tex_07 = map_09_tex_07_rgba16_rgba16__png;
+gMap09Tex_08 = map_09_tex_08_rgba16_rgba16__png;
+gMap09Tex_09 = map_09_tex_09_rgba16_rgba16__png;
+gMap09Tex_10 = map_09_tex_10_rgba16_rgba16__png;
+gMap09Tex_11 = map_09_tex_11_rgba16_rgba16__png;
+gMap09Tex_12 = map_09_tex_12_rgba16_rgba16__png;
+gMap09Tex_13 = map_09_tex_13_rgba16_rgba16__png;
+gMap09Tex_14 = map_09_tex_14_rgba16_rgba16__png;
+gMap09Tex_15 = map_09_tex_15_rgba16_rgba16__png;
+gMap09Tex_16 = map_09_tex_16_rgba16_rgba16__png;
+gMap09Tex_17 = map_09_tex_17_rgba16_rgba16__png;
+gMap09Tex_18 = map_09_tex_18_rgba16_rgba16__png;
+gMap09Tex_19 = map_09_tex_19_rgba16_rgba16__png;
+gMap09Tex_20 = map_09_tex_20_rgba16_rgba16__png;
+gMap09Tex_21 = map_09_tex_21_rgba16_rgba16__png;
+gMap09Tex_22 = map_09_tex_22_rgba16_rgba16__png;
+gMap09Tex_23 = map_09_tex_23_rgba16_rgba16__png;
+gMap09Tex_24 = map_09_tex_24_rgba16_rgba16__png;
+gMap09Tex_25 = map_09_tex_25_rgba16_rgba16__png;
+gMap09Tex_26 = map_09_tex_26_rgba16_rgba16__png;
+gMap09Tex_27 = map_09_tex_27_rgba16_rgba16__png;
+gMap09Tex_28 = map_09_tex_28_rgba16_rgba16__png;
+gMap09Tex_29 = map_09_tex_29_rgba16_rgba16__png;
+gMap09Tex_30 = map_09_tex_30_rgba16_rgba16__png;
+gMap09Tex_31 = map_09_tex_31_rgba16_rgba16__png;
+gMap09Tex_32 = map_09_tex_32_rgba16_rgba16__png;
+gMap09Tex_33 = map_09_tex_33_rgba16_rgba16__png;
+gMap09Tex_34 = map_09_tex_34_rgba16_rgba16__png;
+gMap09Tex_35 = map_09_tex_35_rgba16_rgba16__png;
+gMap09Tex_36 = map_09_tex_36_rgba16_rgba16__png;
+gMap09Tex_37 = map_09_tex_37_rgba16_rgba16__png;
+gMap09Tex_38 = map_09_tex_38_rgba16_rgba16__png;
+gMap09Tex_39 = map_09_tex_39_rgba16_rgba16__png;
+gMap09Tex_40 = map_09_tex_40_rgba16_rgba16__png;
+gMap09Tex_41 = map_09_tex_41_rgba16_rgba16__png;
+gMap09Tex_42 = map_09_tex_42_rgba16_rgba16__png;
+gMap09Tex_43 = map_09_tex_43_rgba16_rgba16__png;
+gMap09Tex_44 = map_09_tex_44_rgba16_rgba16__png;
+gMap09Tex_45 = map_09_tex_45_rgba16_rgba16__png;
+gMap09Raw_35490 = map_09_raw_35490_bin;
+gMap09Tex_46 = map_09_tex_46_ci8_ci8__png;
+gMap09Tex_47 = map_09_tex_47_rgba16_rgba16__png;
+gMap09Raw_35E90 = map_09_raw_35e90_bin;
+gMap09Tex_48 = map_09_tex_48_ci8_ci8__png;
+gMap09Tex_49 = map_09_tex_49_rgba16_rgba16__png;
+gMap09Raw_37490 = map_09_raw_37490_bin;
+gMap09Tex_50 = map_09_tex_50_ci4_ci4__png;
+gMap09Raw_37998 = map_09_raw_37998_bin;
+gMap09Tex_51 = map_09_tex_51_rgba16_rgba16__png;
+gMap09Raw_383A0 = map_09_raw_383a0_bin;
+gMap09Tex_52 = map_09_tex_52_ci4_ci4__png;
+gMap09Raw_38628 = map_09_raw_38628_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gRegion4Tex_05480 = region_4_VRAM + 0x5480; /* map 23 */
+gRegion4DL_06500 = region_4_VRAM + 0x6500; /* map 11 */
+gRegion4DL_06620 = region_4_VRAM + 0x6620; /* maps 9 11 23 */
+gRegion4DL_06740 = region_4_VRAM + 0x6740; /* maps 9 23 */
+gRegion4DL_06AA0 = region_4_VRAM + 0x6AA0; /* map 11 */
+gRegion4DL_06BC0 = region_4_VRAM + 0x6BC0; /* map 11 */
+gRegion4DL_06CE0 = region_4_VRAM + 0x6CE0; /* map 11 */
+gRegion4DL_06E00 = region_4_VRAM + 0x6E00; /* maps 9 11 23 */
+/* fixed addresses map 9's NPC records name in other binary files (not relocated) */
+
+/* map_18: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap18Tex_00 = map_18_tex_00_rgba16_rgba16__png;
+gMap18Tex_01 = map_18_tex_01_rgba16_rgba16__png;
+gMap18Tex_02 = map_18_tex_02_rgba16_rgba16__png;
+gMap18Tex_03 = map_18_tex_03_rgba16_rgba16__png;
+gMap18Tex_04 = map_18_tex_04_rgba16_rgba16__png;
+gMap18Tex_05 = map_18_tex_05_rgba16_rgba16__png;
+gMap18Tex_06 = map_18_tex_06_rgba16_rgba16__png;
+gMap18Tex_07 = map_18_tex_07_rgba16_rgba16__png;
+gMap18Tex_08 = map_18_tex_08_rgba16_rgba16__png;
+gMap18Tex_09 = map_18_tex_09_rgba16_rgba16__png;
+gMap18Tex_10 = map_18_tex_10_rgba16_rgba16__png;
+gMap18Tex_11 = map_18_tex_11_rgba16_rgba16__png;
+gMap18Tex_12 = map_18_tex_12_rgba16_rgba16__png;
+gMap18Tex_13 = map_18_tex_13_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 18's NPC records name in other binary files (not relocated) */
+
+/* map_19: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap19Tex_00 = map_19_tex_00_rgba16_rgba16__png;
+gMap19Tex_01 = map_19_tex_01_rgba16_rgba16__png;
+gMap19Tex_02 = map_19_tex_02_rgba16_rgba16__png;
+gMap19Tex_03 = map_19_tex_03_rgba16_rgba16__png;
+gMap19Tex_04 = map_19_tex_04_rgba16_rgba16__png;
+gMap19Tex_05 = map_19_tex_05_rgba16_rgba16__png;
+gMap19Tex_06 = map_19_tex_06_rgba16_rgba16__png;
+gMap19Tex_07 = map_19_tex_07_rgba16_rgba16__png;
+gMap19Tex_08 = map_19_tex_08_rgba16_rgba16__png;
+gMap19Tex_09 = map_19_tex_09_rgba16_rgba16__png;
+gMap19Tex_10 = map_19_tex_10_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 19's NPC records name in other binary files (not relocated) */
+
+/* map_20: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap20Tex_00 = map_20_tex_00_rgba16_rgba16__png;
+gMap20Tex_01 = map_20_tex_01_rgba16_rgba16__png;
+gMap20Tex_02 = map_20_tex_02_rgba16_rgba16__png;
+gMap20Tex_03 = map_20_tex_03_rgba16_rgba16__png;
+gMap20Tex_04 = map_20_tex_04_rgba16_rgba16__png;
+gMap20Tex_05 = map_20_tex_05_rgba16_rgba16__png;
+gMap20Tex_06 = map_20_tex_06_rgba16_rgba16__png;
+gMap20Tex_07 = map_20_tex_07_rgba16_rgba16__png;
+gMap20Tex_08 = map_20_tex_08_rgba16_rgba16__png;
+gMap20Tex_09 = map_20_tex_09_rgba16_rgba16__png;
+gMap20Tex_10 = map_20_tex_10_rgba16_rgba16__png;
+gMap20Tex_11 = map_20_tex_11_rgba16_rgba16__png;
+gMap20Tex_12 = map_20_tex_12_rgba16_rgba16__png;
+gMap20Tex_13 = map_20_tex_13_rgba16_rgba16__png;
+gMap20Tex_14 = map_20_tex_14_rgba16_rgba16__png;
+gMap20Tex_15 = map_20_tex_15_rgba16_rgba16__png;
+gMap20Tex_16 = map_20_tex_16_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 20's NPC records name in other binary files (not relocated) */
+
+/* map_26: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap26Tex_00 = map_26_tex_00_rgba16_rgba16__png;
+gMap26Tex_01 = map_26_tex_01_rgba16_rgba16__png;
+gMap26Tex_02 = map_26_tex_02_rgba16_rgba16__png;
+gMap26Tex_03 = map_26_tex_03_rgba16_rgba16__png;
+gMap26Tex_04 = map_26_tex_04_rgba16_rgba16__png;
+gMap26Tex_05 = map_26_tex_05_rgba16_rgba16__png;
+gMap26Tex_06 = map_26_tex_06_rgba16_rgba16__png;
+gMap26Tex_07 = map_26_tex_07_rgba16_rgba16__png;
+gMap26Tex_08 = map_26_tex_08_rgba16_rgba16__png;
+gMap26Tex_09 = map_26_tex_09_rgba16_rgba16__png;
+gMap26Tex_10 = map_26_tex_10_rgba16_rgba16__png;
+gMap26Tex_11 = map_26_tex_11_rgba16_rgba16__png;
+gMap26Tex_12 = map_26_tex_12_rgba16_rgba16__png;
+gMap26Tex_13 = map_26_tex_13_rgba16_rgba16__png;
+gMap26Tex_14 = map_26_tex_14_rgba16_rgba16__png;
+gMap26Tex_15 = map_26_tex_15_rgba16_rgba16__png;
+gMap26Tex_16 = map_26_tex_16_rgba16_rgba16__png;
+gMap26Tex_17 = map_26_tex_17_rgba16_rgba16__png;
+gMap26Tex_18 = map_26_tex_18_rgba16_rgba16__png;
+gMap26Tex_19 = map_26_tex_19_rgba16_rgba16__png;
+gMap26Tex_20 = map_26_tex_20_rgba16_rgba16__png;
+gMap26Tex_21 = map_26_tex_21_rgba16_rgba16__png;
+gMap26Tex_22 = map_26_tex_22_rgba16_rgba16__png;
+gMap26Tex_23 = map_26_tex_23_rgba16_rgba16__png;
+gMap26Tex_24 = map_26_tex_24_rgba16_rgba16__png;
+gMap26Tex_25 = map_26_tex_25_rgba16_rgba16__png;
+gMap26Tex_26 = map_26_tex_26_rgba16_rgba16__png;
+gMap26Tex_27 = map_26_tex_27_rgba16_rgba16__png;
+gMap26Tex_28 = map_26_tex_28_rgba16_rgba16__png;
+gMap26Tex_29 = map_26_tex_29_rgba16_rgba16__png;
+gMap26Tex_30 = map_26_tex_30_rgba16_rgba16__png;
+gMap26Tex_31 = map_26_tex_31_rgba16_rgba16__png;
+gMap26Tex_32 = map_26_tex_32_rgba16_rgba16__png;
+gMap26Tex_33 = map_26_tex_33_rgba16_rgba16__png;
+gMap26Tex_34 = map_26_tex_34_rgba16_rgba16__png;
+gMap26Tex_35 = map_26_tex_35_rgba16_rgba16__png;
+gMap26Tex_36 = map_26_tex_36_rgba16_rgba16__png;
+gMap26Tex_37 = map_26_tex_37_rgba16_rgba16__png;
+gMap26Tex_38 = map_26_tex_38_rgba16_rgba16__png;
+gMap26Tex_39 = map_26_tex_39_rgba16_rgba16__png;
+gMap26Tex_40 = map_26_tex_40_rgba16_rgba16__png;
+gMap26Tex_41 = map_26_tex_41_rgba16_rgba16__png;
+gMap26Tex_42 = map_26_tex_42_rgba16_rgba16__png;
+gMap26Tex_43 = map_26_tex_43_rgba16_rgba16__png;
+gMap26Tex_44 = map_26_tex_44_rgba16_rgba16__png;
+gMap26Tex_45 = map_26_tex_45_rgba16_rgba16__png;
+gMap26Tex_46 = map_26_tex_46_rgba16_rgba16__png;
+gMap26Tex_47 = map_26_tex_47_rgba16_rgba16__png;
+gMap26Tex_48 = map_26_tex_48_rgba16_rgba16__png;
+gMap26Tex_49 = map_26_tex_49_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 26's NPC records name in other binary files (not relocated) */
+
+/* map_31: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap31Tex_00 = map_31_tex_00_rgba16_rgba16__png;
+gMap31Tex_01 = map_31_tex_01_rgba16_rgba16__png;
+gMap31Tex_02 = map_31_tex_02_rgba16_rgba16__png;
+gMap31Tex_03 = map_31_tex_03_rgba16_rgba16__png;
+gMap31Tex_04 = map_31_tex_04_rgba16_rgba16__png;
+gMap31Tex_05 = map_31_tex_05_rgba16_rgba16__png;
+gMap31Tex_06 = map_31_tex_06_rgba16_rgba16__png;
+gMap31Tex_07 = map_31_tex_07_rgba16_rgba16__png;
+gMap31Tex_08 = map_31_tex_08_rgba16_rgba16__png;
+gMap31Tex_09 = map_31_tex_09_rgba16_rgba16__png;
+gMap31Tex_10 = map_31_tex_10_rgba16_rgba16__png;
+gMap31Tex_11 = map_31_tex_11_rgba16_rgba16__png;
+gMap31Tex_12 = map_31_tex_12_rgba16_rgba16__png;
+gMap31Tex_13 = map_31_tex_13_rgba16_rgba16__png;
+gMap31Tex_14 = map_31_tex_14_rgba16_rgba16__png;
+gMap31Tex_15 = map_31_tex_15_rgba16_rgba16__png;
+gMap31Tex_16 = map_31_tex_16_rgba16_rgba16__png;
+gMap31Tex_17 = map_31_tex_17_rgba16_rgba16__png;
+gMap31Tex_18 = map_31_tex_18_rgba16_rgba16__png;
+gMap31Tex_19 = map_31_tex_19_rgba16_rgba16__png;
+gMap31Tex_20 = map_31_tex_20_rgba16_rgba16__png;
+gMap31Tex_21 = map_31_tex_21_rgba16_rgba16__png;
+gMap31Tex_22 = map_31_tex_22_rgba16_rgba16__png;
+gMap31Tex_23 = map_31_tex_23_rgba16_rgba16__png;
+gMap31Tex_24 = map_31_tex_24_rgba16_rgba16__png;
+gMap31Tex_25 = map_31_tex_25_rgba16_rgba16__png;
+gMap31Tex_26 = map_31_tex_26_rgba16_rgba16__png;
+gMap31Tex_27 = map_31_tex_27_rgba16_rgba16__png;
+gMap31Tex_28 = map_31_tex_28_rgba16_rgba16__png;
+gMap31Tex_29 = map_31_tex_29_rgba16_rgba16__png;
+gMap31Tex_30 = map_31_tex_30_rgba16_rgba16__png;
+gMap31Tex_31 = map_31_tex_31_rgba16_rgba16__png;
+gMap31Tex_32 = map_31_tex_32_rgba16_rgba16__png;
+gMap31Tex_33 = map_31_tex_33_rgba16_rgba16__png;
+gMap31Tex_34 = map_31_tex_34_rgba16_rgba16__png;
+gMap31Tex_35 = map_31_tex_35_rgba16_rgba16__png;
+gMap31Tex_36 = map_31_tex_36_rgba16_rgba16__png;
+gMap31Tex_37 = map_31_tex_37_rgba16_rgba16__png;
+gMap31Tex_38 = map_31_tex_38_rgba16_rgba16__png;
+gMap31Tex_39 = map_31_tex_39_rgba16_rgba16__png;
+gMap31Tex_40 = map_31_tex_40_rgba16_rgba16__png;
+gMap31Tex_41 = map_31_tex_41_rgba16_rgba16__png;
+gMap31Tex_42 = map_31_tex_42_rgba16_rgba16__png;
+gMap31Tex_43 = map_31_tex_43_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 31's NPC records name in other binary files (not relocated) */
+
+/* map_33: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap33Tex_00 = map_33_tex_00_rgba16_rgba16__png;
+gMap33Tex_01 = map_33_tex_01_rgba16_rgba16__png;
+gMap33Tex_02 = map_33_tex_02_rgba16_rgba16__png;
+gMap33Tex_03 = map_33_tex_03_rgba16_rgba16__png;
+gMap33Tex_04 = map_33_tex_04_rgba16_rgba16__png;
+gMap33Tex_05 = map_33_tex_05_rgba16_rgba16__png;
+gMap33Tex_06 = map_33_tex_06_rgba16_rgba16__png;
+gMap33Tex_07 = map_33_tex_07_rgba16_rgba16__png;
+gMap33Tex_08 = map_33_tex_08_rgba16_rgba16__png;
+gMap33Tex_09 = map_33_tex_09_rgba16_rgba16__png;
+gMap33Tex_10 = map_33_tex_10_rgba16_rgba16__png;
+gMap33Tex_11 = map_33_tex_11_rgba16_rgba16__png;
+gMap33Tex_12 = map_33_tex_12_rgba16_rgba16__png;
+gMap33Tex_13 = map_33_tex_13_rgba16_rgba16__png;
+gMap33Tex_14 = map_33_tex_14_rgba16_rgba16__png;
+gMap33Tex_15 = map_33_tex_15_rgba16_rgba16__png;
+gMap33Tex_16 = map_33_tex_16_rgba16_rgba16__png;
+gMap33Tex_17 = map_33_tex_17_rgba16_rgba16__png;
+gMap33Tex_18 = map_33_tex_18_rgba16_rgba16__png;
+gMap33Tex_19 = map_33_tex_19_rgba16_rgba16__png;
+gMap33Tex_20 = map_33_tex_20_rgba16_rgba16__png;
+gMap33Tex_21 = map_33_tex_21_rgba16_rgba16__png;
+gMap33Tex_22 = map_33_tex_22_rgba16_rgba16__png;
+gMap33Tex_23 = map_33_tex_23_rgba16_rgba16__png;
+gMap33Tex_24 = map_33_tex_24_rgba16_rgba16__png;
+gMap33Tex_25 = map_33_tex_25_rgba16_rgba16__png;
+gMap33Tex_26 = map_33_tex_26_rgba16_rgba16__png;
+gMap33Tex_27 = map_33_tex_27_rgba16_rgba16__png;
+gMap33Tex_28 = map_33_tex_28_rgba16_rgba16__png;
+gMap33Tex_29 = map_33_tex_29_rgba16_rgba16__png;
+gMap33Tex_30 = map_33_tex_30_rgba16_rgba16__png;
+gMap33Tex_31 = map_33_tex_31_rgba16_rgba16__png;
+gMap33Tex_32 = map_33_tex_32_rgba16_rgba16__png;
+gMap33Tex_33 = map_33_tex_33_rgba16_rgba16__png;
+gMap33Tex_34 = map_33_tex_34_rgba16_rgba16__png;
+gMap33Tex_35 = map_33_tex_35_rgba16_rgba16__png;
+gMap33Tex_36 = map_33_tex_36_rgba16_rgba16__png;
+gMap33Tex_37 = map_33_tex_37_rgba16_rgba16__png;
+gMap33Tex_38 = map_33_tex_38_rgba16_rgba16__png;
+gMap33Tex_39 = map_33_tex_39_rgba16_rgba16__png;
+gMap33Tex_40 = map_33_tex_40_rgba16_rgba16__png;
+gMap33Tex_41 = map_33_tex_41_rgba16_rgba16__png;
+gMap33Tex_42 = map_33_tex_42_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 33's NPC records name in other binary files (not relocated) */
+
+/* map_35: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap35Tex_00 = map_35_tex_00_rgba16_rgba16__png;
+gMap35Tex_01 = map_35_tex_01_rgba16_rgba16__png;
+gMap35Tex_02 = map_35_tex_02_rgba16_rgba16__png;
+gMap35Tex_03 = map_35_tex_03_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 35's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 4, 8, 9, 18, 19, 20, 26, 31, 33, 35, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_04_VRAM + (map_04_ROM_END - map_04_ROM_START) <= gEventBlob, "map_04 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_08_VRAM + (map_08_ROM_END - map_08_ROM_START) <= gEventBlob, "map_08 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_09_VRAM + (map_09_ROM_END - map_09_ROM_START) <= gEventBlob, "map_09 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_18_VRAM + (map_18_ROM_END - map_18_ROM_START) <= gEventBlob, "map_18 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_19_VRAM + (map_19_ROM_END - map_19_ROM_START) <= gEventBlob, "map_19 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_20_VRAM + (map_20_ROM_END - map_20_ROM_START) <= gEventBlob, "map_20 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_26_VRAM + (map_26_ROM_END - map_26_ROM_START) <= gEventBlob, "map_26 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_31_VRAM + (map_31_ROM_END - map_31_ROM_START) <= gEventBlob, "map_31 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_33_VRAM + (map_33_ROM_END - map_33_ROM_START) <= gEventBlob, "map_33 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_35_VRAM + (map_35_ROM_END - map_35_ROM_START) <= gEventBlob, "map_35 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_23: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap23Tex_00 = map_23_tex_00_rgba16_rgba16__png;
+gMap23Tex_01 = map_23_tex_01_rgba16_rgba16__png;
+gMap23Tex_02 = map_23_tex_02_rgba16_rgba16__png;
+gMap23Tex_03 = map_23_tex_03_rgba16_rgba16__png;
+gMap23Tex_04 = map_23_tex_04_rgba16_rgba16__png;
+gMap23Tex_05 = map_23_tex_05_rgba16_rgba16__png;
+gMap23Tex_06 = map_23_tex_06_rgba16_rgba16__png;
+gMap23Tex_07 = map_23_tex_07_rgba16_rgba16__png;
+gMap23Tex_08 = map_23_tex_08_rgba16_rgba16__png;
+gMap23Tex_09 = map_23_tex_09_rgba16_rgba16__png;
+gMap23Tex_10 = map_23_tex_10_rgba16_rgba16__png;
+gMap23Tex_11 = map_23_tex_11_rgba16_rgba16__png;
+gMap23Tex_12 = map_23_tex_12_rgba16_rgba16__png;
+gMap23Tex_13 = map_23_tex_13_rgba16_rgba16__png;
+gMap23Tex_14 = map_23_tex_14_rgba16_rgba16__png;
+gMap23Tex_15 = map_23_tex_15_rgba16_rgba16__png;
+gMap23Tex_16 = map_23_tex_16_rgba16_rgba16__png;
+gMap23Tex_17 = map_23_tex_17_rgba16_rgba16__png;
+gMap23Tex_18 = map_23_tex_18_rgba16_rgba16__png;
+gMap23Tex_19 = map_23_tex_19_rgba16_rgba16__png;
+gMap23Tex_20 = map_23_tex_20_rgba16_rgba16__png;
+gMap23Tex_21 = map_23_tex_21_rgba16_rgba16__png;
+gMap23Tex_22 = map_23_tex_22_rgba16_rgba16__png;
+gMap23Tex_23 = map_23_tex_23_rgba16_rgba16__png;
+gMap23Tex_24 = map_23_tex_24_rgba16_rgba16__png;
+gMap23Tex_25 = map_23_tex_25_rgba16_rgba16__png;
+gMap23Tex_26 = map_23_tex_26_rgba16_rgba16__png;
+gMap23Tex_27 = map_23_tex_27_rgba16_rgba16__png;
+gMap23Tex_28 = map_23_tex_28_rgba16_rgba16__png;
+gMap23Tex_29 = map_23_tex_29_rgba16_rgba16__png;
+gMap23Tex_30 = map_23_tex_30_rgba16_rgba16__png;
+gMap23Tex_31 = map_23_tex_31_rgba16_rgba16__png;
+gMap23Tex_32 = map_23_tex_32_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 23's NPC records name in other binary files (not relocated) */
+
+/* map_25: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap25Tex_00 = map_25_tex_00_rgba16_rgba16__png;
+gMap25Tex_01 = map_25_tex_01_rgba16_rgba16__png;
+gMap25Tex_02 = map_25_tex_02_rgba16_rgba16__png;
+gMap25Tex_03 = map_25_tex_03_rgba16_rgba16__png;
+gMap25Tex_04 = map_25_tex_04_rgba16_rgba16__png;
+gMap25Tex_05 = map_25_tex_05_rgba16_rgba16__png;
+gMap25Tex_06 = map_25_tex_06_rgba16_rgba16__png;
+gMap25Tex_07 = map_25_tex_07_rgba16_rgba16__png;
+gMap25Tex_08 = map_25_tex_08_rgba16_rgba16__png;
+gMap25Tex_09 = map_25_tex_09_rgba16_rgba16__png;
+gMap25Tex_10 = map_25_tex_10_rgba16_rgba16__png;
+gMap25Tex_11 = map_25_tex_11_rgba16_rgba16__png;
+gMap25Tex_12 = map_25_tex_12_rgba16_rgba16__png;
+gMap25Tex_13 = map_25_tex_13_rgba16_rgba16__png;
+gMap25Tex_14 = map_25_tex_14_rgba16_rgba16__png;
+gMap25Tex_15 = map_25_tex_15_rgba16_rgba16__png;
+gMap25Tex_16 = map_25_tex_16_rgba16_rgba16__png;
+gMap25Tex_17 = map_25_tex_17_rgba16_rgba16__png;
+gMap25Tex_18 = map_25_tex_18_rgba16_rgba16__png;
+gMap25Tex_19 = map_25_tex_19_rgba16_rgba16__png;
+gMap25Tex_20 = map_25_tex_20_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 25's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 23, 25, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_23_VRAM + (map_23_ROM_END - map_23_ROM_START) <= gEventBlob, "map_23 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_25_VRAM + (map_25_ROM_END - map_25_ROM_START) <= gEventBlob, "map_25 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_10: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap10Tex_00 = map_10_tex_00_rgba16_rgba16__png;
+gMap10Tex_01 = map_10_tex_01_rgba16_rgba16__png;
+gMap10Tex_02 = map_10_tex_02_rgba16_rgba16__png;
+gMap10Tex_03 = map_10_tex_03_rgba16_rgba16__png;
+gMap10Tex_04 = map_10_tex_04_rgba16_rgba16__png;
+gMap10Tex_05 = map_10_tex_05_rgba16_rgba16__png;
+gMap10Tex_06 = map_10_tex_06_rgba16_rgba16__png;
+gMap10Tex_07 = map_10_tex_07_rgba16_rgba16__png;
+gMap10Tex_08 = map_10_tex_08_rgba16_rgba16__png;
+gMap10Tex_09 = map_10_tex_09_rgba16_rgba16__png;
+gMap10Tex_10 = map_10_tex_10_rgba16_rgba16__png;
+gMap10Tex_11 = map_10_tex_11_rgba16_rgba16__png;
+gMap10Tex_12 = map_10_tex_12_rgba16_rgba16__png;
+gMap10Tex_13 = map_10_tex_13_rgba16_rgba16__png;
+gMap10Tex_14 = map_10_tex_14_rgba16_rgba16__png;
+gMap10Tex_15 = map_10_tex_15_rgba16_rgba16__png;
+gMap10Tex_16 = map_10_tex_16_rgba16_rgba16__png;
+gMap10Tex_17 = map_10_tex_17_rgba16_rgba16__png;
+gMap10Tex_18 = map_10_tex_18_rgba16_rgba16__png;
+gMap10Tex_19 = map_10_tex_19_rgba16_rgba16__png;
+gMap10Tex_20 = map_10_tex_20_rgba16_rgba16__png;
+gMap10Tex_21 = map_10_tex_21_rgba16_rgba16__png;
+gMap10Tex_22 = map_10_tex_22_rgba16_rgba16__png;
+gMap10Tex_23 = map_10_tex_23_rgba16_rgba16__png;
+gMap10Tex_24 = map_10_tex_24_rgba16_rgba16__png;
+gMap10Tex_25 = map_10_tex_25_rgba16_rgba16__png;
+gMap10Tex_26 = map_10_tex_26_rgba16_rgba16__png;
+gMap10Tex_27 = map_10_tex_27_rgba16_rgba16__png;
+gMap10Tex_28 = map_10_tex_28_rgba16_rgba16__png;
+gMap10Tex_29 = map_10_tex_29_rgba16_rgba16__png;
+gMap10Tex_30 = map_10_tex_30_rgba16_rgba16__png;
+gMap10Raw_213D0 = map_10_raw_213d0_bin;
+gMap10Tex_31 = map_10_tex_31_ci4_ci4__png;
+gMap10Raw_218D8 = map_10_raw_218d8_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 10's NPC records name in other binary files (not relocated) */
+
+/* map_13: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap13Tex_00 = map_13_tex_00_rgba16_rgba16__png;
+gMap13Tex_01 = map_13_tex_01_rgba16_rgba16__png;
+gMap13Tex_02 = map_13_tex_02_rgba16_rgba16__png;
+gMap13Tex_03 = map_13_tex_03_rgba16_rgba16__png;
+gMap13Tex_04 = map_13_tex_04_rgba16_rgba16__png;
+gMap13Tex_05 = map_13_tex_05_rgba16_rgba16__png;
+gMap13Tex_06 = map_13_tex_06_rgba16_rgba16__png;
+gMap13Tex_07 = map_13_tex_07_rgba16_rgba16__png;
+gMap13Tex_08 = map_13_tex_08_rgba16_rgba16__png;
+gMap13Tex_09 = map_13_tex_09_rgba16_rgba16__png;
+gMap13Tex_10 = map_13_tex_10_rgba16_rgba16__png;
+gMap13Tex_11 = map_13_tex_11_rgba16_rgba16__png;
+gMap13Tex_12 = map_13_tex_12_rgba16_rgba16__png;
+gMap13Tex_13 = map_13_tex_13_rgba16_rgba16__png;
+gMap13Tex_14 = map_13_tex_14_rgba16_rgba16__png;
+gMap13Tex_15 = map_13_tex_15_rgba16_rgba16__png;
+gMap13Tex_16 = map_13_tex_16_rgba16_rgba16__png;
+gMap13Tex_17 = map_13_tex_17_rgba16_rgba16__png;
+gMap13Tex_18 = map_13_tex_18_rgba16_rgba16__png;
+gMap13Tex_19 = map_13_tex_19_rgba16_rgba16__png;
+gMap13Tex_20 = map_13_tex_20_rgba16_rgba16__png;
+gMap13Tex_21 = map_13_tex_21_rgba16_rgba16__png;
+gMap13Tex_22 = map_13_tex_22_rgba16_rgba16__png;
+gMap13Tex_23 = map_13_tex_23_rgba16_rgba16__png;
+gMap13Tex_24 = map_13_tex_24_rgba16_rgba16__png;
+gMap13Tex_25 = map_13_tex_25_rgba16_rgba16__png;
+gMap13Tex_26 = map_13_tex_26_rgba16_rgba16__png;
+gMap13Tex_27 = map_13_tex_27_rgba16_rgba16__png;
+gMap13Tex_28 = map_13_tex_28_rgba16_rgba16__png;
+gMap13Tex_29 = map_13_tex_29_rgba16_rgba16__png;
+gMap13Tex_30 = map_13_tex_30_rgba16_rgba16__png;
+gMap13Tex_31 = map_13_tex_31_rgba16_rgba16__png;
+gMap13Tex_32 = map_13_tex_32_rgba16_rgba16__png;
+gMap13Tex_33 = map_13_tex_33_rgba16_rgba16__png;
+gMap13Tex_34 = map_13_tex_34_rgba16_rgba16__png;
+gMap13Tex_35 = map_13_tex_35_rgba16_rgba16__png;
+gMap13Tex_36 = map_13_tex_36_rgba16_rgba16__png;
+gMap13Tex_37 = map_13_tex_37_rgba16_rgba16__png;
+gMap13Tex_38 = map_13_tex_38_rgba16_rgba16__png;
+gMap13Tex_39 = map_13_tex_39_rgba16_rgba16__png;
+gMap13Tex_40 = map_13_tex_40_rgba16_rgba16__png;
+gMap13Tex_41 = map_13_tex_41_rgba16_rgba16__png;
+gMap13Tex_42 = map_13_tex_42_rgba16_rgba16__png;
+gMap13Tex_43 = map_13_tex_43_rgba16_rgba16__png;
+gMap13Tex_44 = map_13_tex_44_rgba16_rgba16__png;
+gMap13Tex_45 = map_13_tex_45_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 13's NPC records name in other binary files (not relocated) */
+
+/* map_14: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap14Tex_00 = map_14_tex_00_rgba16_rgba16__png;
+gMap14Tex_01 = map_14_tex_01_rgba16_rgba16__png;
+gMap14Tex_02 = map_14_tex_02_rgba16_rgba16__png;
+gMap14Tex_03 = map_14_tex_03_rgba16_rgba16__png;
+gMap14Tex_04 = map_14_tex_04_rgba16_rgba16__png;
+gMap14Tex_05 = map_14_tex_05_rgba16_rgba16__png;
+gMap14Tex_06 = map_14_tex_06_rgba16_rgba16__png;
+gMap14Tex_07 = map_14_tex_07_rgba16_rgba16__png;
+gMap14Tex_08 = map_14_tex_08_rgba16_rgba16__png;
+gMap14Tex_09 = map_14_tex_09_rgba16_rgba16__png;
+gMap14Tex_10 = map_14_tex_10_rgba16_rgba16__png;
+gMap14Tex_11 = map_14_tex_11_rgba16_rgba16__png;
+gMap14Tex_12 = map_14_tex_12_rgba16_rgba16__png;
+gMap14Tex_13 = map_14_tex_13_rgba16_rgba16__png;
+gMap14Tex_14 = map_14_tex_14_rgba16_rgba16__png;
+gMap14Tex_15 = map_14_tex_15_rgba16_rgba16__png;
+gMap14Tex_16 = map_14_tex_16_rgba16_rgba16__png;
+gMap14Tex_17 = map_14_tex_17_rgba16_rgba16__png;
+gMap14Tex_18 = map_14_tex_18_rgba16_rgba16__png;
+gMap14Tex_19 = map_14_tex_19_rgba16_rgba16__png;
+gMap14Tex_20 = map_14_tex_20_rgba16_rgba16__png;
+gMap14Tex_21 = map_14_tex_21_rgba16_rgba16__png;
+gMap14Tex_22 = map_14_tex_22_rgba16_rgba16__png;
+gMap14Tex_23 = map_14_tex_23_rgba16_rgba16__png;
+gMap14Tex_24 = map_14_tex_24_rgba16_rgba16__png;
+gMap14Tex_25 = map_14_tex_25_rgba16_rgba16__png;
+gMap14Tex_26 = map_14_tex_26_rgba16_rgba16__png;
+gMap14Tex_27 = map_14_tex_27_rgba16_rgba16__png;
+gMap14Tex_28 = map_14_tex_28_rgba16_rgba16__png;
+gMap14Tex_29 = map_14_tex_29_rgba16_rgba16__png;
+gMap14Tex_30 = map_14_tex_30_rgba16_rgba16__png;
+gMap14Tex_31 = map_14_tex_31_rgba16_rgba16__png;
+gMap14Tex_32 = map_14_tex_32_rgba16_rgba16__png;
+gMap14Tex_33 = map_14_tex_33_rgba16_rgba16__png;
+gMap14Tex_34 = map_14_tex_34_rgba16_rgba16__png;
+gMap14Tex_35 = map_14_tex_35_rgba16_rgba16__png;
+gMap14Tex_36 = map_14_tex_36_rgba16_rgba16__png;
+gMap14Tex_37 = map_14_tex_37_rgba16_rgba16__png;
+gMap14Tex_38 = map_14_tex_38_rgba16_rgba16__png;
+gMap14Tex_39 = map_14_tex_39_rgba16_rgba16__png;
+gMap14Tex_40 = map_14_tex_40_rgba16_rgba16__png;
+gMap14Tex_41 = map_14_tex_41_rgba16_rgba16__png;
+gMap14Tex_42 = map_14_tex_42_rgba16_rgba16__png;
+gMap14Tex_43 = map_14_tex_43_rgba16_rgba16__png;
+gMap14Tex_44 = map_14_tex_44_rgba16_rgba16__png;
+gMap14Tex_45 = map_14_tex_45_rgba16_rgba16__png;
+gMap14Tex_46 = map_14_tex_46_rgba16_rgba16__png;
+gMap14Tex_47 = map_14_tex_47_rgba16_rgba16__png;
+gMap14Tex_48 = map_14_tex_48_rgba16_rgba16__png;
+gMap14Tex_49 = map_14_tex_49_rgba16_rgba16__png;
+gMap14Tex_50 = map_14_tex_50_rgba16_rgba16__png;
+gMap14Tex_51 = map_14_tex_51_rgba16_rgba16__png;
+gMap14Tex_52 = map_14_tex_52_rgba16_rgba16__png;
+gMap14Tex_53 = map_14_tex_53_rgba16_rgba16__png;
+gMap14Tex_54 = map_14_tex_54_rgba16_rgba16__png;
+gMap14Tex_55 = map_14_tex_55_rgba16_rgba16__png;
+gMap14Tex_56 = map_14_tex_56_rgba16_rgba16__png;
+gMap14Tex_57 = map_14_tex_57_rgba16_rgba16__png;
+gMap14Tex_58 = map_14_tex_58_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+gRegion1Tex_00720 = region_1_VRAM + 0x720; /* map 14 */
+gRegion1Tex_02720 = region_1_VRAM + 0x2720; /* map 14 */
+gRegion1DL_067A0 = region_1_VRAM + 0x67A0; /* maps 1 14 */
+gRegion1DL_068C0 = region_1_VRAM + 0x68C0; /* maps 1 14 */
+gRegion1DL_069E0 = region_1_VRAM + 0x69E0; /* map 14 */
+gRegion1DL_06B00 = region_1_VRAM + 0x6B00; /* map 14 */
+gRegion1DL_06C20 = region_1_VRAM + 0x6C20; /* map 14 */
+gRegion1DL_06D40 = region_1_VRAM + 0x6D40; /* map 14 */
+gRegion1DL_06E60 = region_1_VRAM + 0x6E60; /* map 14 */
+gRegion1DL_06F80 = region_1_VRAM + 0x6F80; /* map 14 */
+gRegion1DL_071F0 = region_1_VRAM + 0x71F0; /* maps 1 16 */
+gRegion1DL_07310 = region_1_VRAM + 0x7310; /* maps 1 2 14 16 */
+gRegion1DL_07430 = region_1_VRAM + 0x7430; /* maps 1 3 16 */
+gRegion1DL_07550 = region_1_VRAM + 0x7550; /* maps 2 16 */
+gRegion1DL_07670 = region_1_VRAM + 0x7670; /* maps 1 2 */
+gRegion1DL_07790 = region_1_VRAM + 0x7790; /* maps 1 2 */
+gRegion1DL_078B0 = region_1_VRAM + 0x78B0; /* map 2 */
+gRegion1DL_079D0 = region_1_VRAM + 0x79D0; /* map 2 */
+/* fixed addresses map 14's NPC records name in other binary files (not relocated) */
+
+/* map_16: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap16Tex_00 = map_16_tex_00_rgba16_rgba16__png;
+gMap16Tex_01 = map_16_tex_01_rgba16_rgba16__png;
+gMap16Tex_02 = map_16_tex_02_rgba16_rgba16__png;
+gMap16Tex_03 = map_16_tex_03_rgba16_rgba16__png;
+gMap16Tex_04 = map_16_tex_04_rgba16_rgba16__png;
+gMap16Tex_05 = map_16_tex_05_rgba16_rgba16__png;
+gMap16Tex_06 = map_16_tex_06_rgba16_rgba16__png;
+gMap16Tex_07 = map_16_tex_07_rgba16_rgba16__png;
+gMap16Tex_08 = map_16_tex_08_rgba16_rgba16__png;
+gMap16Tex_09 = map_16_tex_09_rgba16_rgba16__png;
+gMap16Tex_10 = map_16_tex_10_rgba16_rgba16__png;
+gMap16Tex_11 = map_16_tex_11_rgba16_rgba16__png;
+gMap16Tex_12 = map_16_tex_12_rgba16_rgba16__png;
+gMap16Tex_13 = map_16_tex_13_rgba16_rgba16__png;
+gMap16Tex_14 = map_16_tex_14_rgba16_rgba16__png;
+gMap16Tex_15 = map_16_tex_15_rgba16_rgba16__png;
+gMap16Tex_16 = map_16_tex_16_rgba16_rgba16__png;
+gMap16Tex_17 = map_16_tex_17_rgba16_rgba16__png;
+gMap16Tex_18 = map_16_tex_18_rgba16_rgba16__png;
+gMap16Tex_19 = map_16_tex_19_rgba16_rgba16__png;
+gMap16Tex_20 = map_16_tex_20_rgba16_rgba16__png;
+gMap16Tex_21 = map_16_tex_21_rgba16_rgba16__png;
+gMap16Tex_22 = map_16_tex_22_rgba16_rgba16__png;
+gMap16Tex_23 = map_16_tex_23_rgba16_rgba16__png;
+gMap16Tex_24 = map_16_tex_24_rgba16_rgba16__png;
+gMap16Tex_25 = map_16_tex_25_rgba16_rgba16__png;
+gMap16Tex_26 = map_16_tex_26_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 16's NPC records name in other binary files (not relocated) */
+
+/* map_24: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap24Tex_00 = map_24_tex_00_rgba16_rgba16__png;
+gMap24Tex_01 = map_24_tex_01_rgba16_rgba16__png;
+gMap24Tex_02 = map_24_tex_02_rgba16_rgba16__png;
+gMap24Tex_03 = map_24_tex_03_rgba16_rgba16__png;
+gMap24Tex_04 = map_24_tex_04_rgba16_rgba16__png;
+gMap24Tex_05 = map_24_tex_05_rgba16_rgba16__png;
+gMap24Tex_06 = map_24_tex_06_rgba16_rgba16__png;
+gMap24Tex_07 = map_24_tex_07_rgba16_rgba16__png;
+gMap24Tex_08 = map_24_tex_08_rgba16_rgba16__png;
+gMap24Tex_09 = map_24_tex_09_rgba16_rgba16__png;
+gMap24Tex_10 = map_24_tex_10_rgba16_rgba16__png;
+gMap24Tex_11 = map_24_tex_11_rgba16_rgba16__png;
+gMap24Tex_12 = map_24_tex_12_rgba16_rgba16__png;
+gMap24Tex_13 = map_24_tex_13_rgba16_rgba16__png;
+gMap24Tex_14 = map_24_tex_14_rgba16_rgba16__png;
+gMap24Tex_15 = map_24_tex_15_rgba16_rgba16__png;
+gMap24Tex_16 = map_24_tex_16_rgba16_rgba16__png;
+gMap24Tex_17 = map_24_tex_17_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 24's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 10, 13, 14, 16, 24, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_10_VRAM + (map_10_ROM_END - map_10_ROM_START) <= gEventBlob, "map_10 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_13_VRAM + (map_13_ROM_END - map_13_ROM_START) <= gEventBlob, "map_13 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_14_VRAM + (map_14_ROM_END - map_14_ROM_START) <= gEventBlob, "map_14 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_16_VRAM + (map_16_ROM_END - map_16_ROM_START) <= gEventBlob, "map_16 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_24_VRAM + (map_24_ROM_END - map_24_ROM_START) <= gEventBlob, "map_24 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_17: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap17Tex_00 = map_17_tex_00_rgba16_rgba16__png;
+gMap17Tex_01 = map_17_tex_01_rgba16_rgba16__png;
+gMap17Tex_02 = map_17_tex_02_rgba16_rgba16__png;
+gMap17Tex_03 = map_17_tex_03_rgba16_rgba16__png;
+gMap17Tex_04 = map_17_tex_04_rgba16_rgba16__png;
+gMap17Tex_05 = map_17_tex_05_rgba16_rgba16__png;
+gMap17Tex_06 = map_17_tex_06_rgba16_rgba16__png;
+gMap17Tex_07 = map_17_tex_07_rgba16_rgba16__png;
+gMap17Tex_08 = map_17_tex_08_rgba16_rgba16__png;
+gMap17Tex_09 = map_17_tex_09_rgba16_rgba16__png;
+gMap17Tex_10 = map_17_tex_10_rgba16_rgba16__png;
+gMap17Tex_11 = map_17_tex_11_rgba16_rgba16__png;
+gMap17Tex_12 = map_17_tex_12_rgba16_rgba16__png;
+gMap17Tex_13 = map_17_tex_13_rgba16_rgba16__png;
+gMap17Tex_14 = map_17_tex_14_rgba16_rgba16__png;
+gMap17Tex_15 = map_17_tex_15_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 17's NPC records name in other binary files (not relocated) */
+
+/* map_21: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap21Tex_00 = map_21_tex_00_rgba16_rgba16__png;
+gMap21Tex_01 = map_21_tex_01_rgba16_rgba16__png;
+gMap21Tex_02 = map_21_tex_02_rgba16_rgba16__png;
+gMap21Tex_03 = map_21_tex_03_rgba16_rgba16__png;
+gMap21Tex_04 = map_21_tex_04_rgba16_rgba16__png;
+gMap21Tex_05 = map_21_tex_05_rgba16_rgba16__png;
+gMap21Tex_06 = map_21_tex_06_rgba16_rgba16__png;
+gMap21Tex_07 = map_21_tex_07_rgba16_rgba16__png;
+gMap21Tex_08 = map_21_tex_08_rgba16_rgba16__png;
+gMap21Tex_09 = map_21_tex_09_rgba16_rgba16__png;
+gMap21Tex_10 = map_21_tex_10_rgba16_rgba16__png;
+gMap21Tex_11 = map_21_tex_11_rgba16_rgba16__png;
+gMap21Tex_12 = map_21_tex_12_rgba16_rgba16__png;
+gMap21Tex_13 = map_21_tex_13_rgba16_rgba16__png;
+gMap21Tex_14 = map_21_tex_14_rgba16_rgba16__png;
+gMap21Tex_15 = map_21_tex_15_rgba16_rgba16__png;
+gMap21Tex_16 = map_21_tex_16_rgba16_rgba16__png;
+gMap21Tex_17 = map_21_tex_17_rgba16_rgba16__png;
+gMap21Tex_18 = map_21_tex_18_rgba16_rgba16__png;
+gMap21Tex_19 = map_21_tex_19_rgba16_rgba16__png;
+gMap21Tex_20 = map_21_tex_20_rgba16_rgba16__png;
+gMap21Tex_21 = map_21_tex_21_rgba16_rgba16__png;
+gMap21Tex_22 = map_21_tex_22_rgba16_rgba16__png;
+gMap21Tex_23 = map_21_tex_23_rgba16_rgba16__png;
+gMap21Tex_24 = map_21_tex_24_rgba16_rgba16__png;
+gMap21Tex_25 = map_21_tex_25_rgba16_rgba16__png;
+gMap21Tex_26 = map_21_tex_26_rgba16_rgba16__png;
+gMap21Tex_27 = map_21_tex_27_rgba16_rgba16__png;
+gMap21Tex_28 = map_21_tex_28_rgba16_rgba16__png;
+gMap21Tex_30 = map_21_tex_30_rgba16_rgba16__png;
+gMap21Tex_31 = map_21_tex_31_rgba16_rgba16__png;
+gMap21Tex_32 = map_21_tex_32_rgba16_rgba16__png;
+gMap21Tex_33 = map_21_tex_33_rgba16_rgba16__png;
+gMap21Tex_34 = map_21_tex_34_rgba16_rgba16__png;
+gMap21Tex_35 = map_21_tex_35_rgba16_rgba16__png;
+gMap21Tex_36 = map_21_tex_36_rgba16_rgba16__png;
+gMap21Tex_37 = map_21_tex_37_rgba16_rgba16__png;
+gMap21Tex_38 = map_21_tex_38_rgba16_rgba16__png;
+gMap21Tex_39 = map_21_tex_39_rgba16_rgba16__png;
+gMap21Tex_40 = map_21_tex_40_rgba16_rgba16__png;
+gMap21Tex_41 = map_21_tex_41_rgba16_rgba16__png;
+gMap21Tex_42 = map_21_tex_42_rgba16_rgba16__png;
+gMap21Tex_43 = map_21_tex_43_rgba16_rgba16__png;
+gMap21Tex_44 = map_21_tex_44_rgba16_rgba16__png;
+gMap21Tex_45 = map_21_tex_45_rgba16_rgba16__png;
+gMap21Tex_46 = map_21_tex_46_rgba16_rgba16__png;
+gMap21Tex_47 = map_21_tex_47_rgba16_rgba16__png;
+gMap21Tex_48 = map_21_tex_48_rgba16_rgba16__png;
+gMap21Tex_49 = map_21_tex_49_rgba16_rgba16__png;
+gMap21Tex_50 = map_21_tex_50_rgba16_rgba16__png;
+gMap21Tex_51 = map_21_tex_51_rgba16_rgba16__png;
+gMap21Tex_52 = map_21_tex_52_rgba16_rgba16__png;
+gMap21Tex_53 = map_21_tex_53_rgba16_rgba16__png;
+gMap21Tex_54 = map_21_tex_54_rgba16_rgba16__png;
+gMap21Tex_55 = map_21_tex_55_rgba16_rgba16__png;
+gMap21Tex_56 = map_21_tex_56_rgba16_rgba16__png;
+gMap21Tex_57 = map_21_tex_57_rgba16_rgba16__png;
+gMap21Tex_58 = map_21_tex_58_rgba16_rgba16__png;
+gMap21Tex_59 = map_21_tex_59_rgba16_rgba16__png;
+gMap21Tex_60 = map_21_tex_60_rgba16_rgba16__png;
+gMap21Tex_61 = map_21_tex_61_rgba16_rgba16__png;
+gMap21Tex_29 = gMap21Tex_28 + 0x400; /* rows of gMap21Tex_28 that other lists load from here */
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 21's NPC records name in other binary files (not relocated) */
+
+/* map_22: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap22Tex_00 = map_22_tex_00_rgba16_rgba16__png;
+gMap22Tex_01 = map_22_tex_01_rgba16_rgba16__png;
+gMap22Tex_02 = map_22_tex_02_rgba16_rgba16__png;
+gMap22Tex_03 = map_22_tex_03_rgba16_rgba16__png;
+gMap22Tex_04 = map_22_tex_04_rgba16_rgba16__png;
+gMap22Tex_05 = map_22_tex_05_rgba16_rgba16__png;
+gMap22Tex_06 = map_22_tex_06_rgba16_rgba16__png;
+gMap22Tex_07 = map_22_tex_07_rgba16_rgba16__png;
+gMap22Tex_08 = map_22_tex_08_rgba16_rgba16__png;
+gMap22Tex_09 = map_22_tex_09_rgba16_rgba16__png;
+gMap22Tex_10 = map_22_tex_10_rgba16_rgba16__png;
+gMap22Tex_11 = map_22_tex_11_rgba16_rgba16__png;
+gMap22Tex_12 = map_22_tex_12_rgba16_rgba16__png;
+gMap22Tex_13 = map_22_tex_13_rgba16_rgba16__png;
+gMap22Tex_14 = map_22_tex_14_rgba16_rgba16__png;
+gMap22Tex_15 = map_22_tex_15_rgba16_rgba16__png;
+gMap22Tex_16 = map_22_tex_16_rgba16_rgba16__png;
+gMap22Tex_17 = map_22_tex_17_rgba16_rgba16__png;
+gMap22Tex_18 = map_22_tex_18_rgba16_rgba16__png;
+gMap22Tex_19 = map_22_tex_19_rgba16_rgba16__png;
+gMap22Tex_20 = map_22_tex_20_rgba16_rgba16__png;
+gMap22Tex_21 = map_22_tex_21_rgba16_rgba16__png;
+gMap22Tex_22 = map_22_tex_22_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 22's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 17, 21, 22, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_17_VRAM + (map_17_ROM_END - map_17_ROM_START) <= gEventBlob, "map_17 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_21_VRAM + (map_21_ROM_END - map_21_ROM_START) <= gEventBlob, "map_21 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_22_VRAM + (map_22_ROM_END - map_22_ROM_START) <= gEventBlob, "map_22 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_00: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap00Tex_00 = map_00_tex_00_rgba16_rgba16__png;
+gMap00Tex_01 = map_00_tex_01_rgba16_rgba16__png;
+gMap00Raw_16700 = map_00_raw_16700_bin;
+gMap00Tex_02 = map_00_tex_02_ci8_ci8__png;
+gMap00Raw_16B00 = map_00_raw_16b00_bin;
+gMap00Tex_03 = map_00_tex_03_ci8_ci8__png;
+gMap00Raw_17100 = map_00_raw_17100_bin;
+gMap00Tex_04 = map_00_tex_04_ci8_ci8__png;
+gMap00Tex_05 = map_00_tex_05_rgba16_rgba16__png;
+gMap00Tex_06 = map_00_tex_06_rgba16_rgba16__png;
+gMap00Tex_07 = map_00_tex_07_rgba16_rgba16__png;
+gMap00Tex_08 = map_00_tex_08_rgba16_rgba16__png;
+gMap00Tex_09 = map_00_tex_09_rgba16_rgba16__png;
+gMap00Tex_10 = map_00_tex_10_rgba16_rgba16__png;
+gMap00Tex_11 = map_00_tex_11_rgba16_rgba16__png;
+gMap00Tex_12 = map_00_tex_12_rgba16_rgba16__png;
+gMap00Tex_13 = map_00_tex_13_rgba16_rgba16__png;
+gMap00Tex_14 = map_00_tex_14_rgba16_rgba16__png;
+gMap00Tex_15 = map_00_tex_15_rgba16_rgba16__png;
+gMap00Tex_16 = map_00_tex_16_rgba16_rgba16__png;
+gMap00Tex_17 = map_00_tex_17_rgba16_rgba16__png;
+gMap00Tex_18 = map_00_tex_18_rgba16_rgba16__png;
+gMap00Tex_19 = map_00_tex_19_rgba16_rgba16__png;
+gMap00Tex_20 = map_00_tex_20_rgba16_rgba16__png;
+gMap00Tex_21 = map_00_tex_21_rgba16_rgba16__png;
+gMap00Tex_22 = map_00_tex_22_rgba16_rgba16__png;
+gMap00Tex_23 = map_00_tex_23_rgba16_rgba16__png;
+gMap00Tex_24 = map_00_tex_24_rgba16_rgba16__png;
+gMap00Tex_25 = map_00_tex_25_rgba16_rgba16__png;
+gMap00Tex_26 = map_00_tex_26_rgba16_rgba16__png;
+gMap00Tex_27 = map_00_tex_27_rgba16_rgba16__png;
+gMap00Tex_28 = map_00_tex_28_rgba16_rgba16__png;
+gMap00Tex_29 = map_00_tex_29_rgba16_rgba16__png;
+gMap00Tex_30 = map_00_tex_30_rgba16_rgba16__png;
+gMap00Tex_31 = map_00_tex_31_rgba16_rgba16__png;
+gMap00Tex_32 = map_00_tex_32_rgba16_rgba16__png;
+gMap00Tex_33 = map_00_tex_33_rgba16_rgba16__png;
+gMap00Tex_34 = map_00_tex_34_rgba16_rgba16__png;
+gMap00Tex_35 = map_00_tex_35_rgba16_rgba16__png;
+gMap00Tex_36 = map_00_tex_36_rgba16_rgba16__png;
+gMap00Tex_37 = map_00_tex_37_rgba16_rgba16__png;
+gMap00Tex_38 = map_00_tex_38_rgba16_rgba16__png;
+gMap00Tex_39 = map_00_tex_39_rgba16_rgba16__png;
+gMap00Tex_40 = map_00_tex_40_rgba16_rgba16__png;
+gMap00Tex_41 = map_00_tex_41_rgba16_rgba16__png;
+gMap00Tex_42 = map_00_tex_42_rgba16_rgba16__png;
+gMap00Tex_43 = map_00_tex_43_rgba16_rgba16__png;
+gMap00Tex_44 = map_00_tex_44_rgba16_rgba16__png;
+gMap00Tex_45 = map_00_tex_45_rgba16_rgba16__png;
+gMap00Tex_46 = map_00_tex_46_rgba16_rgba16__png;
+gMap00Tex_47 = map_00_tex_47_rgba16_rgba16__png;
+gMap00Tex_48 = map_00_tex_48_rgba16_rgba16__png;
+gMap00Tex_49 = map_00_tex_49_rgba16_rgba16__png;
+gMap00Tex_50 = map_00_tex_50_rgba16_rgba16__png;
+gMap00Tex_51 = map_00_tex_51_rgba16_rgba16__png;
+gMap00Tex_52 = map_00_tex_52_rgba16_rgba16__png;
+gMap00Tex_53 = map_00_tex_53_rgba16_rgba16__png;
+gMap00Tex_54 = map_00_tex_54_rgba16_rgba16__png;
+gMap00Tex_55 = map_00_tex_55_rgba16_rgba16__png;
+gMap00Tex_56 = map_00_tex_56_rgba16_rgba16__png;
+gMap00Tex_57 = map_00_tex_57_rgba16_rgba16__png;
+gMap00Tex_58 = map_00_tex_58_rgba16_rgba16__png;
+gMap00Tex_59 = map_00_tex_59_rgba16_rgba16__png;
+gMap00Tex_60 = map_00_tex_60_rgba16_rgba16__png;
+gMap00Tex_61 = map_00_tex_61_rgba16_rgba16__png;
+gMap00Tex_62 = map_00_tex_62_rgba16_rgba16__png;
+gMap00Tex_63 = map_00_tex_63_rgba16_rgba16__png;
+gMap00Raw_3BC00 = map_00_raw_3bc00_bin;
+gMap00Tex_64 = map_00_tex_64_ci4_ci4__png;
+gMap00Raw_3C388 = map_00_raw_3c388_bin;
+gMap00Tex_65 = map_00_tex_65_rgba16_rgba16__png;
+gMap00Raw_3CD90 = map_00_raw_3cd90_bin;
+gMap00Tex_66 = map_00_tex_66_ci4_ci4__png;
+gMap00Raw_3D298 = map_00_raw_3d298_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 0's NPC records name in other binary files (not relocated) */
+
+/* map_01: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap01Tex_00 = map_01_tex_00_rgba16_rgba16__png;
+gMap01Tex_01 = map_01_tex_01_rgba16_rgba16__png;
+gMap01Tex_02 = map_01_tex_02_rgba16_rgba16__png;
+gMap01Raw_0C950 = map_01_raw_0c950_bin;
+gMap01Tex_03 = map_01_tex_03_ci8_ci8__png;
+gMap01Tex_04 = map_01_tex_04_rgba16_rgba16__png;
+gMap01Tex_05 = map_01_tex_05_rgba16_rgba16__png;
+gMap01Tex_06 = map_01_tex_06_rgba16_rgba16__png;
+gMap01Tex_07 = map_01_tex_07_rgba16_rgba16__png;
+gMap01Tex_08 = map_01_tex_08_rgba16_rgba16__png;
+gMap01Raw_0F350 = map_01_raw_0f350_bin;
+gMap01Tex_09 = map_01_tex_09_ci8_ci8__png;
+gMap01Tex_10 = map_01_tex_10_rgba16_rgba16__png;
+gMap01Tex_11 = map_01_tex_11_rgba16_rgba16__png;
+gMap01Tex_12 = map_01_tex_12_rgba16_rgba16__png;
+gMap01Tex_13 = map_01_tex_13_rgba16_rgba16__png;
+gMap01Tex_14 = map_01_tex_14_rgba16_rgba16__png;
+gMap01Tex_15 = map_01_tex_15_rgba16_rgba16__png;
+gMap01Tex_16 = map_01_tex_16_rgba16_rgba16__png;
+gMap01Tex_17 = map_01_tex_17_rgba16_rgba16__png;
+gMap01Tex_18 = map_01_tex_18_rgba16_rgba16__png;
+gMap01Tex_19 = map_01_tex_19_rgba16_rgba16__png;
+gMap01Tex_20 = map_01_tex_20_rgba16_rgba16__png;
+gMap01Tex_21 = map_01_tex_21_rgba16_rgba16__png;
+gMap01Tex_22 = map_01_tex_22_rgba16_rgba16__png;
+gMap01Tex_23 = map_01_tex_23_rgba16_rgba16__png;
+gMap01Tex_24 = map_01_tex_24_rgba16_rgba16__png;
+gMap01Tex_25 = map_01_tex_25_rgba16_rgba16__png;
+gMap01Tex_26 = map_01_tex_26_rgba16_rgba16__png;
+gMap01Tex_27 = map_01_tex_27_rgba16_rgba16__png;
+gMap01Tex_28 = map_01_tex_28_rgba16_rgba16__png;
+gMap01Tex_29 = map_01_tex_29_rgba16_rgba16__png;
+gMap01Tex_30 = map_01_tex_30_rgba16_rgba16__png;
+gMap01Tex_31 = map_01_tex_31_rgba16_rgba16__png;
+gMap01Tex_32 = map_01_tex_32_rgba16_rgba16__png;
+gMap01Tex_33 = map_01_tex_33_rgba16_rgba16__png;
+gMap01Tex_34 = map_01_tex_34_rgba16_rgba16__png;
+gMap01Tex_35 = map_01_tex_35_rgba16_rgba16__png;
+gMap01Tex_36 = map_01_tex_36_rgba16_rgba16__png;
+gMap01Tex_37 = map_01_tex_37_rgba16_rgba16__png;
+gMap01Tex_38 = map_01_tex_38_rgba16_rgba16__png;
+gMap01Tex_39 = map_01_tex_39_rgba16_rgba16__png;
+gMap01Tex_40 = map_01_tex_40_rgba16_rgba16__png;
+gMap01Tex_41 = map_01_tex_41_rgba16_rgba16__png;
+gMap01Tex_42 = map_01_tex_42_rgba16_rgba16__png;
+gMap01Tex_43 = map_01_tex_43_rgba16_rgba16__png;
+gMap01Tex_44 = map_01_tex_44_rgba16_rgba16__png;
+gMap01Tex_45 = map_01_tex_45_rgba16_rgba16__png;
+gMap01Tex_46 = map_01_tex_46_rgba16_rgba16__png;
+gMap01Raw_28FC0 = map_01_raw_28fc0_bin;
+gMap01Tex_47 = map_01_tex_47_ci8_ci8__png;
+gMap01Tex_48 = map_01_tex_48_rgba16_rgba16__png;
+gMap01Tex_49 = map_01_tex_49_rgba16_rgba16__png;
+gMap01Tex_50 = map_01_tex_50_rgba16_rgba16__png;
+gMap01Tex_51 = map_01_tex_51_rgba16_rgba16__png;
+gMap01Tex_52 = map_01_tex_52_rgba16_rgba16__png;
+gMap01Raw_2D5C0 = map_01_raw_2d5c0_bin;
+gMap01Tex_53 = map_01_tex_53_ci4_ci4__png;
+gMap01Raw_2DC88 = map_01_raw_2dc88_bin;
+gMap01Raw_2DE90 = map_01_raw_2de90_bin;
+gMap01Tex_54 = map_01_tex_54_ci4_ci4__png;
+gMap01Raw_2EB98 = map_01_raw_2eb98_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 1's NPC records name in other binary files (not relocated) */
+
+/* map_03: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap03Tex_00 = map_03_tex_00_rgba16_rgba16__png;
+gMap03Tex_01 = map_03_tex_01_rgba16_rgba16__png;
+gMap03Tex_02 = map_03_tex_02_rgba16_rgba16__png;
+gMap03Tex_03 = map_03_tex_03_rgba16_rgba16__png;
+gMap03Tex_04 = map_03_tex_04_rgba16_rgba16__png;
+gMap03Tex_05 = map_03_tex_05_rgba16_rgba16__png;
+gMap03Tex_06 = map_03_tex_06_rgba16_rgba16__png;
+gMap03Tex_07 = map_03_tex_07_rgba16_rgba16__png;
+gMap03Tex_08 = map_03_tex_08_rgba16_rgba16__png;
+gMap03Tex_09 = map_03_tex_09_rgba16_rgba16__png;
+gMap03Tex_10 = map_03_tex_10_rgba16_rgba16__png;
+gMap03Tex_11 = map_03_tex_11_rgba16_rgba16__png;
+gMap03Tex_12 = map_03_tex_12_rgba16_rgba16__png;
+gMap03Tex_13 = map_03_tex_13_rgba16_rgba16__png;
+gMap03Tex_14 = map_03_tex_14_rgba16_rgba16__png;
+gMap03Tex_15 = map_03_tex_15_rgba16_rgba16__png;
+gMap03Tex_16 = map_03_tex_16_rgba16_rgba16__png;
+gMap03Tex_17 = map_03_tex_17_rgba16_rgba16__png;
+gMap03Tex_18 = map_03_tex_18_rgba16_rgba16__png;
+gMap03Tex_19 = map_03_tex_19_rgba16_rgba16__png;
+gMap03Tex_20 = map_03_tex_20_rgba16_rgba16__png;
+gMap03Tex_21 = map_03_tex_21_rgba16_rgba16__png;
+gMap03Tex_22 = map_03_tex_22_rgba16_rgba16__png;
+gMap03Tex_23 = map_03_tex_23_rgba16_rgba16__png;
+gMap03Tex_24 = map_03_tex_24_rgba16_rgba16__png;
+gMap03Tex_25 = map_03_tex_25_rgba16_rgba16__png;
+gMap03Tex_26 = map_03_tex_26_rgba16_rgba16__png;
+gMap03Tex_27 = map_03_tex_27_rgba16_rgba16__png;
+gMap03Tex_28 = map_03_tex_28_rgba16_rgba16__png;
+gMap03Tex_29 = map_03_tex_29_rgba16_rgba16__png;
+gMap03Tex_30 = map_03_tex_30_rgba16_rgba16__png;
+gMap03Tex_31 = map_03_tex_31_rgba16_rgba16__png;
+gMap03Raw_20AC0 = map_03_raw_20ac0_bin;
+gMap03Tex_32 = map_03_tex_32_ci8_ci8__png;
+gMap03Tex_33 = map_03_tex_33_rgba16_rgba16__png;
+gMap03Tex_34 = map_03_tex_34_rgba16_rgba16__png;
+gMap03Tex_35 = map_03_tex_35_rgba16_rgba16__png;
+gMap03Tex_36 = map_03_tex_36_rgba16_rgba16__png;
+gMap03Raw_250C0 = map_03_raw_250c0_bin;
+gMap03Tex_37 = map_03_tex_37_ci4_ci4__png;
+gMap03Raw_25848 = map_03_raw_25848_bin;
+gMap03Raw_25A50 = map_03_raw_25a50_bin;
+gMap03Tex_38 = map_03_tex_38_ci4_ci4__png;
+gMap03Raw_25F58 = map_03_raw_25f58_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 3's NPC records name in other binary files (not relocated) */
+
+/* map_05: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap05Tex_00 = map_05_tex_00_rgba16_rgba16__png;
+gMap05Tex_01 = map_05_tex_01_rgba16_rgba16__png;
+gMap05Tex_02 = map_05_tex_02_rgba16_rgba16__png;
+gMap05Tex_03 = map_05_tex_03_rgba16_rgba16__png;
+gMap05Tex_04 = map_05_tex_04_rgba16_rgba16__png;
+gMap05Tex_05 = map_05_tex_05_rgba16_rgba16__png;
+gMap05Tex_06 = map_05_tex_06_rgba16_rgba16__png;
+gMap05Tex_07 = map_05_tex_07_rgba16_rgba16__png;
+gMap05Tex_08 = map_05_tex_08_rgba16_rgba16__png;
+gMap05Tex_09 = map_05_tex_09_rgba16_rgba16__png;
+gMap05Tex_10 = map_05_tex_10_rgba16_rgba16__png;
+gMap05Tex_11 = map_05_tex_11_rgba16_rgba16__png;
+gMap05Tex_12 = map_05_tex_12_rgba16_rgba16__png;
+gMap05Tex_13 = map_05_tex_13_rgba16_rgba16__png;
+gMap05Tex_14 = map_05_tex_14_rgba16_rgba16__png;
+gMap05Tex_15 = map_05_tex_15_rgba16_rgba16__png;
+gMap05Tex_16 = map_05_tex_16_rgba16_rgba16__png;
+gMap05Tex_17 = map_05_tex_17_rgba16_rgba16__png;
+gMap05Tex_18 = map_05_tex_18_rgba16_rgba16__png;
+gMap05Tex_19 = map_05_tex_19_rgba16_rgba16__png;
+gMap05Tex_20 = map_05_tex_20_rgba16_rgba16__png;
+gMap05Tex_21 = map_05_tex_21_rgba16_rgba16__png;
+gMap05Tex_22 = map_05_tex_22_rgba16_rgba16__png;
+gMap05Tex_23 = map_05_tex_23_rgba16_rgba16__png;
+gMap05Tex_24 = map_05_tex_24_rgba16_rgba16__png;
+gMap05Tex_25 = map_05_tex_25_rgba16_rgba16__png;
+gMap05Tex_26 = map_05_tex_26_rgba16_rgba16__png;
+gMap05Tex_27 = map_05_tex_27_rgba16_rgba16__png;
+gMap05Tex_28 = map_05_tex_28_rgba16_rgba16__png;
+gMap05Tex_29 = map_05_tex_29_rgba16_rgba16__png;
+gMap05Tex_30 = map_05_tex_30_rgba16_rgba16__png;
+gMap05Tex_31 = map_05_tex_31_rgba16_rgba16__png;
+gMap05Tex_32 = map_05_tex_32_rgba16_rgba16__png;
+gMap05Tex_33 = map_05_tex_33_rgba16_rgba16__png;
+gMap05Tex_34 = map_05_tex_34_rgba16_rgba16__png;
+gMap05Tex_35 = map_05_tex_35_rgba16_rgba16__png;
+gMap05Tex_36 = map_05_tex_36_rgba16_rgba16__png;
+gMap05Tex_37 = map_05_tex_37_rgba16_rgba16__png;
+gMap05Tex_38 = map_05_tex_38_rgba16_rgba16__png;
+gMap05Tex_39 = map_05_tex_39_rgba16_rgba16__png;
+gMap05Tex_40 = map_05_tex_40_rgba16_rgba16__png;
+gMap05Tex_41 = map_05_tex_41_rgba16_rgba16__png;
+gMap05Tex_42 = map_05_tex_42_rgba16_rgba16__png;
+gMap05Tex_43 = map_05_tex_43_rgba16_rgba16__png;
+gMap05Tex_44 = map_05_tex_44_rgba16_rgba16__png;
+gMap05Tex_45 = map_05_tex_45_rgba16_rgba16__png;
+gMap05Tex_46 = map_05_tex_46_rgba16_rgba16__png;
+gMap05Raw_352A0 = map_05_raw_352a0_bin;
+gMap05Tex_47 = map_05_tex_47_ci8_ci8__png;
+gMap05Tex_48 = map_05_tex_48_rgba16_rgba16__png;
+gMap05Tex_49 = map_05_tex_49_rgba16_rgba16__png;
+gMap05Tex_50 = map_05_tex_50_rgba16_rgba16__png;
+gMap05Raw_37CA0 = map_05_raw_37ca0_bin;
+gMap05Tex_51 = map_05_tex_51_ci8_ci8__png;
+gMap05Raw_37F20 = map_05_raw_37f20_bin;
+gMap05Tex_52 = map_05_tex_52_ci8_ci8__png;
+gMap05Tex_53 = map_05_tex_53_rgba16_rgba16__png;
+gMap05Tex_54 = map_05_tex_54_rgba16_rgba16__png;
+gMap05Tex_55 = map_05_tex_55_rgba16_rgba16__png;
+gMap05Tex_56 = map_05_tex_56_rgba16_rgba16__png;
+gMap05Tex_57 = map_05_tex_57_rgba16_rgba16__png;
+gMap05Tex_58 = map_05_tex_58_rgba16_rgba16__png;
+gMap05Tex_59 = map_05_tex_59_rgba16_rgba16__png;
+gMap05Tex_60 = map_05_tex_60_rgba16_rgba16__png;
+gMap05Tex_61 = map_05_tex_61_rgba16_rgba16__png;
+gMap05Tex_62 = map_05_tex_62_rgba16_rgba16__png;
+gMap05Tex_63 = map_05_tex_63_rgba16_rgba16__png;
+gMap05Raw_40320 = map_05_raw_40320_bin;
+gMap05Tex_64 = map_05_tex_64_ci4_ci4__png;
+gMap05Raw_40AA8 = map_05_raw_40aa8_bin;
+gMap05Raw_40CB0 = map_05_raw_40cb0_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 5's NPC records name in other binary files (not relocated) */
+
+/* map_06: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap06Tex_00 = map_06_tex_00_rgba16_rgba16__png;
+gMap06Tex_01 = map_06_tex_01_rgba16_rgba16__png;
+gMap06Tex_02 = map_06_tex_02_rgba16_rgba16__png;
+gMap06Raw_094D0 = map_06_raw_094d0_bin;
+gMap06Tex_03 = map_06_tex_03_ci8_ci8__png;
+gMap06Tex_04 = map_06_tex_04_rgba16_rgba16__png;
+gMap06Tex_05 = map_06_tex_05_rgba16_rgba16__png;
+gMap06Tex_06 = map_06_tex_06_rgba16_rgba16__png;
+gMap06Tex_07 = map_06_tex_07_rgba16_rgba16__png;
+gMap06Tex_08 = map_06_tex_08_rgba16_rgba16__png;
+gMap06Raw_0D5D0 = map_06_raw_0d5d0_bin;
+gMap06Tex_09 = map_06_tex_09_ci8_ci8__png;
+gMap06Tex_10 = map_06_tex_10_rgba16_rgba16__png;
+gMap06Tex_11 = map_06_tex_11_rgba16_rgba16__png;
+gMap06Tex_12 = map_06_tex_12_rgba16_rgba16__png;
+gMap06Tex_13 = map_06_tex_13_rgba16_rgba16__png;
+gMap06Tex_14 = map_06_tex_14_rgba16_rgba16__png;
+gMap06Tex_15 = map_06_tex_15_rgba16_rgba16__png;
+gMap06Tex_16 = map_06_tex_16_rgba16_rgba16__png;
+gMap06Tex_17 = map_06_tex_17_rgba16_rgba16__png;
+gMap06Tex_18 = map_06_tex_18_rgba16_rgba16__png;
+gMap06Tex_19 = map_06_tex_19_rgba16_rgba16__png;
+gMap06Tex_20 = map_06_tex_20_rgba16_rgba16__png;
+gMap06Tex_21 = map_06_tex_21_rgba16_rgba16__png;
+gMap06Tex_22 = map_06_tex_22_rgba16_rgba16__png;
+gMap06Tex_23 = map_06_tex_23_rgba16_rgba16__png;
+gMap06Tex_24 = map_06_tex_24_rgba16_rgba16__png;
+gMap06Tex_25 = map_06_tex_25_rgba16_rgba16__png;
+gMap06Tex_26 = map_06_tex_26_rgba16_rgba16__png;
+gMap06Tex_27 = map_06_tex_27_rgba16_rgba16__png;
+gMap06Tex_28 = map_06_tex_28_rgba16_rgba16__png;
+gMap06Tex_29 = map_06_tex_29_rgba16_rgba16__png;
+gMap06Tex_30 = map_06_tex_30_rgba16_rgba16__png;
+gMap06Tex_31 = map_06_tex_31_rgba16_rgba16__png;
+gMap06Tex_32 = map_06_tex_32_rgba16_rgba16__png;
+gMap06Tex_33 = map_06_tex_33_rgba16_rgba16__png;
+gMap06Tex_34 = map_06_tex_34_rgba16_rgba16__png;
+gMap06Tex_35 = map_06_tex_35_rgba16_rgba16__png;
+gMap06Tex_36 = map_06_tex_36_rgba16_rgba16__png;
+gMap06Tex_37 = map_06_tex_37_rgba16_rgba16__png;
+gMap06Tex_38 = map_06_tex_38_rgba16_rgba16__png;
+gMap06Tex_39 = map_06_tex_39_rgba16_rgba16__png;
+gMap06Tex_40 = map_06_tex_40_rgba16_rgba16__png;
+gMap06Tex_41 = map_06_tex_41_rgba16_rgba16__png;
+gMap06Tex_42 = map_06_tex_42_rgba16_rgba16__png;
+gMap06Tex_43 = map_06_tex_43_rgba16_rgba16__png;
+gMap06Tex_44 = map_06_tex_44_rgba16_rgba16__png;
+gMap06Raw_211D0 = map_06_raw_211d0_bin;
+gMap06Tex_45 = map_06_tex_45_ci4_ci4__png;
+gMap06Raw_21958 = map_06_raw_21958_bin;
+gMap06Raw_21B60 = map_06_raw_21b60_bin;
+gMap06Tex_46 = map_06_tex_46_ci4_ci4__png;
+gMap06Raw_22868 = map_06_raw_22868_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 6's NPC records name in other binary files (not relocated) */
+
+/* map_07: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap07Tex_00 = map_07_tex_00_rgba16_rgba16__png;
+gMap07Tex_01 = map_07_tex_01_rgba16_rgba16__png;
+gMap07Tex_02 = map_07_tex_02_rgba16_rgba16__png;
+gMap07Tex_03 = map_07_tex_03_rgba16_rgba16__png;
+gMap07Tex_04 = map_07_tex_04_rgba16_rgba16__png;
+gMap07Tex_05 = map_07_tex_05_rgba16_rgba16__png;
+gMap07Tex_06 = map_07_tex_06_rgba16_rgba16__png;
+gMap07Tex_07 = map_07_tex_07_rgba16_rgba16__png;
+gMap07Tex_08 = map_07_tex_08_rgba16_rgba16__png;
+gMap07Tex_09 = map_07_tex_09_rgba16_rgba16__png;
+gMap07Tex_10 = map_07_tex_10_rgba16_rgba16__png;
+gMap07Tex_11 = map_07_tex_11_rgba16_rgba16__png;
+gMap07Tex_12 = map_07_tex_12_rgba16_rgba16__png;
+gMap07Tex_13 = map_07_tex_13_rgba16_rgba16__png;
+gMap07Tex_14 = map_07_tex_14_rgba16_rgba16__png;
+gMap07Tex_15 = map_07_tex_15_rgba16_rgba16__png;
+gMap07Tex_16 = map_07_tex_16_rgba16_rgba16__png;
+gMap07Tex_17 = map_07_tex_17_rgba16_rgba16__png;
+gMap07Tex_18 = map_07_tex_18_rgba16_rgba16__png;
+gMap07Tex_19 = map_07_tex_19_rgba16_rgba16__png;
+gMap07Tex_20 = map_07_tex_20_rgba16_rgba16__png;
+gMap07Raw_1BBE0 = map_07_raw_1bbe0_bin;
+gMap07Tex_21 = map_07_tex_21_ci8_ci8__png;
+gMap07Tex_22 = map_07_tex_22_rgba16_rgba16__png;
+gMap07Tex_23 = map_07_tex_23_rgba16_rgba16__png;
+gMap07Tex_24 = map_07_tex_24_rgba16_rgba16__png;
+gMap07Raw_1E5E0 = map_07_raw_1e5e0_bin;
+gMap07Tex_25 = map_07_tex_25_ci8_ci8__png;
+gMap07Tex_26 = map_07_tex_26_rgba16_rgba16__png;
+gMap07Tex_27 = map_07_tex_27_rgba16_rgba16__png;
+gMap07Tex_28 = map_07_tex_28_rgba16_rgba16__png;
+gMap07Tex_29 = map_07_tex_29_rgba16_rgba16__png;
+gMap07Tex_30 = map_07_tex_30_rgba16_rgba16__png;
+gMap07Tex_31 = map_07_tex_31_rgba16_rgba16__png;
+gMap07Tex_32 = map_07_tex_32_rgba16_rgba16__png;
+gMap07Tex_33 = map_07_tex_33_rgba16_rgba16__png;
+gMap07Tex_34 = map_07_tex_34_rgba16_rgba16__png;
+gMap07Tex_35 = map_07_tex_35_rgba16_rgba16__png;
+gMap07Tex_36 = map_07_tex_36_rgba16_rgba16__png;
+gMap07Tex_37 = map_07_tex_37_rgba16_rgba16__png;
+gMap07Raw_267E0 = map_07_raw_267e0_bin;
+gMap07Tex_38 = map_07_tex_38_ci4_ci4__png;
+gMap07Raw_26F68 = map_07_raw_26f68_bin;
+gMap07Raw_27170 = map_07_raw_27170_bin;
+gMap07Tex_39 = map_07_tex_39_ci4_ci4__png;
+gMap07Raw_27678 = map_07_raw_27678_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 7's NPC records name in other binary files (not relocated) */
+
+/* map_30: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap30Tex_00 = map_30_tex_00_rgba16_rgba16__png;
+gMap30Tex_01 = map_30_tex_01_rgba16_rgba16__png;
+gMap30Tex_02 = map_30_tex_02_rgba16_rgba16__png;
+gMap30Tex_03 = map_30_tex_03_rgba16_rgba16__png;
+gMap30Tex_04 = map_30_tex_04_rgba16_rgba16__png;
+gMap30Tex_05 = map_30_tex_05_rgba16_rgba16__png;
+gMap30Tex_06 = map_30_tex_06_rgba16_rgba16__png;
+gMap30Tex_07 = map_30_tex_07_rgba16_rgba16__png;
+gMap30Tex_08 = map_30_tex_08_rgba16_rgba16__png;
+gMap30Tex_09 = map_30_tex_09_rgba16_rgba16__png;
+gMap30Tex_10 = map_30_tex_10_rgba16_rgba16__png;
+gMap30Tex_11 = map_30_tex_11_rgba16_rgba16__png;
+gMap30Tex_12 = map_30_tex_12_rgba16_rgba16__png;
+gMap30Tex_13 = map_30_tex_13_rgba16_rgba16__png;
+gMap30Tex_14 = map_30_tex_14_rgba16_rgba16__png;
+gMap30Tex_15 = map_30_tex_15_rgba16_rgba16__png;
+gMap30Tex_16 = map_30_tex_16_rgba16_rgba16__png;
+gMap30Tex_17 = map_30_tex_17_rgba16_rgba16__png;
+gMap30Tex_18 = map_30_tex_18_rgba16_rgba16__png;
+gMap30Tex_19 = map_30_tex_19_rgba16_rgba16__png;
+gMap30Tex_20 = map_30_tex_20_rgba16_rgba16__png;
+gMap30Tex_21 = map_30_tex_21_rgba16_rgba16__png;
+gMap30Tex_22 = map_30_tex_22_rgba16_rgba16__png;
+gMap30Tex_23 = map_30_tex_23_rgba16_rgba16__png;
+gMap30Tex_24 = map_30_tex_24_rgba16_rgba16__png;
+gMap30Tex_25 = map_30_tex_25_rgba16_rgba16__png;
+gMap30Tex_26 = map_30_tex_26_rgba16_rgba16__png;
+gMap30Tex_27 = map_30_tex_27_rgba16_rgba16__png;
+gMap30Tex_28 = map_30_tex_28_rgba16_rgba16__png;
+gMap30Tex_29 = map_30_tex_29_rgba16_rgba16__png;
+gMap30Tex_30 = map_30_tex_30_rgba16_rgba16__png;
+gMap30Tex_31 = map_30_tex_31_rgba16_rgba16__png;
+gMap30Tex_32 = map_30_tex_32_rgba16_rgba16__png;
+gMap30Tex_33 = map_30_tex_33_rgba16_rgba16__png;
+gMap30Tex_34 = map_30_tex_34_rgba16_rgba16__png;
+gMap30Tex_35 = map_30_tex_35_rgba16_rgba16__png;
+gMap30Tex_36 = map_30_tex_36_rgba16_rgba16__png;
+gMap30Tex_37 = map_30_tex_37_rgba16_rgba16__png;
+gMap30Tex_38 = map_30_tex_38_rgba16_rgba16__png;
+gMap30Tex_39 = map_30_tex_39_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 30's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 0, 1, 3, 5, 6, 7, 30, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_00_VRAM + (map_00_ROM_END - map_00_ROM_START) <= gEventBlob, "map_00 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_01_VRAM + (map_01_ROM_END - map_01_ROM_START) <= gEventBlob, "map_01 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_03_VRAM + (map_03_ROM_END - map_03_ROM_START) <= gEventBlob, "map_03 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_05_VRAM + (map_05_ROM_END - map_05_ROM_START) <= gEventBlob, "map_05 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_06_VRAM + (map_06_ROM_END - map_06_ROM_START) <= gEventBlob, "map_06 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_07_VRAM + (map_07_ROM_END - map_07_ROM_START) <= gEventBlob, "map_07 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_30_VRAM + (map_30_ROM_END - map_30_ROM_START) <= gEventBlob, "map_30 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_02: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap02Tex_00 = map_02_tex_00_rgba16_rgba16__png;
+gMap02Tex_01 = map_02_tex_01_rgba16_rgba16__png;
+gMap02Tex_02 = map_02_tex_02_rgba16_rgba16__png;
+gMap02Tex_03 = map_02_tex_03_rgba16_rgba16__png;
+gMap02Tex_04 = map_02_tex_04_rgba16_rgba16__png;
+gMap02Tex_05 = map_02_tex_05_rgba16_rgba16__png;
+gMap02Tex_06 = map_02_tex_06_rgba16_rgba16__png;
+gMap02Tex_07 = map_02_tex_07_rgba16_rgba16__png;
+gMap02Tex_08 = map_02_tex_08_rgba16_rgba16__png;
+gMap02Tex_09 = map_02_tex_09_rgba16_rgba16__png;
+gMap02Tex_10 = map_02_tex_10_rgba16_rgba16__png;
+gMap02Tex_11 = map_02_tex_11_rgba16_rgba16__png;
+gMap02Tex_12 = map_02_tex_12_rgba16_rgba16__png;
+gMap02Tex_13 = map_02_tex_13_rgba16_rgba16__png;
+gMap02Tex_14 = map_02_tex_14_rgba16_rgba16__png;
+gMap02Tex_15 = map_02_tex_15_rgba16_rgba16__png;
+gMap02Tex_16 = map_02_tex_16_rgba16_rgba16__png;
+gMap02Tex_17 = map_02_tex_17_rgba16_rgba16__png;
+gMap02Tex_18 = map_02_tex_18_rgba16_rgba16__png;
+gMap02Tex_19 = map_02_tex_19_rgba16_rgba16__png;
+gMap02Tex_20 = map_02_tex_20_rgba16_rgba16__png;
+gMap02Tex_21 = map_02_tex_21_rgba16_rgba16__png;
+gMap02Tex_22 = map_02_tex_22_rgba16_rgba16__png;
+gMap02Tex_23 = map_02_tex_23_rgba16_rgba16__png;
+gMap02Tex_24 = map_02_tex_24_rgba16_rgba16__png;
+gMap02Tex_25 = map_02_tex_25_rgba16_rgba16__png;
+gMap02Tex_26 = map_02_tex_26_rgba16_rgba16__png;
+gMap02Tex_27 = map_02_tex_27_rgba16_rgba16__png;
+gMap02Tex_28 = map_02_tex_28_rgba16_rgba16__png;
+gMap02Tex_29 = map_02_tex_29_rgba16_rgba16__png;
+gMap02Tex_30 = map_02_tex_30_rgba16_rgba16__png;
+gMap02Tex_31 = map_02_tex_31_rgba16_rgba16__png;
+gMap02Tex_32 = map_02_tex_32_rgba16_rgba16__png;
+gMap02Tex_33 = map_02_tex_33_rgba16_rgba16__png;
+gMap02Tex_34 = map_02_tex_34_rgba16_rgba16__png;
+gMap02Tex_35 = map_02_tex_35_rgba16_rgba16__png;
+gMap02Tex_36 = map_02_tex_36_rgba16_rgba16__png;
+gMap02Raw_25880 = map_02_raw_25880_bin;
+gMap02Tex_37 = map_02_tex_37_ci8_ci8__png;
+gMap02Tex_38 = map_02_tex_38_rgba16_rgba16__png;
+gMap02Tex_39 = map_02_tex_39_rgba16_rgba16__png;
+gMap02Tex_40 = map_02_tex_40_rgba16_rgba16__png;
+gMap02Tex_41 = map_02_tex_41_rgba16_rgba16__png;
+gMap02Tex_42 = map_02_tex_42_rgba16_rgba16__png;
+gMap02Tex_43 = map_02_tex_43_rgba16_rgba16__png;
+gMap02Tex_44 = map_02_tex_44_rgba16_rgba16__png;
+gMap02Tex_45 = map_02_tex_45_rgba16_rgba16__png;
+gMap02Tex_46 = map_02_tex_46_rgba16_rgba16__png;
+gMap02Tex_47 = map_02_tex_47_rgba16_rgba16__png;
+gMap02Tex_48 = map_02_tex_48_rgba16_rgba16__png;
+gMap02Tex_49 = map_02_tex_49_rgba16_rgba16__png;
+gMap02Tex_50 = map_02_tex_50_rgba16_rgba16__png;
+gMap02Raw_2D880 = map_02_raw_2d880_bin;
+gMap02Tex_51 = map_02_tex_51_ci4_ci4__png;
+gMap02Raw_2E008 = map_02_raw_2e008_bin;
+gMap02Raw_2E210 = map_02_raw_2e210_bin;
+gMap02Tex_52 = map_02_tex_52_ci4_ci4__png;
+gMap02Raw_2E718 = map_02_raw_2e718_bin;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 2's NPC records name in other binary files (not relocated) */
+
+/* map_11: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap11Raw_210E0 = map_11_raw_210e0_bin;
+gMap11Tex_00 = map_11_tex_00_ci8_ci8__png;
+gMap11Tex_01 = map_11_tex_01_rgba16_rgba16__png;
+gMap11Tex_02 = map_11_tex_02_rgba16_rgba16__png;
+gMap11Tex_03 = map_11_tex_03_rgba16_rgba16__png;
+gMap11Raw_232E0 = map_11_raw_232e0_bin;
+gMap11Tex_04 = map_11_tex_04_ci8_ci8__png;
+gMap11Tex_05 = map_11_tex_05_rgba16_rgba16__png;
+gMap11Tex_06 = map_11_tex_06_rgba16_rgba16__png;
+gMap11Tex_07 = map_11_tex_07_rgba16_rgba16__png;
+gMap11Tex_08 = map_11_tex_08_rgba16_rgba16__png;
+gMap11Raw_270E0 = map_11_raw_270e0_bin;
+gMap11Tex_09 = map_11_tex_09_ci8_ci8__png;
+gMap11Tex_10 = map_11_tex_10_rgba16_rgba16__png;
+gMap11Tex_11 = map_11_tex_11_rgba16_rgba16__png;
+gMap11Tex_12 = map_11_tex_12_rgba16_rgba16__png;
+gMap11Tex_13 = map_11_tex_13_rgba16_rgba16__png;
+gMap11Tex_14 = map_11_tex_14_rgba16_rgba16__png;
+gMap11Tex_15 = map_11_tex_15_rgba16_rgba16__png;
+gMap11Tex_16 = map_11_tex_16_rgba16_rgba16__png;
+gMap11Tex_17 = map_11_tex_17_rgba16_rgba16__png;
+gMap11Tex_18 = map_11_tex_18_rgba16_rgba16__png;
+gMap11Tex_19 = map_11_tex_19_rgba16_rgba16__png;
+gMap11Tex_20 = map_11_tex_20_rgba16_rgba16__png;
+gMap11Tex_21 = map_11_tex_21_rgba16_rgba16__png;
+gMap11Tex_22 = map_11_tex_22_rgba16_rgba16__png;
+gMap11Tex_23 = map_11_tex_23_rgba16_rgba16__png;
+gMap11Tex_24 = map_11_tex_24_rgba16_rgba16__png;
+gMap11Tex_25 = map_11_tex_25_rgba16_rgba16__png;
+gMap11Tex_26 = map_11_tex_26_rgba16_rgba16__png;
+gMap11Tex_27 = map_11_tex_27_rgba16_rgba16__png;
+gMap11Tex_28 = map_11_tex_28_rgba16_rgba16__png;
+gMap11Tex_29 = map_11_tex_29_rgba16_rgba16__png;
+gMap11Tex_30 = map_11_tex_30_rgba16_rgba16__png;
+gMap11Tex_31 = map_11_tex_31_rgba16_rgba16__png;
+gMap11Tex_32 = map_11_tex_32_rgba16_rgba16__png;
+gMap11Tex_33 = map_11_tex_33_rgba16_rgba16__png;
+gMap11Tex_34 = map_11_tex_34_rgba16_rgba16__png;
+gMap11Tex_35 = map_11_tex_35_rgba16_rgba16__png;
+gMap11Tex_36 = map_11_tex_36_rgba16_rgba16__png;
+gMap11Tex_37 = map_11_tex_37_rgba16_rgba16__png;
+gMap11Tex_38 = map_11_tex_38_rgba16_rgba16__png;
+gMap11Tex_39 = map_11_tex_39_rgba16_rgba16__png;
+gMap11Tex_40 = map_11_tex_40_rgba16_rgba16__png;
+gMap11Tex_41 = map_11_tex_41_rgba16_rgba16__png;
+gMap11Tex_42 = map_11_tex_42_rgba16_rgba16__png;
+gMap11Tex_43 = map_11_tex_43_rgba16_rgba16__png;
+gMap11Tex_44 = map_11_tex_44_rgba16_rgba16__png;
+gMap11Tex_45 = map_11_tex_45_rgba16_rgba16__png;
+gMap11Tex_46 = map_11_tex_46_rgba16_rgba16__png;
+gMap11Tex_47 = map_11_tex_47_rgba16_rgba16__png;
+gMap11Tex_48 = map_11_tex_48_rgba16_rgba16__png;
+gMap11Tex_49 = map_11_tex_49_rgba16_rgba16__png;
+gMap11Tex_50 = map_11_tex_50_rgba16_rgba16__png;
+gMap11Tex_51 = map_11_tex_51_rgba16_rgba16__png;
+gMap11Tex_52 = map_11_tex_52_rgba16_rgba16__png;
+gMap11Tex_53 = map_11_tex_53_rgba16_rgba16__png;
+gMap11Tex_54 = map_11_tex_54_rgba16_rgba16__png;
+gMap11Tex_55 = map_11_tex_55_rgba16_rgba16__png;
+gMap11Tex_56 = map_11_tex_56_rgba16_rgba16__png;
+gMap11Tex_57 = map_11_tex_57_rgba16_rgba16__png;
+gMap11Tex_58 = map_11_tex_58_rgba16_rgba16__png;
+gMap11Tex_59 = map_11_tex_59_rgba16_rgba16__png;
+gMap11Tex_60 = map_11_tex_60_rgba16_rgba16__png;
+gMap11Tex_61 = map_11_tex_61_rgba16_rgba16__png;
+gMap11Tex_62 = map_11_tex_62_rgba16_rgba16__png;
+gMap11Tex_63 = map_11_tex_63_rgba16_rgba16__png;
+gMap11Tex_64 = map_11_tex_64_rgba16_rgba16__png;
+gMap11Tex_65 = map_11_tex_65_rgba16_rgba16__png;
+gMap11Tex_66 = map_11_tex_66_rgba16_rgba16__png;
+gMap11Tex_67 = map_11_tex_67_rgba16_rgba16__png;
+gMap11Tex_68 = map_11_tex_68_rgba16_rgba16__png;
+gMap11Tex_69 = map_11_tex_69_rgba16_rgba16__png;
+gMap11Tex_70 = map_11_tex_70_rgba16_rgba16__png;
+gMap11Tex_71 = map_11_tex_71_rgba16_rgba16__png;
+gMap11Tex_72 = map_11_tex_72_rgba16_rgba16__png;
+gMap11Tex_73 = map_11_tex_73_rgba16_rgba16__png;
+gMap11Tex_74 = map_11_tex_74_rgba16_rgba16__png;
+gMap11Tex_75 = map_11_tex_75_rgba16_rgba16__png;
+gMap11Tex_76 = map_11_tex_76_rgba16_rgba16__png;
+gMap11Raw_52FE0 = map_11_raw_52fe0_bin;
+gMap11Tex_77 = map_11_tex_77_ci8_ci8__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 11's NPC records name in other binary files (not relocated) */
+
+/* map_27: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap27Tex_00 = map_27_tex_00_rgba16_rgba16__png;
+gMap27Tex_01 = map_27_tex_01_rgba16_rgba16__png;
+gMap27Tex_02 = map_27_tex_02_rgba16_rgba16__png;
+gMap27Tex_03 = map_27_tex_03_rgba16_rgba16__png;
+gMap27Tex_04 = map_27_tex_04_rgba16_rgba16__png;
+gMap27Tex_05 = map_27_tex_05_rgba16_rgba16__png;
+gMap27Tex_06 = map_27_tex_06_rgba16_rgba16__png;
+gMap27Tex_07 = map_27_tex_07_rgba16_rgba16__png;
+gMap27Tex_08 = map_27_tex_08_rgba16_rgba16__png;
+gMap27Tex_09 = map_27_tex_09_rgba16_rgba16__png;
+gMap27Tex_10 = map_27_tex_10_rgba16_rgba16__png;
+gMap27Tex_11 = map_27_tex_11_rgba16_rgba16__png;
+gMap27Tex_12 = map_27_tex_12_rgba16_rgba16__png;
+gMap27Tex_13 = map_27_tex_13_rgba16_rgba16__png;
+gMap27Tex_14 = map_27_tex_14_rgba16_rgba16__png;
+gMap27Tex_15 = map_27_tex_15_rgba16_rgba16__png;
+gMap27Tex_16 = map_27_tex_16_rgba16_rgba16__png;
+gMap27Tex_17 = map_27_tex_17_rgba16_rgba16__png;
+gMap27Tex_18 = map_27_tex_18_rgba16_rgba16__png;
+gMap27Tex_19 = map_27_tex_19_rgba16_rgba16__png;
+gMap27Tex_20 = map_27_tex_20_rgba16_rgba16__png;
+gMap27Tex_21 = map_27_tex_21_rgba16_rgba16__png;
+gMap27Tex_22 = map_27_tex_22_rgba16_rgba16__png;
+gMap27Tex_23 = map_27_tex_23_rgba16_rgba16__png;
+gMap27Tex_24 = map_27_tex_24_rgba16_rgba16__png;
+gMap27Tex_25 = map_27_tex_25_rgba16_rgba16__png;
+gMap27Tex_26 = map_27_tex_26_rgba16_rgba16__png;
+gMap27Tex_27 = map_27_tex_27_rgba16_rgba16__png;
+gMap27Tex_28 = map_27_tex_28_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 27's NPC records name in other binary files (not relocated) */
+
+/* map_28: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap28Tex_00 = map_28_tex_00_rgba16_rgba16__png;
+gMap28Tex_01 = map_28_tex_01_rgba16_rgba16__png;
+gMap28Tex_02 = map_28_tex_02_rgba16_rgba16__png;
+gMap28Tex_03 = map_28_tex_03_rgba16_rgba16__png;
+gMap28Tex_04 = map_28_tex_04_rgba16_rgba16__png;
+gMap28Tex_05 = map_28_tex_05_rgba16_rgba16__png;
+gMap28Tex_06 = map_28_tex_06_rgba16_rgba16__png;
+gMap28Tex_07 = map_28_tex_07_rgba16_rgba16__png;
+gMap28Tex_08 = map_28_tex_08_rgba16_rgba16__png;
+gMap28Tex_09 = map_28_tex_09_rgba16_rgba16__png;
+gMap28Tex_10 = map_28_tex_10_rgba16_rgba16__png;
+gMap28Tex_11 = map_28_tex_11_rgba16_rgba16__png;
+gMap28Tex_12 = map_28_tex_12_rgba16_rgba16__png;
+gMap28Tex_13 = map_28_tex_13_rgba16_rgba16__png;
+gMap28Tex_14 = map_28_tex_14_rgba16_rgba16__png;
+gMap28Tex_15 = map_28_tex_15_rgba16_rgba16__png;
+gMap28Tex_16 = map_28_tex_16_rgba16_rgba16__png;
+gMap28Tex_17 = map_28_tex_17_rgba16_rgba16__png;
+gMap28Tex_18 = map_28_tex_18_rgba16_rgba16__png;
+gMap28Tex_19 = map_28_tex_19_rgba16_rgba16__png;
+gMap28Tex_20 = map_28_tex_20_rgba16_rgba16__png;
+gMap28Tex_21 = map_28_tex_21_rgba16_rgba16__png;
+gMap28Tex_22 = map_28_tex_22_rgba16_rgba16__png;
+gMap28Tex_23 = map_28_tex_23_rgba16_rgba16__png;
+gMap28Tex_24 = map_28_tex_24_rgba16_rgba16__png;
+gMap28Tex_25 = map_28_tex_25_rgba16_rgba16__png;
+gMap28Tex_26 = map_28_tex_26_rgba16_rgba16__png;
+gMap28Tex_27 = map_28_tex_27_rgba16_rgba16__png;
+gMap28Tex_28 = map_28_tex_28_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 28's NPC records name in other binary files (not relocated) */
+
+/* map_29: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap29Raw_14BF0 = map_29_raw_14bf0_bin;
+gMap29Tex_00 = map_29_tex_00_ci8_ci8__png;
+gMap29Raw_14FF8 = map_29_raw_14ff8_bin;
+gMap29Tex_01 = map_29_tex_01_rgba16_rgba16__png;
+gMap29Tex_02 = map_29_tex_02_rgba16_rgba16__png;
+gMap29Tex_03 = map_29_tex_03_rgba16_rgba16__png;
+gMap29Tex_04 = map_29_tex_04_rgba16_rgba16__png;
+gMap29Tex_05 = map_29_tex_05_rgba16_rgba16__png;
+gMap29Tex_06 = map_29_tex_06_rgba16_rgba16__png;
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 29's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 2, 11, 27, 28, 29, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_02_VRAM + (map_02_ROM_END - map_02_ROM_START) <= gEventBlob, "map_02 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_11_VRAM + (map_11_ROM_END - map_11_ROM_START) <= gEventBlob, "map_11 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_27_VRAM + (map_27_ROM_END - map_27_ROM_START) <= gEventBlob, "map_27 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_28_VRAM + (map_28_ROM_END - map_28_ROM_START) <= gEventBlob, "map_28 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+ASSERT(map_29_VRAM + (map_29_ROM_END - map_29_ROM_START) <= gEventBlob, "map_29 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* map_34: each texture's name at its image, each raw piece's at its bytes (linker symbols of the segment) */
+gMap34Tex_00 = map_34_tex_00_rgba16_rgba16__png;
+gMap34Tex_01 = map_34_tex_01_rgba16_rgba16__png;
+gMap34Tex_02 = map_34_tex_02_rgba16_rgba16__png;
+gMap34Tex_03 = map_34_tex_03_rgba16_rgba16__png;
+gMap34Tex_04 = map_34_tex_04_rgba16_rgba16__png;
+gMap34Tex_05 = map_34_tex_05_rgba16_rgba16__png;
+gMap34Tex_06 = map_34_tex_06_rgba16_rgba16__png;
+gMap34Tex_07 = map_34_tex_07_rgba16_rgba16__png;
+gMap34Tex_08 = map_34_tex_08_rgba16_rgba16__png;
+gMap34Tex_09 = map_34_tex_09_rgba16_rgba16__png;
+gMap34Tex_10 = map_34_tex_10_rgba16_rgba16__png;
+gMap34Tex_11 = map_34_tex_11_rgba16_rgba16__png;
+gMap34Tex_12 = map_34_tex_12_rgba16_rgba16__png;
+gMap34Tex_13 = map_34_tex_13_rgba16_rgba16__png;
+gMap34Tex_14 = map_34_tex_14_rgba16_rgba16__png;
+gMap34Tex_15 = map_34_tex_15_rgba16_rgba16__png;
+gMap34Tex_16 = map_34_tex_16_rgba16_rgba16__png;
+gMap34Tex_17 = map_34_tex_17_rgba16_rgba16__png;
+gMap34Tex_18 = map_34_tex_18_rgba16_rgba16__png;
+gMap34Tex_19 = map_34_tex_19_rgba16_rgba16__png;
+gMap34Tex_20 = map_34_tex_20_rgba16_rgba16__png;
+gMap34Tex_21 = map_34_tex_21_rgba16_rgba16__png;
+gMap34Tex_22 = map_34_tex_22_rgba16_rgba16__png;
+gMap34Tex_23 = map_34_tex_23_rgba16_rgba16__png;
+gMap34Tex_24 = map_34_tex_24_rgba16_rgba16__png;
+gMap34Tex_25 = map_34_tex_25_rgba16_rgba16__png;
+gMap34Tex_26 = map_34_tex_26_rgba16_rgba16__png;
+gMap34Room01Doors = map_34_VRAM + (map_34_ROM_END - map_34_ROM_START); /* submap 1's door table, doorCount 0, at the end of the file */
+/* the shared blocks' targets: every address a map that loads the block names in it, from the block's label */
+/* fixed addresses map 34's NPC records name in other binary files (not relocated) */
+/* the RAM ceiling of maps 34, as the typed maps' before them: the ending's data (gEventBlob, 0x801C0000),
+   which LoadEndingScene keeps resident beside the map it loads, is the lowest RAM above any map blob */
+ASSERT(map_34_VRAM + (map_34_ROM_END - map_34_ROM_START) <= gEventBlob, "map_34 has outgrown its RAM: it would reach the ending's data (gEventBlob), which the ending keeps resident beside the map it loads");
+
+/* ---- NPC files: built from typed sources (each record a name of its segment); their RAM envelopes; the ending's
+   data, binary but for its NPC records, locked; Brian's model, binary, the one texture NPC lists take from it ---- */
+/* npc_held_objects: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcHeldTex_00 = npc_held_objects_tex_00_i4_i4__png;
+gNpcHeldTex_01 = npc_held_objects_tex_01_i4_i4__png;
+gNpcHeldTex_02 = npc_held_objects_tex_02_i4_i4__png;
+gNpcHeldTex_03 = npc_held_objects_tex_03_i4_i4__png;
+gNpcHeldTex_04 = npc_held_objects_tex_04_i4_i4__png;
+gNpcHeldTex_05 = npc_held_objects_tex_05_rgba16_rgba16__png;
+gNpcHeldTex_06 = npc_held_objects_tex_06_i4_i4__png;
+gNpcHeldTex_07 = npc_held_objects_tex_07_rgba16_rgba16__png;
+gNpcHeldTex_08 = npc_held_objects_tex_08_i4_i4__png;
+gNpcHeldRaw_00988 = npc_held_objects_raw_00988_bin;
+gNpcHeldRaw_0E90 = npc_held_objects_raw_0E90_bin;
+gNpcHeldTex_10 = npc_held_objects_tex_10_rgba16_rgba16__png;
+gNpcHeldTex_11 = npc_held_objects_tex_11_rgba16_rgba16__png;
+gNpcHeldTex_12 = npc_held_objects_tex_12_i4_i4__png;
+gNpcHeldTex_13 = npc_held_objects_tex_13_i4_i4__png;
+gNpcHeldRaw_14B0 = npc_held_objects_raw_14B0_bin;
+gNpcHeldRaw_16B0 = npc_held_objects_raw_16B0_bin;
+gNpcHeldRaw_1730 = npc_held_objects_raw_1730_bin;
+ASSERT(npc_held_objects_VRAM == func_8020C0D0, "npc_held_objects: LoadNPCArea loads them to the overlay slot");
+ASSERT(npc_held_objects_VRAM + (npc_held_objects_ROM_END - npc_held_objects_ROM_START) <= gMonsterFileBuffer,
+       "npc_held_objects have outgrown the overlay slot's room: they would reach the NPC area's file (gMonsterFileBuffer)");
+/* npc_blob_0: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea0Tex_000 = npc_blob_0_tex_000_rgba16_rgba16__png;
+gNpcArea0Tex_001 = npc_blob_0_tex_001_rgba16_rgba16__png;
+gNpcArea0Tex_002 = npc_blob_0_tex_002_rgba16_rgba16__png;
+gNpcArea0Raw_30D30 = npc_blob_0_raw_30D30_bin;
+gNpcArea0Raw_30F30 = npc_blob_0_raw_30F30_bin;
+gNpcArea0Raw_31530 = npc_blob_0_raw_31530_bin;
+gNpcArea0Tex_006 = npc_blob_0_tex_006_rgba16_rgba16__png;
+gNpcArea0Tex_007 = npc_blob_0_tex_007_rgba16_rgba16__png;
+gNpcArea0Tex_008 = npc_blob_0_tex_008_rgba16_rgba16__png;
+gNpcArea0Tex_009 = npc_blob_0_tex_009_rgba16_rgba16__png;
+gNpcArea0Tex_010 = npc_blob_0_tex_010_rgba16_rgba16__png;
+gNpcArea0Tex_011 = npc_blob_0_tex_011_rgba16_rgba16__png;
+gNpcArea0Tex_012 = npc_blob_0_tex_012_rgba16_rgba16__png;
+gNpcArea0Tex_013 = npc_blob_0_tex_013_rgba16_rgba16__png;
+gNpcArea0Tex_014 = npc_blob_0_tex_014_rgba16_rgba16__png;
+gNpcArea0Tex_015 = npc_blob_0_tex_015_rgba16_rgba16__png;
+gNpcArea0Tex_016 = npc_blob_0_tex_016_rgba16_rgba16__png;
+gNpcArea0Tex_017 = npc_blob_0_tex_017_rgba16_rgba16__png;
+gNpcArea0Tex_018 = npc_blob_0_tex_018_rgba16_rgba16__png;
+gNpcArea0Tex_019 = npc_blob_0_tex_019_rgba16_rgba16__png;
+gNpcArea0Tex_020 = npc_blob_0_tex_020_rgba16_rgba16__png;
+gNpcArea0Tex_021 = npc_blob_0_tex_021_rgba16_rgba16__png;
+gNpcArea0Tex_022 = npc_blob_0_tex_022_rgba16_rgba16__png;
+gNpcArea0Tex_023 = npc_blob_0_tex_023_rgba16_rgba16__png;
+gNpcArea0Tex_024 = npc_blob_0_tex_024_rgba16_rgba16__png;
+gNpcArea0Tex_025 = npc_blob_0_tex_025_rgba16_rgba16__png;
+gNpcArea0Tex_026 = npc_blob_0_tex_026_rgba16_rgba16__png;
+gNpcArea0Tex_027 = npc_blob_0_tex_027_i4_i4__png;
+gNpcArea0Tex_028 = npc_blob_0_tex_028_i4_i4__png;
+gNpcArea0Tex_029 = npc_blob_0_tex_029_rgba16_rgba16__png;
+gNpcArea0Tex_030 = npc_blob_0_tex_030_rgba16_rgba16__png;
+gNpcArea0Raw_344F0 = npc_blob_0_raw_344F0_bin;
+gNpcArea0Tex_031 = npc_blob_0_tex_031_rgba16_rgba16__png;
+gNpcArea0Tex_032 = npc_blob_0_tex_032_rgba16_rgba16__png;
+gNpcArea0Tex_033 = npc_blob_0_tex_033_rgba16_rgba16__png;
+gNpcArea0Tex_034 = npc_blob_0_tex_034_rgba16_rgba16__png;
+gNpcArea0Tex_035 = npc_blob_0_tex_035_rgba16_rgba16__png;
+gNpcArea0Tex_036 = npc_blob_0_tex_036_rgba16_rgba16__png;
+gNpcArea0Tex_037 = npc_blob_0_tex_037_rgba16_rgba16__png;
+gNpcArea0Tex_038 = npc_blob_0_tex_038_rgba16_rgba16__png;
+gNpcArea0Tex_039 = npc_blob_0_tex_039_rgba16_rgba16__png;
+gNpcArea0Tex_040 = npc_blob_0_tex_040_rgba16_rgba16__png;
+gNpcArea0Tex_041 = npc_blob_0_tex_041_i4_i4__png;
+gNpcArea0Tex_042 = npc_blob_0_tex_042_rgba16_rgba16__png;
+gNpcArea0Tex_043 = npc_blob_0_tex_043_rgba16_rgba16__png;
+gNpcArea0Tex_044 = npc_blob_0_tex_044_rgba16_rgba16__png;
+gNpcArea0Tex_045 = npc_blob_0_tex_045_rgba16_rgba16__png;
+gNpcArea0Tex_046 = npc_blob_0_tex_046_rgba16_rgba16__png;
+gNpcArea0Tex_047 = npc_blob_0_tex_047_rgba16_rgba16__png;
+gNpcArea0Tex_048 = npc_blob_0_tex_048_rgba16_rgba16__png;
+gNpcArea0Tex_049 = npc_blob_0_tex_049_rgba16_rgba16__png;
+gNpcArea0Tex_050 = npc_blob_0_tex_050_rgba16_rgba16__png;
+gNpcArea0Tex_051 = npc_blob_0_tex_051_rgba16_rgba16__png;
+gNpcArea0Tex_052 = npc_blob_0_tex_052_rgba16_rgba16__png;
+gNpcArea0Tex_053 = npc_blob_0_tex_053_rgba16_rgba16__png;
+gNpcArea0Tex_054 = npc_blob_0_tex_054_rgba16_rgba16__png;
+gNpcArea0Tex_055 = npc_blob_0_tex_055_rgba16_rgba16__png;
+gNpcArea0Tex_056 = npc_blob_0_tex_056_rgba16_rgba16__png;
+gNpcArea0Tex_057 = npc_blob_0_tex_057_rgba16_rgba16__png;
+gNpcArea0Tex_058 = npc_blob_0_tex_058_rgba16_rgba16__png;
+gNpcArea0Tex_059 = npc_blob_0_tex_059_rgba16_rgba16__png;
+gNpcArea0Raw_38870 = npc_blob_0_raw_38870_bin;
+gNpcArea0Tex_060 = npc_blob_0_tex_060_rgba16_rgba16__png;
+gNpcArea0Raw_39078 = npc_blob_0_raw_39078_bin;
+gNpcArea0Tex_061 = npc_blob_0_tex_061_rgba16_rgba16__png;
+gNpcArea0Raw_39280 = npc_blob_0_raw_39280_bin;
+gNpcArea0Tex_062 = npc_blob_0_tex_062_rgba16_rgba16__png;
+gNpcArea0Raw_39A88 = npc_blob_0_raw_39A88_bin;
+gNpcArea0Tex_063 = npc_blob_0_tex_063_rgba16_rgba16__png;
+gNpcArea0Raw_3A290 = npc_blob_0_raw_3A290_bin;
+gNpcArea0Tex_064 = npc_blob_0_tex_064_rgba16_rgba16__png;
+gNpcArea0Raw_3A318 = npc_blob_0_raw_3A318_bin;
+gNpcArea0Tex_065 = npc_blob_0_tex_065_rgba16_rgba16__png;
+gNpcArea0Raw_3A3A0 = npc_blob_0_raw_3A3A0_bin;
+gNpcArea0Tex_066 = npc_blob_0_tex_066_rgba16_rgba16__png;
+gNpcArea0Tex_067 = npc_blob_0_tex_067_rgba16_rgba16__png;
+gNpcArea0Tex_068 = npc_blob_0_tex_068_rgba16_rgba16__png;
+gNpcArea0Tex_069 = npc_blob_0_tex_069_rgba16_rgba16__png;
+gNpcArea0Tex_070 = npc_blob_0_tex_070_rgba16_rgba16__png;
+gNpcArea0Raw_3AD28 = npc_blob_0_raw_3AD28_bin;
+gNpcArea0Tex_071 = npc_blob_0_tex_071_rgba16_rgba16__png;
+gNpcArea0Raw_3B530 = npc_blob_0_raw_3B530_bin;
+gNpcArea0Tex_072 = npc_blob_0_tex_072_rgba16_rgba16__png;
+gNpcArea0Raw_3B9B8 = npc_blob_0_raw_3B9B8_bin;
+gNpcArea0Tex_073 = npc_blob_0_tex_073_rgba16_rgba16__png;
+gNpcArea0Tex_074 = npc_blob_0_tex_074_rgba16_rgba16__png;
+gNpcArea0Tex_075 = npc_blob_0_tex_075_rgba16_rgba16__png;
+gNpcArea0Tex_076 = npc_blob_0_tex_076_rgba16_rgba16__png;
+gNpcArea0Tex_077 = npc_blob_0_tex_077_rgba16_rgba16__png;
+gNpcArea0Tex_078 = npc_blob_0_tex_078_i4_i4__png;
+gNpcArea0Tex_079 = npc_blob_0_tex_079_rgba16_rgba16__png;
+gNpcArea0Tex_080 = npc_blob_0_tex_080_rgba16_rgba16__png;
+gNpcArea0Tex_081 = npc_blob_0_tex_081_rgba16_rgba16__png;
+gNpcArea0Tex_082 = npc_blob_0_tex_082_rgba16_rgba16__png;
+gNpcArea0Tex_083 = npc_blob_0_tex_083_rgba16_rgba16__png;
+gNpcArea0Tex_084 = npc_blob_0_tex_084_rgba16_rgba16__png;
+gNpcArea0Tex_085 = npc_blob_0_tex_085_rgba16_rgba16__png;
+gNpcArea0Tex_086 = npc_blob_0_tex_086_rgba16_rgba16__png;
+gNpcArea0Tex_087 = npc_blob_0_tex_087_rgba16_rgba16__png;
+gNpcArea0Tex_088 = npc_blob_0_tex_088_rgba16_rgba16__png;
+gNpcArea0Tex_089 = npc_blob_0_tex_089_rgba16_rgba16__png;
+gNpcArea0Tex_090 = npc_blob_0_tex_090_rgba16_rgba16__png;
+gNpcArea0Tex_091 = npc_blob_0_tex_091_rgba16_rgba16__png;
+gNpcArea0Tex_092 = npc_blob_0_tex_092_rgba16_rgba16__png;
+gNpcArea0Tex_093 = npc_blob_0_tex_093_rgba16_rgba16__png;
+ASSERT(npc_blob_0_VRAM == gMonsterFileBuffer, "npc_blob_0: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_0_VRAM + (npc_blob_0_ROM_END - npc_blob_0_ROM_START) <= gShannonActorData,
+       "npc_blob_0 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_1: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea1Tex_000 = npc_blob_1_tex_000_rgba16_rgba16__png;
+gNpcArea1Tex_001 = npc_blob_1_tex_001_rgba16_rgba16__png;
+gNpcArea1Tex_002 = npc_blob_1_tex_002_rgba16_rgba16__png;
+gNpcArea1Tex_003 = npc_blob_1_tex_003_rgba16_rgba16__png;
+gNpcArea1Tex_004 = npc_blob_1_tex_004_rgba16_rgba16__png;
+gNpcArea1Tex_005 = npc_blob_1_tex_005_rgba16_rgba16__png;
+gNpcArea1Tex_006 = npc_blob_1_tex_006_rgba16_rgba16__png;
+gNpcArea1Tex_007 = npc_blob_1_tex_007_rgba16_rgba16__png;
+gNpcArea1Tex_008 = npc_blob_1_tex_008_rgba16_rgba16__png;
+gNpcArea1Tex_009 = npc_blob_1_tex_009_rgba16_rgba16__png;
+gNpcArea1Tex_010 = npc_blob_1_tex_010_rgba16_rgba16__png;
+gNpcArea1Tex_011 = npc_blob_1_tex_011_rgba16_rgba16__png;
+gNpcArea1Tex_012 = npc_blob_1_tex_012_rgba16_rgba16__png;
+gNpcArea1Tex_013 = npc_blob_1_tex_013_rgba16_rgba16__png;
+gNpcArea1Tex_014 = npc_blob_1_tex_014_rgba16_rgba16__png;
+gNpcArea1Tex_015 = npc_blob_1_tex_015_rgba16_rgba16__png;
+gNpcArea1Tex_016 = npc_blob_1_tex_016_rgba16_rgba16__png;
+gNpcArea1Tex_017 = npc_blob_1_tex_017_rgba16_rgba16__png;
+gNpcArea1Tex_018 = npc_blob_1_tex_018_rgba16_rgba16__png;
+gNpcArea1Tex_019 = npc_blob_1_tex_019_rgba16_rgba16__png;
+gNpcArea1Tex_020 = npc_blob_1_tex_020_rgba16_rgba16__png;
+gNpcArea1Tex_021 = npc_blob_1_tex_021_rgba16_rgba16__png;
+gNpcArea1Tex_022 = npc_blob_1_tex_022_rgba16_rgba16__png;
+gNpcArea1Tex_023 = npc_blob_1_tex_023_rgba16_rgba16__png;
+gNpcArea1Tex_024 = npc_blob_1_tex_024_rgba16_rgba16__png;
+gNpcArea1Tex_025 = npc_blob_1_tex_025_rgba16_rgba16__png;
+gNpcArea1Tex_026 = npc_blob_1_tex_026_rgba16_rgba16__png;
+gNpcArea1Tex_027 = npc_blob_1_tex_027_rgba16_rgba16__png;
+gNpcArea1Tex_028 = npc_blob_1_tex_028_rgba16_rgba16__png;
+gNpcArea1Tex_029 = npc_blob_1_tex_029_rgba16_rgba16__png;
+gNpcArea1Tex_030 = npc_blob_1_tex_030_rgba16_rgba16__png;
+gNpcArea1Raw_29B70 = npc_blob_1_raw_29B70_bin;
+gNpcArea1Tex_031 = npc_blob_1_tex_031_rgba16_rgba16__png;
+gNpcArea1Raw_29F78 = npc_blob_1_raw_29F78_bin;
+gNpcArea1Tex_032 = npc_blob_1_tex_032_rgba16_rgba16__png;
+gNpcArea1Raw_2A180 = npc_blob_1_raw_2A180_bin;
+gNpcArea1Tex_033 = npc_blob_1_tex_033_rgba16_rgba16__png;
+gNpcArea1Raw_2A308 = npc_blob_1_raw_2A308_bin;
+gNpcArea1Tex_034 = npc_blob_1_tex_034_rgba16_rgba16__png;
+gNpcArea1Raw_2A510 = npc_blob_1_raw_2A510_bin;
+gNpcArea1Tex_035 = npc_blob_1_tex_035_rgba16_rgba16__png;
+gNpcArea1Raw_2A718 = npc_blob_1_raw_2A718_bin;
+gNpcArea1Tex_036 = npc_blob_1_tex_036_rgba16_rgba16__png;
+gNpcArea1Raw_2A920 = npc_blob_1_raw_2A920_bin;
+gNpcArea1Raw_2AB20 = npc_blob_1_raw_2AB20_bin;
+gNpcArea1Tex_038 = npc_blob_1_tex_038_rgba16_rgba16__png;
+gNpcArea1Raw_2AB68 = npc_blob_1_raw_2AB68_bin;
+gNpcArea1Tex_039 = npc_blob_1_tex_039_rgba16_rgba16__png;
+gNpcArea1Raw_2AF70 = npc_blob_1_raw_2AF70_bin;
+gNpcArea1Tex_040 = npc_blob_1_tex_040_rgba16_rgba16__png;
+gNpcArea1Tex_041 = npc_blob_1_tex_041_i4_i4__png;
+gNpcArea1Raw_2B1F8 = npc_blob_1_raw_2B1F8_bin;
+gNpcArea1Tex_042 = npc_blob_1_tex_042_rgba16_rgba16__png;
+gNpcArea1Raw_2B400 = npc_blob_1_raw_2B400_bin;
+gNpcArea1Tex_043 = npc_blob_1_tex_043_rgba16_rgba16__png;
+gNpcArea1Raw_2B808 = npc_blob_1_raw_2B808_bin;
+gNpcArea1Tex_044 = npc_blob_1_tex_044_rgba16_rgba16__png;
+gNpcArea1Raw_2C010 = npc_blob_1_raw_2C010_bin;
+gNpcArea1Tex_045 = npc_blob_1_tex_045_rgba16_rgba16__png;
+gNpcArea1Tex_046 = npc_blob_1_tex_046_i4_i4__png;
+gNpcArea1Tex_047 = npc_blob_1_tex_047_rgba16_rgba16__png;
+gNpcArea1Tex_048 = npc_blob_1_tex_048_rgba16_rgba16__png;
+gNpcArea1Tex_049 = npc_blob_1_tex_049_rgba16_rgba16__png;
+gNpcArea1Tex_050 = npc_blob_1_tex_050_rgba16_rgba16__png;
+gNpcArea1Tex_051 = npc_blob_1_tex_051_rgba16_rgba16__png;
+gNpcArea1Tex_052 = npc_blob_1_tex_052_rgba16_rgba16__png;
+gNpcArea1Raw_2D198 = npc_blob_1_raw_2D198_bin;
+gNpcArea1Tex_053 = npc_blob_1_tex_053_rgba16_rgba16__png;
+gNpcArea1Raw_2D3A0 = npc_blob_1_raw_2D3A0_bin;
+gNpcArea1Tex_054 = npc_blob_1_tex_054_rgba16_rgba16__png;
+gNpcArea1Raw_2D7A8 = npc_blob_1_raw_2D7A8_bin;
+gNpcArea1Tex_055 = npc_blob_1_tex_055_rgba16_rgba16__png;
+gNpcArea1Tex_056 = npc_blob_1_tex_056_rgba16_rgba16__png;
+gNpcArea1Tex_057 = npc_blob_1_tex_057_rgba16_rgba16__png;
+gNpcArea1Tex_058 = npc_blob_1_tex_058_rgba16_rgba16__png;
+gNpcArea1Tex_059 = npc_blob_1_tex_059_i4_i4__png;
+gNpcArea1Tex_060 = npc_blob_1_tex_060_rgba16_rgba16__png;
+gNpcArea1Tex_061 = npc_blob_1_tex_061_rgba16_rgba16__png;
+gNpcArea1Tex_062 = npc_blob_1_tex_062_rgba16_rgba16__png;
+gNpcArea1Tex_063 = npc_blob_1_tex_063_rgba16_rgba16__png;
+gNpcArea1Tex_064 = npc_blob_1_tex_064_rgba16_rgba16__png;
+gNpcArea1Tex_065 = npc_blob_1_tex_065_rgba16_rgba16__png;
+gNpcArea1Tex_066 = npc_blob_1_tex_066_rgba16_rgba16__png;
+gNpcArea1Tex_067 = npc_blob_1_tex_067_rgba16_rgba16__png;
+gNpcArea1Tex_068 = npc_blob_1_tex_068_rgba16_rgba16__png;
+gNpcArea1Tex_069 = npc_blob_1_tex_069_rgba16_rgba16__png;
+gNpcArea1Tex_070 = npc_blob_1_tex_070_rgba16_rgba16__png;
+gNpcArea1Tex_071 = npc_blob_1_tex_071_rgba16_rgba16__png;
+gNpcArea1Tex_072 = npc_blob_1_tex_072_rgba16_rgba16__png;
+gNpcArea1Tex_073 = npc_blob_1_tex_073_rgba16_rgba16__png;
+gNpcArea1Tex_074 = npc_blob_1_tex_074_rgba16_rgba16__png;
+gNpcArea1Tex_075 = npc_blob_1_tex_075_rgba16_rgba16__png;
+gNpcArea1Tex_076 = npc_blob_1_tex_076_rgba16_rgba16__png;
+gNpcArea1Tex_077 = npc_blob_1_tex_077_rgba16_rgba16__png;
+gNpcArea1Tex_078 = npc_blob_1_tex_078_rgba16_rgba16__png;
+gNpcArea1Tex_079 = npc_blob_1_tex_079_rgba16_rgba16__png;
+gNpcArea1Tex_080 = npc_blob_1_tex_080_rgba16_rgba16__png;
+gNpcArea1Tex_081 = npc_blob_1_tex_081_rgba16_rgba16__png;
+gNpcArea1Raw_32930 = npc_blob_1_raw_32930_bin;
+gNpcArea1Tex_082 = npc_blob_1_tex_082_rgba16_rgba16__png;
+gNpcArea1Tex_083 = npc_blob_1_tex_083_rgba16_rgba16__png;
+gNpcArea1Tex_084 = npc_blob_1_tex_084_rgba16_rgba16__png;
+gNpcArea1Tex_085 = npc_blob_1_tex_085_rgba16_rgba16__png;
+gNpcArea1Tex_086 = npc_blob_1_tex_086_rgba16_rgba16__png;
+gNpcArea1Raw_33838 = npc_blob_1_raw_33838_bin;
+gNpcArea1Tex_087 = npc_blob_1_tex_087_rgba16_rgba16__png;
+gNpcArea1Raw_33A40 = npc_blob_1_raw_33A40_bin;
+gNpcArea1Tex_088 = npc_blob_1_tex_088_i4_i4__png;
+gNpcArea1Tex_089 = npc_blob_1_tex_089_rgba16_rgba16__png;
+gNpcArea1Tex_090 = npc_blob_1_tex_090_rgba16_rgba16__png;
+gNpcArea1Tex_091 = npc_blob_1_tex_091_rgba16_rgba16__png;
+gNpcArea1Tex_092 = npc_blob_1_tex_092_rgba16_rgba16__png;
+gNpcArea1Raw_344C8 = npc_blob_1_raw_344C8_bin;
+gNpcArea1Tex_093 = npc_blob_1_tex_093_rgba16_rgba16__png;
+gNpcArea1Raw_346D0 = npc_blob_1_raw_346D0_bin;
+gNpcArea1Tex_094 = npc_blob_1_tex_094_rgba16_rgba16__png;
+gNpcArea1Raw_34AD8 = npc_blob_1_raw_34AD8_bin;
+gNpcArea1Tex_095 = npc_blob_1_tex_095_rgba16_rgba16__png;
+gNpcArea1Tex_096 = npc_blob_1_tex_096_i4_i4__png;
+gNpcArea1Raw_34B80 = npc_blob_1_raw_34B80_bin;
+gNpcArea1Tex_097 = npc_blob_1_tex_097_rgba16_rgba16__png;
+gNpcArea1Tex_098 = npc_blob_1_tex_098_rgba16_rgba16__png;
+gNpcArea1Tex_099 = npc_blob_1_tex_099_rgba16_rgba16__png;
+gNpcArea1Tex_100 = npc_blob_1_tex_100_rgba16_rgba16__png;
+gNpcArea1Tex_101 = npc_blob_1_tex_101_rgba16_rgba16__png;
+gNpcArea1Tex_102 = npc_blob_1_tex_102_rgba16_rgba16__png;
+gNpcArea1Tex_103 = npc_blob_1_tex_103_rgba16_rgba16__png;
+gNpcArea1Tex_104 = npc_blob_1_tex_104_rgba16_rgba16__png;
+gNpcArea1Tex_105 = npc_blob_1_tex_105_i4_i4__png;
+gNpcArea1Tex_106 = npc_blob_1_tex_106_i4_i4__png;
+gNpcArea1Tex_107 = npc_blob_1_tex_107_i4_i4__png;
+gNpcArea1Tex_108 = npc_blob_1_tex_108_i4_i4__png;
+gNpcArea1Tex_109 = npc_blob_1_tex_109_rgba16_rgba16__png;
+gNpcArea1Tex_110 = npc_blob_1_tex_110_i4_i4__png;
+gNpcArea1Tex_111 = npc_blob_1_tex_111_i4_i4__png;
+gNpcArea1Tex_112 = npc_blob_1_tex_112_i4_i4__png;
+gNpcArea1Tex_113 = npc_blob_1_tex_113_i4_i4__png;
+gNpcArea1Tex_114 = npc_blob_1_tex_114_i4_i4__png;
+gNpcArea1Tex_115 = npc_blob_1_tex_115_rgba16_rgba16__png;
+gNpcArea1Tex_116 = npc_blob_1_tex_116_rgba16_rgba16__png;
+gNpcArea1Tex_117 = npc_blob_1_tex_117_rgba16_rgba16__png;
+gNpcArea1Tex_118 = npc_blob_1_tex_118_rgba16_rgba16__png;
+gNpcArea1Tex_119 = npc_blob_1_tex_119_rgba16_rgba16__png;
+gNpcArea1Tex_120 = npc_blob_1_tex_120_rgba16_rgba16__png;
+gNpcArea1Pad_38028 = npc_blob_1_pad_38028_bin;
+ASSERT(npc_blob_1_VRAM == gMonsterFileBuffer, "npc_blob_1: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_1_VRAM + (npc_blob_1_ROM_END - npc_blob_1_ROM_START) <= gShannonActorData,
+       "npc_blob_1 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_2: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea2Tex_000 = npc_blob_2_tex_000_rgba16_rgba16__png;
+gNpcArea2Tex_001 = npc_blob_2_tex_001_rgba16_rgba16__png;
+gNpcArea2Tex_002 = npc_blob_2_tex_002_rgba16_rgba16__png;
+gNpcArea2Tex_003 = npc_blob_2_tex_003_rgba16_rgba16__png;
+gNpcArea2Tex_004 = npc_blob_2_tex_004_rgba16_rgba16__png;
+gNpcArea2Tex_005 = npc_blob_2_tex_005_rgba16_rgba16__png;
+gNpcArea2Tex_006 = npc_blob_2_tex_006_rgba16_rgba16__png;
+gNpcArea2Tex_007 = npc_blob_2_tex_007_rgba16_rgba16__png;
+gNpcArea2Tex_008 = npc_blob_2_tex_008_rgba16_rgba16__png;
+gNpcArea2Tex_009 = npc_blob_2_tex_009_rgba16_rgba16__png;
+gNpcArea2Tex_010 = npc_blob_2_tex_010_rgba16_rgba16__png;
+gNpcArea2Tex_011 = npc_blob_2_tex_011_rgba16_rgba16__png;
+gNpcArea2Tex_012 = npc_blob_2_tex_012_rgba16_rgba16__png;
+gNpcArea2Tex_013 = npc_blob_2_tex_013_rgba16_rgba16__png;
+gNpcArea2Tex_014 = npc_blob_2_tex_014_rgba16_rgba16__png;
+gNpcArea2Raw_1ABD0 = npc_blob_2_raw_1ABD0_bin;
+gNpcArea2Tex_015 = npc_blob_2_tex_015_rgba16_rgba16__png;
+gNpcArea2Tex_016 = npc_blob_2_tex_016_i4_i4__png;
+gNpcArea2Tex_017 = npc_blob_2_tex_017_rgba16_rgba16__png;
+gNpcArea2Raw_1B258 = npc_blob_2_raw_1B258_bin;
+gNpcArea2Tex_018 = npc_blob_2_tex_018_rgba16_rgba16__png;
+gNpcArea2Raw_1B460 = npc_blob_2_raw_1B460_bin;
+gNpcArea2Tex_019 = npc_blob_2_tex_019_rgba16_rgba16__png;
+gNpcArea2Raw_1B868 = npc_blob_2_raw_1B868_bin;
+gNpcArea2Tex_020 = npc_blob_2_tex_020_rgba16_rgba16__png;
+gNpcArea2Tex_021 = npc_blob_2_tex_021_rgba16_rgba16__png;
+gNpcArea2Tex_022 = npc_blob_2_tex_022_rgba16_rgba16__png;
+gNpcArea2Tex_023 = npc_blob_2_tex_023_rgba16_rgba16__png;
+gNpcArea2Tex_024 = npc_blob_2_tex_024_rgba16_rgba16__png;
+gNpcArea2Tex_025 = npc_blob_2_tex_025_rgba16_rgba16__png;
+gNpcArea2Tex_026 = npc_blob_2_tex_026_rgba16_rgba16__png;
+gNpcArea2Tex_027 = npc_blob_2_tex_027_rgba16_rgba16__png;
+gNpcArea2Tex_028 = npc_blob_2_tex_028_rgba16_rgba16__png;
+gNpcArea2Tex_029 = npc_blob_2_tex_029_rgba16_rgba16__png;
+gNpcArea2Tex_030 = npc_blob_2_tex_030_rgba16_rgba16__png;
+gNpcArea2Tex_031 = npc_blob_2_tex_031_rgba16_rgba16__png;
+gNpcArea2Tex_032 = npc_blob_2_tex_032_rgba16_rgba16__png;
+gNpcArea2Tex_033 = npc_blob_2_tex_033_rgba16_rgba16__png;
+gNpcArea2Tex_034 = npc_blob_2_tex_034_rgba16_rgba16__png;
+gNpcArea2Tex_035 = npc_blob_2_tex_035_rgba16_rgba16__png;
+gNpcArea2Tex_036 = npc_blob_2_tex_036_rgba16_rgba16__png;
+gNpcArea2Tex_037 = npc_blob_2_tex_037_rgba16_rgba16__png;
+gNpcArea2Tex_038 = npc_blob_2_tex_038_rgba16_rgba16__png;
+gNpcArea2Tex_039 = npc_blob_2_tex_039_rgba16_rgba16__png;
+gNpcArea2Tex_040 = npc_blob_2_tex_040_rgba16_rgba16__png;
+gNpcArea2Tex_041 = npc_blob_2_tex_041_rgba16_rgba16__png;
+gNpcArea2Tex_042 = npc_blob_2_tex_042_rgba16_rgba16__png;
+gNpcArea2Tex_043 = npc_blob_2_tex_043_rgba16_rgba16__png;
+gNpcArea2Tex_044 = npc_blob_2_tex_044_rgba16_rgba16__png;
+gNpcArea2Tex_045 = npc_blob_2_tex_045_rgba16_rgba16__png;
+gNpcArea2Tex_046 = npc_blob_2_tex_046_rgba16_rgba16__png;
+gNpcArea2Raw_20CF0 = npc_blob_2_raw_20CF0_bin;
+gNpcArea2Tex_047 = npc_blob_2_tex_047_rgba16_rgba16__png;
+gNpcArea2Raw_20D78 = npc_blob_2_raw_20D78_bin;
+gNpcArea2Tex_048 = npc_blob_2_tex_048_rgba16_rgba16__png;
+gNpcArea2Tex_049 = npc_blob_2_tex_049_rgba16_rgba16__png;
+gNpcArea2Raw_20E80 = npc_blob_2_raw_20E80_bin;
+gNpcArea2Tex_050 = npc_blob_2_tex_050_rgba16_rgba16__png;
+gNpcArea2Tex_051 = npc_blob_2_tex_051_rgba16_rgba16__png;
+gNpcArea2Tex_052 = npc_blob_2_tex_052_rgba16_rgba16__png;
+gNpcArea2Tex_053 = npc_blob_2_tex_053_rgba16_rgba16__png;
+gNpcArea2Tex_054 = npc_blob_2_tex_054_rgba16_rgba16__png;
+gNpcArea2Tex_055 = npc_blob_2_tex_055_i4_i4__png;
+gNpcArea2Tex_056 = npc_blob_2_tex_056_rgba16_rgba16__png;
+gNpcArea2Tex_057 = npc_blob_2_tex_057_rgba16_rgba16__png;
+gNpcArea2Tex_058 = npc_blob_2_tex_058_rgba16_rgba16__png;
+gNpcArea2Pad_24008 = npc_blob_2_pad_24008_bin;
+ASSERT(npc_blob_2_VRAM == gMonsterFileBuffer, "npc_blob_2: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_2_VRAM + (npc_blob_2_ROM_END - npc_blob_2_ROM_START) <= gShannonActorData,
+       "npc_blob_2 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_3: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea3Tex_000 = npc_blob_3_tex_000_rgba16_rgba16__png;
+gNpcArea3Tex_001 = npc_blob_3_tex_001_rgba16_rgba16__png;
+gNpcArea3Tex_002 = npc_blob_3_tex_002_rgba16_rgba16__png;
+gNpcArea3Tex_003 = npc_blob_3_tex_003_rgba16_rgba16__png;
+gNpcArea3Tex_004 = npc_blob_3_tex_004_rgba16_rgba16__png;
+gNpcArea3Tex_005 = npc_blob_3_tex_005_rgba16_rgba16__png;
+gNpcArea3Tex_006 = npc_blob_3_tex_006_rgba16_rgba16__png;
+gNpcArea3Tex_007 = npc_blob_3_tex_007_rgba16_rgba16__png;
+gNpcArea3Tex_008 = npc_blob_3_tex_008_rgba16_rgba16__png;
+gNpcArea3Tex_009 = npc_blob_3_tex_009_rgba16_rgba16__png;
+gNpcArea3Tex_010 = npc_blob_3_tex_010_rgba16_rgba16__png;
+gNpcArea3Tex_011 = npc_blob_3_tex_011_rgba16_rgba16__png;
+gNpcArea3Tex_012 = npc_blob_3_tex_012_rgba16_rgba16__png;
+gNpcArea3Tex_013 = npc_blob_3_tex_013_rgba16_rgba16__png;
+gNpcArea3Tex_014 = npc_blob_3_tex_014_rgba16_rgba16__png;
+gNpcArea3Tex_015 = npc_blob_3_tex_015_rgba16_rgba16__png;
+gNpcArea3Tex_016 = npc_blob_3_tex_016_rgba16_rgba16__png;
+gNpcArea3Tex_017 = npc_blob_3_tex_017_rgba16_rgba16__png;
+gNpcArea3Tex_018 = npc_blob_3_tex_018_rgba16_rgba16__png;
+gNpcArea3Tex_019 = npc_blob_3_tex_019_rgba16_rgba16__png;
+gNpcArea3Tex_020 = npc_blob_3_tex_020_rgba16_rgba16__png;
+gNpcArea3Tex_021 = npc_blob_3_tex_021_rgba16_rgba16__png;
+gNpcArea3Tex_022 = npc_blob_3_tex_022_rgba16_rgba16__png;
+gNpcArea3Tex_023 = npc_blob_3_tex_023_rgba16_rgba16__png;
+gNpcArea3Tex_024 = npc_blob_3_tex_024_rgba16_rgba16__png;
+gNpcArea3Tex_025 = npc_blob_3_tex_025_i4_i4__png;
+gNpcArea3Tex_026 = npc_blob_3_tex_026_rgba16_rgba16__png;
+gNpcArea3Tex_027 = npc_blob_3_tex_027_rgba16_rgba16__png;
+gNpcArea3Tex_028 = npc_blob_3_tex_028_rgba16_rgba16__png;
+gNpcArea3Tex_029 = npc_blob_3_tex_029_rgba16_rgba16__png;
+gNpcArea3Tex_030 = npc_blob_3_tex_030_rgba16_rgba16__png;
+gNpcArea3Tex_031 = npc_blob_3_tex_031_rgba16_rgba16__png;
+gNpcArea3Tex_032 = npc_blob_3_tex_032_rgba16_rgba16__png;
+gNpcArea3Tex_033 = npc_blob_3_tex_033_rgba16_rgba16__png;
+gNpcArea3Tex_034 = npc_blob_3_tex_034_rgba16_rgba16__png;
+gNpcArea3Tex_035 = npc_blob_3_tex_035_rgba16_rgba16__png;
+gNpcArea3Tex_036 = npc_blob_3_tex_036_rgba16_rgba16__png;
+gNpcArea3Tex_037 = npc_blob_3_tex_037_rgba16_rgba16__png;
+gNpcArea3Tex_038 = npc_blob_3_tex_038_rgba16_rgba16__png;
+gNpcArea3Tex_039 = npc_blob_3_tex_039_rgba16_rgba16__png;
+gNpcArea3Tex_040 = npc_blob_3_tex_040_rgba16_rgba16__png;
+gNpcArea3Tex_041 = npc_blob_3_tex_041_rgba16_rgba16__png;
+gNpcArea3Tex_042 = npc_blob_3_tex_042_rgba16_rgba16__png;
+gNpcArea3Tex_043 = npc_blob_3_tex_043_rgba16_rgba16__png;
+ASSERT(npc_blob_3_VRAM == gMonsterFileBuffer, "npc_blob_3: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_3_VRAM + (npc_blob_3_ROM_END - npc_blob_3_ROM_START) <= gShannonActorData,
+       "npc_blob_3 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_4: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea4Tex_000 = npc_blob_4_tex_000_rgba16_rgba16__png;
+gNpcArea4Tex_001 = npc_blob_4_tex_001_rgba16_rgba16__png;
+gNpcArea4Tex_002 = npc_blob_4_tex_002_rgba16_rgba16__png;
+gNpcArea4Tex_003 = npc_blob_4_tex_003_rgba16_rgba16__png;
+gNpcArea4Tex_004 = npc_blob_4_tex_004_rgba16_rgba16__png;
+gNpcArea4Tex_005 = npc_blob_4_tex_005_rgba16_rgba16__png;
+gNpcArea4Tex_006 = npc_blob_4_tex_006_rgba16_rgba16__png;
+gNpcArea4Tex_007 = npc_blob_4_tex_007_rgba16_rgba16__png;
+gNpcArea4Raw_1CDC0 = npc_blob_4_raw_1CDC0_bin;
+gNpcArea4Raw_1D1C0 = npc_blob_4_raw_1D1C0_bin;
+gNpcArea4Raw_1D5C0 = npc_blob_4_raw_1D5C0_bin;
+gNpcArea4Raw_1D7C0 = npc_blob_4_raw_1D7C0_bin;
+gNpcArea4Raw_1D9C0 = npc_blob_4_raw_1D9C0_bin;
+gNpcArea4Raw_1DDC0 = npc_blob_4_raw_1DDC0_bin;
+gNpcArea4Raw_1DEC0 = npc_blob_4_raw_1DEC0_bin;
+gNpcArea4Raw_1E0C0 = npc_blob_4_raw_1E0C0_bin;
+gNpcArea4Raw_1E2C0 = npc_blob_4_raw_1E2C0_bin;
+gNpcArea4Raw_1EAC0 = npc_blob_4_raw_1EAC0_bin;
+gNpcArea4Raw_1ECC0 = npc_blob_4_raw_1ECC0_bin;
+gNpcArea4Raw_1EEC0 = npc_blob_4_raw_1EEC0_bin;
+gNpcArea4Raw_1F1C0 = npc_blob_4_raw_1F1C0_bin;
+gNpcArea4Raw_1F2C0 = npc_blob_4_raw_1F2C0_bin;
+gNpcArea4Raw_1FAC0 = npc_blob_4_raw_1FAC0_bin;
+gNpcArea4Raw_1FCC0 = npc_blob_4_raw_1FCC0_bin;
+gNpcArea4Raw_200C0 = npc_blob_4_raw_200C0_bin;
+gNpcArea4Raw_202C0 = npc_blob_4_raw_202C0_bin;
+gNpcArea4Raw_204C0 = npc_blob_4_raw_204C0_bin;
+gNpcArea4Raw_205C0 = npc_blob_4_raw_205C0_bin;
+gNpcArea4Tex_028 = npc_blob_4_tex_028_rgba16_rgba16__png;
+gNpcArea4Tex_029 = npc_blob_4_tex_029_i4_i4__png;
+gNpcArea4Tex_030 = npc_blob_4_tex_030_rgba16_rgba16__png;
+gNpcArea4Tex_031 = npc_blob_4_tex_031_rgba16_rgba16__png;
+gNpcArea4Tex_032 = npc_blob_4_tex_032_rgba16_rgba16__png;
+gNpcArea4Tex_033 = npc_blob_4_tex_033_rgba16_rgba16__png;
+gNpcArea4Tex_034 = npc_blob_4_tex_034_rgba16_rgba16__png;
+gNpcArea4Tex_035 = npc_blob_4_tex_035_rgba16_rgba16__png;
+gNpcArea4Tex_036 = npc_blob_4_tex_036_rgba16_rgba16__png;
+gNpcArea4Tex_037 = npc_blob_4_tex_037_rgba16_rgba16__png;
+gNpcArea4Tex_038 = npc_blob_4_tex_038_rgba16_rgba16__png;
+gNpcArea4Tex_039 = npc_blob_4_tex_039_rgba16_rgba16__png;
+gNpcArea4Tex_040 = npc_blob_4_tex_040_rgba16_rgba16__png;
+gNpcArea4Tex_041 = npc_blob_4_tex_041_rgba16_rgba16__png;
+gNpcArea4Tex_042 = npc_blob_4_tex_042_rgba16_rgba16__png;
+gNpcArea4Tex_043 = npc_blob_4_tex_043_rgba16_rgba16__png;
+gNpcArea4Tex_044 = npc_blob_4_tex_044_rgba16_rgba16__png;
+gNpcArea4Tex_045 = npc_blob_4_tex_045_rgba16_rgba16__png;
+gNpcArea4Tex_046 = npc_blob_4_tex_046_rgba16_rgba16__png;
+gNpcArea4Tex_047 = npc_blob_4_tex_047_rgba16_rgba16__png;
+gNpcArea4Tex_048 = npc_blob_4_tex_048_rgba16_rgba16__png;
+gNpcArea4Tex_049 = npc_blob_4_tex_049_rgba16_rgba16__png;
+gNpcArea4Tex_050 = npc_blob_4_tex_050_rgba16_rgba16__png;
+gNpcArea4Tex_051 = npc_blob_4_tex_051_rgba16_rgba16__png;
+gNpcArea4Tex_052 = npc_blob_4_tex_052_rgba16_rgba16__png;
+gNpcArea4Tex_053 = npc_blob_4_tex_053_rgba16_rgba16__png;
+gNpcArea4Tex_054 = npc_blob_4_tex_054_rgba16_rgba16__png;
+gNpcArea4Tex_055 = npc_blob_4_tex_055_rgba16_rgba16__png;
+gNpcArea4Tex_056 = npc_blob_4_tex_056_rgba16_rgba16__png;
+gNpcArea4Tex_057 = npc_blob_4_tex_057_rgba16_rgba16__png;
+gNpcArea4Tex_058 = npc_blob_4_tex_058_rgba16_rgba16__png;
+gNpcArea4Tex_059 = npc_blob_4_tex_059_rgba16_rgba16__png;
+gNpcArea4Tex_060 = npc_blob_4_tex_060_rgba16_rgba16__png;
+gNpcArea4Tex_061 = npc_blob_4_tex_061_rgba16_rgba16__png;
+gNpcArea4Tex_062 = npc_blob_4_tex_062_rgba16_rgba16__png;
+gNpcArea4Tex_063 = npc_blob_4_tex_063_rgba16_rgba16__png;
+gNpcArea4Tex_064 = npc_blob_4_tex_064_rgba16_rgba16__png;
+gNpcArea4Tex_065 = npc_blob_4_tex_065_rgba16_rgba16__png;
+gNpcArea4Tex_066 = npc_blob_4_tex_066_rgba16_rgba16__png;
+gNpcArea4Tex_067 = npc_blob_4_tex_067_i4_i4__png;
+gNpcArea4Tex_068 = npc_blob_4_tex_068_rgba16_rgba16__png;
+gNpcArea4Tex_069 = npc_blob_4_tex_069_rgba16_rgba16__png;
+gNpcArea4Tex_070 = npc_blob_4_tex_070_rgba16_rgba16__png;
+gNpcArea4Tex_071 = npc_blob_4_tex_071_rgba16_rgba16__png;
+gNpcArea4Tex_072 = npc_blob_4_tex_072_rgba16_rgba16__png;
+gNpcArea4Tex_073 = npc_blob_4_tex_073_rgba16_rgba16__png;
+gNpcArea4Tex_074 = npc_blob_4_tex_074_rgba16_rgba16__png;
+gNpcArea4Tex_075 = npc_blob_4_tex_075_rgba16_rgba16__png;
+gNpcArea4Tex_076 = npc_blob_4_tex_076_rgba16_rgba16__png;
+gNpcArea4Tex_077 = npc_blob_4_tex_077_rgba16_rgba16__png;
+gNpcArea4Tex_078 = npc_blob_4_tex_078_rgba16_rgba16__png;
+gNpcArea4Tex_079 = npc_blob_4_tex_079_rgba16_rgba16__png;
+gNpcArea4Tex_080 = npc_blob_4_tex_080_rgba16_rgba16__png;
+gNpcArea4Tex_081 = npc_blob_4_tex_081_rgba16_rgba16__png;
+gNpcArea4Tex_082 = npc_blob_4_tex_082_rgba16_rgba16__png;
+gNpcArea4Tex_083 = npc_blob_4_tex_083_rgba16_rgba16__png;
+gNpcArea4Tex_084 = npc_blob_4_tex_084_rgba16_rgba16__png;
+gNpcArea4Tex_085 = npc_blob_4_tex_085_i4_i4__png;
+gNpcArea4Tex_086 = npc_blob_4_tex_086_rgba16_rgba16__png;
+gNpcArea4Tex_087 = npc_blob_4_tex_087_i4_i4__png;
+gNpcArea4Tex_088 = npc_blob_4_tex_088_rgba16_rgba16__png;
+gNpcArea4Tex_089 = npc_blob_4_tex_089_rgba16_rgba16__png;
+gNpcArea4Tex_090 = npc_blob_4_tex_090_rgba16_rgba16__png;
+gNpcArea4Tex_091 = npc_blob_4_tex_091_rgba16_rgba16__png;
+gNpcArea4Tex_092 = npc_blob_4_tex_092_rgba16_rgba16__png;
+gNpcArea4Tex_093 = npc_blob_4_tex_093_rgba16_rgba16__png;
+gNpcArea4Tex_094 = npc_blob_4_tex_094_rgba16_rgba16__png;
+gNpcArea4Tex_095 = npc_blob_4_tex_095_rgba16_rgba16__png;
+gNpcArea4Tex_096 = npc_blob_4_tex_096_rgba16_rgba16__png;
+gNpcArea4Tex_097 = npc_blob_4_tex_097_rgba16_rgba16__png;
+gNpcArea4Tex_098 = npc_blob_4_tex_098_rgba16_rgba16__png;
+gNpcArea4Tex_099 = npc_blob_4_tex_099_rgba16_rgba16__png;
+gNpcArea4Tex_100 = npc_blob_4_tex_100_i4_i4__png;
+gNpcArea4Tex_101 = npc_blob_4_tex_101_i4_i4__png;
+gNpcArea4Tex_102 = npc_blob_4_tex_102_i4_i4__png;
+gNpcArea4Tex_103 = npc_blob_4_tex_103_i4_i4__png;
+gNpcArea4Tex_104 = npc_blob_4_tex_104_rgba16_rgba16__png;
+gNpcArea4Tex_105 = npc_blob_4_tex_105_i4_i4__png;
+gNpcArea4Tex_106 = npc_blob_4_tex_106_i4_i4__png;
+gNpcArea4Tex_107 = npc_blob_4_tex_107_i4_i4__png;
+gNpcArea4Tex_108 = npc_blob_4_tex_108_i4_i4__png;
+gNpcArea4Tex_109 = npc_blob_4_tex_109_i4_i4__png;
+gNpcArea4Tex_110 = npc_blob_4_tex_110_rgba16_rgba16__png;
+gNpcArea4Tex_111 = npc_blob_4_tex_111_rgba16_rgba16__png;
+gNpcArea4Tex_112 = npc_blob_4_tex_112_rgba16_rgba16__png;
+gNpcArea4Tex_113 = npc_blob_4_tex_113_rgba16_rgba16__png;
+gNpcArea4Tex_114 = npc_blob_4_tex_114_rgba16_rgba16__png;
+gNpcArea4Tex_115 = npc_blob_4_tex_115_rgba16_rgba16__png;
+gNpcArea4Tex_116 = npc_blob_4_tex_116_rgba16_rgba16__png;
+gNpcArea4Tex_117 = npc_blob_4_tex_117_rgba16_rgba16__png;
+gNpcArea4Tex_118 = npc_blob_4_tex_118_rgba16_rgba16__png;
+gNpcArea4Tex_119 = npc_blob_4_tex_119_rgba16_rgba16__png;
+gNpcArea4Tex_120 = npc_blob_4_tex_120_rgba16_rgba16__png;
+gNpcArea4Tex_121 = npc_blob_4_tex_121_rgba16_rgba16__png;
+gNpcArea4Tex_122 = npc_blob_4_tex_122_rgba16_rgba16__png;
+gNpcArea4Tex_123 = npc_blob_4_tex_123_rgba16_rgba16__png;
+gNpcArea4Tex_124 = npc_blob_4_tex_124_rgba16_rgba16__png;
+gNpcArea4Tex_125 = npc_blob_4_tex_125_rgba16_rgba16__png;
+ASSERT(npc_blob_4_VRAM == gMonsterFileBuffer, "npc_blob_4: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_4_VRAM + (npc_blob_4_ROM_END - npc_blob_4_ROM_START) <= gShannonActorData,
+       "npc_blob_4 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_5: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea5Tex_000 = npc_blob_5_tex_000_rgba16_rgba16__png;
+gNpcArea5Tex_001 = npc_blob_5_tex_001_rgba16_rgba16__png;
+gNpcArea5Tex_002 = npc_blob_5_tex_002_rgba16_rgba16__png;
+gNpcArea5Tex_003 = npc_blob_5_tex_003_rgba16_rgba16__png;
+gNpcArea5Tex_004 = npc_blob_5_tex_004_rgba16_rgba16__png;
+gNpcArea5Tex_005 = npc_blob_5_tex_005_rgba16_rgba16__png;
+gNpcArea5Tex_006 = npc_blob_5_tex_006_rgba16_rgba16__png;
+gNpcArea5Tex_007 = npc_blob_5_tex_007_rgba16_rgba16__png;
+gNpcArea5Tex_008 = npc_blob_5_tex_008_rgba16_rgba16__png;
+gNpcArea5Tex_009 = npc_blob_5_tex_009_rgba16_rgba16__png;
+gNpcArea5Tex_010 = npc_blob_5_tex_010_rgba16_rgba16__png;
+gNpcArea5Tex_011 = npc_blob_5_tex_011_rgba16_rgba16__png;
+gNpcArea5Tex_012 = npc_blob_5_tex_012_rgba16_rgba16__png;
+gNpcArea5Tex_013 = npc_blob_5_tex_013_rgba16_rgba16__png;
+gNpcArea5Tex_014 = npc_blob_5_tex_014_rgba16_rgba16__png;
+gNpcArea5Tex_015 = npc_blob_5_tex_015_i4_i4__png;
+gNpcArea5Raw_16A90 = npc_blob_5_raw_16A90_bin;
+gNpcArea5Tex_016 = npc_blob_5_tex_016_rgba16_rgba16__png;
+gNpcArea5Tex_017 = npc_blob_5_tex_017_rgba16_rgba16__png;
+gNpcArea5Tex_018 = npc_blob_5_tex_018_rgba16_rgba16__png;
+gNpcArea5Tex_019 = npc_blob_5_tex_019_rgba16_rgba16__png;
+gNpcArea5Tex_020 = npc_blob_5_tex_020_rgba16_rgba16__png;
+gNpcArea5Tex_021 = npc_blob_5_tex_021_rgba16_rgba16__png;
+gNpcArea5Tex_022 = npc_blob_5_tex_022_rgba16_rgba16__png;
+gNpcArea5Tex_023 = npc_blob_5_tex_023_rgba16_rgba16__png;
+gNpcArea5Tex_024 = npc_blob_5_tex_024_rgba16_rgba16__png;
+gNpcArea5Tex_025 = npc_blob_5_tex_025_rgba16_rgba16__png;
+gNpcArea5Tex_026 = npc_blob_5_tex_026_rgba16_rgba16__png;
+gNpcArea5Tex_027 = npc_blob_5_tex_027_rgba16_rgba16__png;
+gNpcArea5Tex_028 = npc_blob_5_tex_028_rgba16_rgba16__png;
+gNpcArea5Tex_029 = npc_blob_5_tex_029_rgba16_rgba16__png;
+gNpcArea5Tex_030 = npc_blob_5_tex_030_rgba16_rgba16__png;
+gNpcArea5Tex_031 = npc_blob_5_tex_031_i4_i4__png;
+gNpcArea5Tex_032 = npc_blob_5_tex_032_i4_i4__png;
+gNpcArea5Tex_033 = npc_blob_5_tex_033_i4_i4__png;
+gNpcArea5Tex_034 = npc_blob_5_tex_034_i4_i4__png;
+gNpcArea5Tex_035 = npc_blob_5_tex_035_rgba16_rgba16__png;
+gNpcArea5Tex_036 = npc_blob_5_tex_036_i4_i4__png;
+gNpcArea5Tex_037 = npc_blob_5_tex_037_i4_i4__png;
+gNpcArea5Tex_038 = npc_blob_5_tex_038_i4_i4__png;
+gNpcArea5Raw_1A230 = npc_blob_5_raw_1A230_bin;
+gNpcArea5Tex_039 = npc_blob_5_tex_039_i4_i4__png;
+gNpcArea5Tex_040 = npc_blob_5_tex_040_i4_i4__png;
+gNpcArea5Raw_1A4B0 = npc_blob_5_raw_1A4B0_bin;
+gNpcArea5Tex_041 = npc_blob_5_tex_041_i4_i4__png;
+gNpcArea5Tex_042 = npc_blob_5_tex_042_i4_i4__png;
+gNpcArea5Tex_043 = npc_blob_5_tex_043_rgba16_rgba16__png;
+gNpcArea5Tex_044 = npc_blob_5_tex_044_rgba16_rgba16__png;
+gNpcArea5Tex_045 = npc_blob_5_tex_045_rgba16_rgba16__png;
+gNpcArea5Tex_046 = npc_blob_5_tex_046_rgba16_rgba16__png;
+gNpcArea5Tex_047 = npc_blob_5_tex_047_rgba16_rgba16__png;
+gNpcArea5Tex_048 = npc_blob_5_tex_048_rgba16_rgba16__png;
+gNpcArea5Tex_049 = npc_blob_5_tex_049_rgba16_rgba16__png;
+gNpcArea5Tex_050 = npc_blob_5_tex_050_rgba16_rgba16__png;
+gNpcArea5Tex_051 = npc_blob_5_tex_051_rgba16_rgba16__png;
+gNpcArea5Tex_052 = npc_blob_5_tex_052_rgba16_rgba16__png;
+gNpcArea5Tex_053 = npc_blob_5_tex_053_rgba16_rgba16__png;
+gNpcArea5Tex_054 = npc_blob_5_tex_054_rgba16_rgba16__png;
+gNpcArea5Tex_055 = npc_blob_5_tex_055_rgba16_rgba16__png;
+gNpcArea5Tex_056 = npc_blob_5_tex_056_rgba16_rgba16__png;
+gNpcArea5Tex_057 = npc_blob_5_tex_057_rgba16_rgba16__png;
+gNpcArea5Tex_058 = npc_blob_5_tex_058_rgba16_rgba16__png;
+gNpcArea5Tex_059 = npc_blob_5_tex_059_rgba16_rgba16__png;
+gNpcArea5Tex_060 = npc_blob_5_tex_060_rgba16_rgba16__png;
+gNpcArea5Tex_061 = npc_blob_5_tex_061_rgba16_rgba16__png;
+gNpcArea5Tex_062 = npc_blob_5_tex_062_rgba16_rgba16__png;
+gNpcArea5Tex_063 = npc_blob_5_tex_063_rgba16_rgba16__png;
+gNpcArea5Tex_064 = npc_blob_5_tex_064_rgba16_rgba16__png;
+gNpcArea5Tex_065 = npc_blob_5_tex_065_rgba16_rgba16__png;
+gNpcArea5Raw_1EA30 = npc_blob_5_raw_1EA30_bin;
+gNpcArea5Raw_1EC30 = npc_blob_5_raw_1EC30_bin;
+gNpcArea5Raw_1EE30 = npc_blob_5_raw_1EE30_bin;
+gNpcArea5Raw_1EF30 = npc_blob_5_raw_1EF30_bin;
+gNpcArea5Raw_1EFB0 = npc_blob_5_raw_1EFB0_bin;
+gNpcArea5Raw_1F3B0 = npc_blob_5_raw_1F3B0_bin;
+gNpcArea5Raw_1F430 = npc_blob_5_raw_1F430_bin;
+gNpcArea5Raw_1F630 = npc_blob_5_raw_1F630_bin;
+gNpcArea5Raw_1F830 = npc_blob_5_raw_1F830_bin;
+gNpcArea5Raw_1F930 = npc_blob_5_raw_1F930_bin;
+gNpcArea5Raw_1F9B0 = npc_blob_5_raw_1F9B0_bin;
+gNpcArea5Raw_1FDB0 = npc_blob_5_raw_1FDB0_bin;
+ASSERT(npc_blob_5_VRAM == gMonsterFileBuffer, "npc_blob_5: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_5_VRAM + (npc_blob_5_ROM_END - npc_blob_5_ROM_START) <= gShannonActorData,
+       "npc_blob_5 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* npc_blob_6: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gNpcArea6Tex_000 = npc_blob_6_tex_000_rgba16_rgba16__png;
+gNpcArea6Tex_001 = npc_blob_6_tex_001_rgba16_rgba16__png;
+gNpcArea6Tex_002 = npc_blob_6_tex_002_rgba16_rgba16__png;
+gNpcArea6Tex_003 = npc_blob_6_tex_003_rgba16_rgba16__png;
+gNpcArea6Tex_004 = npc_blob_6_tex_004_rgba16_rgba16__png;
+gNpcArea6Tex_005 = npc_blob_6_tex_005_rgba16_rgba16__png;
+gNpcArea6Tex_006 = npc_blob_6_tex_006_rgba16_rgba16__png;
+gNpcArea6Tex_007 = npc_blob_6_tex_007_rgba16_rgba16__png;
+gNpcArea6Tex_008 = npc_blob_6_tex_008_rgba16_rgba16__png;
+gNpcArea6Tex_009 = npc_blob_6_tex_009_rgba16_rgba16__png;
+gNpcArea6Tex_010 = npc_blob_6_tex_010_rgba16_rgba16__png;
+gNpcArea6Tex_011 = npc_blob_6_tex_011_rgba16_rgba16__png;
+gNpcArea6Tex_012 = npc_blob_6_tex_012_rgba16_rgba16__png;
+gNpcArea6Tex_013 = npc_blob_6_tex_013_rgba16_rgba16__png;
+gNpcArea6Tex_014 = npc_blob_6_tex_014_rgba16_rgba16__png;
+gNpcArea6Tex_015 = npc_blob_6_tex_015_rgba16_rgba16__png;
+gNpcArea6Tex_016 = npc_blob_6_tex_016_rgba16_rgba16__png;
+gNpcArea6Tex_017 = npc_blob_6_tex_017_rgba16_rgba16__png;
+gNpcArea6Tex_018 = npc_blob_6_tex_018_rgba16_rgba16__png;
+gNpcArea6Tex_019 = npc_blob_6_tex_019_rgba16_rgba16__png;
+gNpcArea6Tex_020 = npc_blob_6_tex_020_rgba16_rgba16__png;
+gNpcArea6Tex_021 = npc_blob_6_tex_021_rgba16_rgba16__png;
+gNpcArea6Tex_022 = npc_blob_6_tex_022_rgba16_rgba16__png;
+gNpcArea6Tex_023 = npc_blob_6_tex_023_rgba16_rgba16__png;
+gNpcArea6Tex_024 = npc_blob_6_tex_024_rgba16_rgba16__png;
+gNpcArea6Tex_025 = npc_blob_6_tex_025_rgba16_rgba16__png;
+gNpcArea6Tex_026 = npc_blob_6_tex_026_rgba16_rgba16__png;
+gNpcArea6Tex_027 = npc_blob_6_tex_027_rgba16_rgba16__png;
+gNpcArea6Tex_028 = npc_blob_6_tex_028_rgba16_rgba16__png;
+gNpcArea6Tex_029 = npc_blob_6_tex_029_rgba16_rgba16__png;
+gNpcArea6Tex_030 = npc_blob_6_tex_030_rgba16_rgba16__png;
+gNpcArea6Tex_031 = npc_blob_6_tex_031_rgba16_rgba16__png;
+gNpcArea6Tex_032 = npc_blob_6_tex_032_rgba16_rgba16__png;
+gNpcArea6Tex_033 = npc_blob_6_tex_033_rgba16_rgba16__png;
+gNpcArea6Tex_034 = npc_blob_6_tex_034_rgba16_rgba16__png;
+gNpcArea6Tex_035 = npc_blob_6_tex_035_rgba16_rgba16__png;
+gNpcArea6Tex_036 = npc_blob_6_tex_036_rgba16_rgba16__png;
+gNpcArea6Tex_037 = npc_blob_6_tex_037_rgba16_rgba16__png;
+gNpcArea6Tex_038 = npc_blob_6_tex_038_rgba16_rgba16__png;
+gNpcArea6Tex_039 = npc_blob_6_tex_039_rgba16_rgba16__png;
+gNpcArea6Tex_040 = npc_blob_6_tex_040_rgba16_rgba16__png;
+gNpcArea6Tex_041 = npc_blob_6_tex_041_rgba16_rgba16__png;
+gNpcArea6Tex_042 = npc_blob_6_tex_042_rgba16_rgba16__png;
+gNpcArea6Tex_043 = npc_blob_6_tex_043_i4_i4__png;
+gNpcArea6Tex_044 = npc_blob_6_tex_044_i4_i4__png;
+gNpcArea6Raw_23560 = npc_blob_6_raw_23560_bin;
+gNpcArea6Tex_045 = npc_blob_6_tex_045_rgba16_rgba16__png;
+gNpcArea6Tex_046 = npc_blob_6_tex_046_i4_i4__png;
+gNpcArea6Tex_047 = npc_blob_6_tex_047_rgba16_rgba16__png;
+gNpcArea6Tex_048 = npc_blob_6_tex_048_rgba16_rgba16__png;
+gNpcArea6Tex_049 = npc_blob_6_tex_049_rgba16_rgba16__png;
+gNpcArea6Tex_050 = npc_blob_6_tex_050_rgba16_rgba16__png;
+gNpcArea6Tex_051 = npc_blob_6_tex_051_i4_i4__png;
+gNpcArea6Tex_052 = npc_blob_6_tex_052_i4_i4__png;
+gNpcArea6Tex_053 = npc_blob_6_tex_053_rgba16_rgba16__png;
+gNpcArea6Tex_054 = npc_blob_6_tex_054_rgba16_rgba16__png;
+gNpcArea6Tex_055 = npc_blob_6_tex_055_rgba16_rgba16__png;
+gNpcArea6Tex_056 = npc_blob_6_tex_056_rgba16_rgba16__png;
+gNpcArea6Tex_057 = npc_blob_6_tex_057_rgba16_rgba16__png;
+gNpcArea6Tex_058 = npc_blob_6_tex_058_rgba16_rgba16__png;
+gNpcArea6Tex_059 = npc_blob_6_tex_059_rgba16_rgba16__png;
+gNpcArea6Tex_060 = npc_blob_6_tex_060_rgba16_rgba16__png;
+gNpcArea6Tex_061 = npc_blob_6_tex_061_rgba16_rgba16__png;
+gNpcArea6Tex_062 = npc_blob_6_tex_062_rgba16_rgba16__png;
+gNpcArea6Tex_063 = npc_blob_6_tex_063_rgba16_rgba16__png;
+gNpcArea6Tex_064 = npc_blob_6_tex_064_rgba16_rgba16__png;
+gNpcArea6Tex_065 = npc_blob_6_tex_065_rgba16_rgba16__png;
+gNpcArea6Tex_066 = npc_blob_6_tex_066_rgba16_rgba16__png;
+gNpcArea6Tex_067 = npc_blob_6_tex_067_rgba16_rgba16__png;
+gNpcArea6Tex_068 = npc_blob_6_tex_068_rgba16_rgba16__png;
+gNpcArea6Tex_069 = npc_blob_6_tex_069_rgba16_rgba16__png;
+gNpcArea6Tex_070 = npc_blob_6_tex_070_rgba16_rgba16__png;
+gNpcArea6Tex_071 = npc_blob_6_tex_071_rgba16_rgba16__png;
+gNpcArea6Tex_072 = npc_blob_6_tex_072_rgba16_rgba16__png;
+gNpcArea6Tex_073 = npc_blob_6_tex_073_rgba16_rgba16__png;
+gNpcArea6Tex_074 = npc_blob_6_tex_074_rgba16_rgba16__png;
+gNpcArea6Tex_075 = npc_blob_6_tex_075_rgba16_rgba16__png;
+gNpcArea6Tex_076 = npc_blob_6_tex_076_rgba16_rgba16__png;
+gNpcArea6Tex_077 = npc_blob_6_tex_077_rgba16_rgba16__png;
+gNpcArea6Tex_078 = npc_blob_6_tex_078_rgba16_rgba16__png;
+gNpcArea6Tex_079 = npc_blob_6_tex_079_rgba16_rgba16__png;
+gNpcArea6Tex_080 = npc_blob_6_tex_080_rgba16_rgba16__png;
+gNpcArea6Tex_081 = npc_blob_6_tex_081_rgba16_rgba16__png;
+gNpcArea6Tex_082 = npc_blob_6_tex_082_rgba16_rgba16__png;
+gNpcArea6Tex_083 = npc_blob_6_tex_083_rgba16_rgba16__png;
+gNpcArea6Tex_084 = npc_blob_6_tex_084_rgba16_rgba16__png;
+gNpcArea6Tex_085 = npc_blob_6_tex_085_rgba16_rgba16__png;
+gNpcArea6Tex_086 = npc_blob_6_tex_086_rgba16_rgba16__png;
+gNpcArea6Tex_087 = npc_blob_6_tex_087_i4_i4__png;
+gNpcArea6Tex_088 = npc_blob_6_tex_088_i4_i4__png;
+gNpcArea6Tex_089 = npc_blob_6_tex_089_i4_i4__png;
+gNpcArea6Tex_090 = npc_blob_6_tex_090_i4_i4__png;
+gNpcArea6Tex_091 = npc_blob_6_tex_091_rgba16_rgba16__png;
+gNpcArea6Tex_092 = npc_blob_6_tex_092_i4_i4__png;
+gNpcArea6Tex_093 = npc_blob_6_tex_093_i4_i4__png;
+gNpcArea6Tex_094 = npc_blob_6_tex_094_i4_i4__png;
+gNpcArea6Tex_095 = npc_blob_6_tex_095_i4_i4__png;
+gNpcArea6Tex_096 = npc_blob_6_tex_096_i4_i4__png;
+gNpcArea6Tex_097 = npc_blob_6_tex_097_rgba16_rgba16__png;
+gNpcArea6Tex_098 = npc_blob_6_tex_098_rgba16_rgba16__png;
+gNpcArea6Tex_099 = npc_blob_6_tex_099_rgba16_rgba16__png;
+gNpcArea6Tex_100 = npc_blob_6_tex_100_rgba16_rgba16__png;
+gNpcArea6Tex_101 = npc_blob_6_tex_101_rgba16_rgba16__png;
+gNpcArea6Tex_102 = npc_blob_6_tex_102_rgba16_rgba16__png;
+gNpcArea6Tex_103 = npc_blob_6_tex_103_rgba16_rgba16__png;
+gNpcArea6Tex_104 = npc_blob_6_tex_104_rgba16_rgba16__png;
+gNpcArea6Tex_105 = npc_blob_6_tex_105_rgba16_rgba16__png;
+gNpcArea6Tex_106 = npc_blob_6_tex_106_rgba16_rgba16__png;
+gNpcArea6Tex_107 = npc_blob_6_tex_107_rgba16_rgba16__png;
+gNpcArea6Tex_108 = npc_blob_6_tex_108_rgba16_rgba16__png;
+gNpcArea6Tex_109 = npc_blob_6_tex_109_rgba16_rgba16__png;
+gNpcArea6Tex_110 = npc_blob_6_tex_110_rgba16_rgba16__png;
+gNpcArea6Tex_111 = npc_blob_6_tex_111_rgba16_rgba16__png;
+gNpcArea6Tex_112 = npc_blob_6_tex_112_rgba16_rgba16__png;
+gNpcArea6Tex_113 = npc_blob_6_tex_113_rgba16_rgba16__png;
+gNpcArea6Tex_114 = npc_blob_6_tex_114_rgba16_rgba16__png;
+gNpcArea6Tex_115 = npc_blob_6_tex_115_rgba16_rgba16__png;
+gNpcArea6Tex_116 = npc_blob_6_tex_116_rgba16_rgba16__png;
+gNpcArea6Tex_117 = npc_blob_6_tex_117_rgba16_rgba16__png;
+gNpcArea6Tex_118 = npc_blob_6_tex_118_rgba16_rgba16__png;
+gNpcArea6Tex_119 = npc_blob_6_tex_119_rgba16_rgba16__png;
+gNpcArea6Tex_120 = npc_blob_6_tex_120_rgba16_rgba16__png;
+gNpcArea6Tex_121 = npc_blob_6_tex_121_rgba16_rgba16__png;
+gNpcArea6Tex_122 = npc_blob_6_tex_122_rgba16_rgba16__png;
+gNpcArea6Tex_123 = npc_blob_6_tex_123_rgba16_rgba16__png;
+gNpcArea6Tex_124 = npc_blob_6_tex_124_rgba16_rgba16__png;
+gNpcArea6Tex_125 = npc_blob_6_tex_125_rgba16_rgba16__png;
+gNpcArea6Tex_126 = npc_blob_6_tex_126_rgba16_rgba16__png;
+gNpcArea6Tex_127 = npc_blob_6_tex_127_rgba16_rgba16__png;
+gNpcArea6Tex_128 = npc_blob_6_tex_128_rgba16_rgba16__png;
+gNpcArea6Tex_129 = npc_blob_6_tex_129_rgba16_rgba16__png;
+gNpcArea6Tex_130 = npc_blob_6_tex_130_rgba16_rgba16__png;
+gNpcArea6Tex_131 = npc_blob_6_tex_131_rgba16_rgba16__png;
+gNpcArea6Tex_132 = npc_blob_6_tex_132_rgba16_rgba16__png;
+gNpcArea6Tex_133 = npc_blob_6_tex_133_rgba16_rgba16__png;
+gNpcArea6Tex_134 = npc_blob_6_tex_134_rgba16_rgba16__png;
+gNpcArea6Tex_135 = npc_blob_6_tex_135_rgba16_rgba16__png;
+gNpcArea6Tex_136 = npc_blob_6_tex_136_rgba16_rgba16__png;
+gNpcArea6Tex_137 = npc_blob_6_tex_137_rgba16_rgba16__png;
+gNpcArea6Tex_138 = npc_blob_6_tex_138_rgba16_rgba16__png;
+gNpcArea6Tex_139 = npc_blob_6_tex_139_rgba16_rgba16__png;
+gNpcArea6Tex_140 = npc_blob_6_tex_140_rgba16_rgba16__png;
+gNpcArea6Tex_141 = npc_blob_6_tex_141_rgba16_rgba16__png;
+gNpcArea6Tex_142 = npc_blob_6_tex_142_rgba16_rgba16__png;
+gNpcArea6Tex_143 = npc_blob_6_tex_143_rgba16_rgba16__png;
+gNpcArea6Tex_144 = npc_blob_6_tex_144_rgba16_rgba16__png;
+gNpcArea6Tex_145 = npc_blob_6_tex_145_rgba16_rgba16__png;
+gNpcArea6Tex_146 = npc_blob_6_tex_146_rgba16_rgba16__png;
+gNpcArea6Tex_147 = npc_blob_6_tex_147_rgba16_rgba16__png;
+gNpcArea6Tex_148 = npc_blob_6_tex_148_rgba16_rgba16__png;
+gNpcArea6Tex_149 = npc_blob_6_tex_149_rgba16_rgba16__png;
+gNpcArea6Tex_150 = npc_blob_6_tex_150_rgba16_rgba16__png;
+gNpcArea6Tex_151 = npc_blob_6_tex_151_rgba16_rgba16__png;
+gNpcArea6Tex_152 = npc_blob_6_tex_152_rgba16_rgba16__png;
+gNpcArea6Tex_153 = npc_blob_6_tex_153_rgba16_rgba16__png;
+gNpcArea6Tex_154 = npc_blob_6_tex_154_rgba16_rgba16__png;
+gNpcArea6Tex_155 = npc_blob_6_tex_155_rgba16_rgba16__png;
+gNpcArea6Tex_156 = npc_blob_6_tex_156_rgba16_rgba16__png;
+gNpcArea6Tex_157 = npc_blob_6_tex_157_rgba16_rgba16__png;
+gNpcArea6Tex_158 = npc_blob_6_tex_158_rgba16_rgba16__png;
+gNpcArea6Tex_159 = npc_blob_6_tex_159_rgba16_rgba16__png;
+gNpcArea6Tex_160 = npc_blob_6_tex_160_rgba16_rgba16__png;
+ASSERT(npc_blob_6_VRAM == gMonsterFileBuffer, "npc_blob_6: LoadNPCArea loads it to gMonsterFileBuffer");
+ASSERT(npc_blob_6_VRAM + (npc_blob_6_ROM_END - npc_blob_6_ROM_START) <= gShannonActorData,
+       "npc_blob_6 has outgrown the NPC buffer: it would overwrite the NPC areas' actor (gShannonActorData)");
+/* shannon_actor: each texture's name at its image and each raw piece's name at its bytes, linker symbols of the segment */
+gShannonTex_000 = shannon_actor_tex_000_rgba16_rgba16__png;
+gShannonTex_001 = shannon_actor_tex_001_rgba16_rgba16__png;
+gShannonTex_002 = shannon_actor_tex_002_rgba16_rgba16__png;
+gShannonTex_003 = shannon_actor_tex_003_rgba16_rgba16__png;
+gShannonTex_004 = shannon_actor_tex_004_rgba16_rgba16__png;
+gShannonTex_005 = shannon_actor_tex_005_rgba16_rgba16__png;
+gShannonTex_006 = shannon_actor_tex_006_rgba16_rgba16__png;
+gShannonTex_007 = shannon_actor_tex_007_rgba16_rgba16__png;
+gShannonTex_008 = shannon_actor_tex_008_rgba16_rgba16__png;
+ASSERT(shannon_actor_VRAM == gShannonActorData, "shannon_actor: LoadNPCArea loads it to gShannonActorData");
+ASSERT(shannon_actor_VRAM + (shannon_actor_ROM_END - shannon_actor_ROM_START) <= gBossVAddr,
+       "shannon_actor has outgrown its room: it would reach the boss file buffer (gBossVAddr)");
+/* event_blob_a: its raw pieces at their bytes; its RAM and size locked: the binary text pages and scene table
+   hold the NPC records' addresses and the text's */
+gEventBlobARaw_00000 = event_blob_a_raw_00000_bin;
+gEventBlobARaw_013E8 = event_blob_a_raw_013E8_bin;
+gEndingScenes = gEventBlobARaw_013E8 + 0xFC;   /* the ending's seven scenes (EndingScene, 0x40 each): LoadEndingScene, FadeSceneMusic */
+ASSERT(event_blob_a_VRAM == gEventBlob, "event_blob_a: the ending loads its data to gEventBlob");
+ASSERT(event_blob_a_ROM_END - event_blob_a_ROM_START == 0x16B0, "event_blob_a: its binary parts hold addresses inside it: its size is locked");
+ASSERT(gEndingScene0Npcs == 0x801C11D8, "event_blob_a: the scene table (binary) holds the NPC records' addresses");
+/* brian_model: each texture's name at its image, linker symbols of the segment */
+gBrianModelTex_003B0 = brian_model_tex_003B0_rgba16_rgba16__png;
+gBrianModelTex_00430 = brian_model_tex_00430_i4_i4__png;
+gBrianModelTex_00470 = brian_model_tex_00470_rgba16_rgba16__png;
+gBrianModelTex_004E0 = brian_model_tex_004E0_ia4_ia4__png;
+gBrianModelTex_00560 = brian_model_tex_00560_rgba16_rgba16__png;
+gBrianModelTex_00D60 = brian_model_tex_00D60_rgba16_rgba16__png;
+gBrianModelTex_01560 = brian_model_tex_01560_rgba16_rgba16__png;
+gBrianModelTex_01D60 = brian_model_tex_01D60_rgba16_rgba16__png;
+gBrianModelTex_01F60 = brian_model_tex_01F60_rgba16_rgba16__png;
+gBrianModelTex_02160 = brian_model_tex_02160_rgba16_rgba16__png;
+gBrianModelTex_02460 = brian_model_tex_02460_rgba16_rgba16__png;
+gBrianModelTex_02640 = brian_model_tex_02640_rgba16_rgba16__png;
+gBrianModelTex_02740 = brian_model_tex_02740_i4_i4__png;
+gBrianModelTex_027C0 = brian_model_tex_027C0_rgba16_rgba16__png;
+gBrianModelTex_029C0 = brian_model_tex_029C0_rgba16_rgba16__png;
+gBrianModelTex_02AC0 = brian_model_tex_02AC0_rgba16_rgba16__png;
+gBrianModelTex_02C40 = brian_model_tex_02C40_rgba16_rgba16__png;
+gBrianModelTex_02E40 = brian_model_tex_02E40_rgba16_rgba16__png;
+gBrianModelTex_02F20 = brian_model_tex_02F20_rgba16_rgba16__png;
+gBrianModelTex_03120 = brian_model_tex_03120_rgba16_rgba16__png;
+gBrianModelTex_03220 = brian_model_tex_03220_ia4_ia4__png;
+gBrianModelTex_03340 = brian_model_tex_03340_rgba16_rgba16__png;
+gBrianModelTex_03540 = brian_model_tex_03540_rgba16_rgba16__png;
+/* Brian's model's link address (configure.py writes it into the linker script; the original's 0x80206000, the
+   address splat extracts and names its records at): lower it for a larger model, above the largest animation */
+brian_model_LINK = 0x80206000;
+/* Brian's RAM: his animation files at LoadBrianAnimation's buffer, an immediate in its code; each file below
+   the model; the model below the overlay slot (the NPCs' held objects in play, the title, intro and ending
+   overlays). The largest animation and the model share the RAM between the buffer and the slot. */
+ASSERT(brian_anim_00_VRAM == 0x80200000, "brian_anim_00: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_00_VRAM + (brian_anim_00_ROM_END - brian_anim_00_ROM_START) <= brian_model_VRAM, "brian_anim_00 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_01_VRAM == 0x80200000, "brian_anim_01: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_01_VRAM + (brian_anim_01_ROM_END - brian_anim_01_ROM_START) <= brian_model_VRAM, "brian_anim_01 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_02_VRAM == 0x80200000, "brian_anim_02: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_02_VRAM + (brian_anim_02_ROM_END - brian_anim_02_ROM_START) <= brian_model_VRAM, "brian_anim_02 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_03_VRAM == 0x80200000, "brian_anim_03: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_03_VRAM + (brian_anim_03_ROM_END - brian_anim_03_ROM_START) <= brian_model_VRAM, "brian_anim_03 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_04_VRAM == 0x80200000, "brian_anim_04: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_04_VRAM + (brian_anim_04_ROM_END - brian_anim_04_ROM_START) <= brian_model_VRAM, "brian_anim_04 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_05_VRAM == 0x80200000, "brian_anim_05: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_05_VRAM + (brian_anim_05_ROM_END - brian_anim_05_ROM_START) <= brian_model_VRAM, "brian_anim_05 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_06_VRAM == 0x80200000, "brian_anim_06: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_06_VRAM + (brian_anim_06_ROM_END - brian_anim_06_ROM_START) <= brian_model_VRAM, "brian_anim_06 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_07_VRAM == 0x80200000, "brian_anim_07: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_07_VRAM + (brian_anim_07_ROM_END - brian_anim_07_ROM_START) <= brian_model_VRAM, "brian_anim_07 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_08_VRAM == 0x80200000, "brian_anim_08: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_08_VRAM + (brian_anim_08_ROM_END - brian_anim_08_ROM_START) <= brian_model_VRAM, "brian_anim_08 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_09_VRAM == 0x80200000, "brian_anim_09: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_09_VRAM + (brian_anim_09_ROM_END - brian_anim_09_ROM_START) <= brian_model_VRAM, "brian_anim_09 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_10_VRAM == 0x80200000, "brian_anim_10: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_10_VRAM + (brian_anim_10_ROM_END - brian_anim_10_ROM_START) <= brian_model_VRAM, "brian_anim_10 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_11_VRAM == 0x80200000, "brian_anim_11: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_11_VRAM + (brian_anim_11_ROM_END - brian_anim_11_ROM_START) <= brian_model_VRAM, "brian_anim_11 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_12_VRAM == 0x80200000, "brian_anim_12: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_12_VRAM + (brian_anim_12_ROM_END - brian_anim_12_ROM_START) <= brian_model_VRAM, "brian_anim_12 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_13_VRAM == 0x80200000, "brian_anim_13: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_13_VRAM + (brian_anim_13_ROM_END - brian_anim_13_ROM_START) <= brian_model_VRAM, "brian_anim_13 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_14_VRAM == 0x80200000, "brian_anim_14: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_14_VRAM + (brian_anim_14_ROM_END - brian_anim_14_ROM_START) <= brian_model_VRAM, "brian_anim_14 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_15_VRAM == 0x80200000, "brian_anim_15: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_15_VRAM + (brian_anim_15_ROM_END - brian_anim_15_ROM_START) <= brian_model_VRAM, "brian_anim_15 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_16_VRAM == 0x80200000, "brian_anim_16: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_16_VRAM + (brian_anim_16_ROM_END - brian_anim_16_ROM_START) <= brian_model_VRAM, "brian_anim_16 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_17_VRAM == 0x80200000, "brian_anim_17: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_17_VRAM + (brian_anim_17_ROM_END - brian_anim_17_ROM_START) <= brian_model_VRAM, "brian_anim_17 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_18_VRAM == 0x80200000, "brian_anim_18: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_18_VRAM + (brian_anim_18_ROM_END - brian_anim_18_ROM_START) <= brian_model_VRAM, "brian_anim_18 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_19_VRAM == 0x80200000, "brian_anim_19: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_19_VRAM + (brian_anim_19_ROM_END - brian_anim_19_ROM_START) <= brian_model_VRAM, "brian_anim_19 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_20_VRAM == 0x80200000, "brian_anim_20: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_20_VRAM + (brian_anim_20_ROM_END - brian_anim_20_ROM_START) <= brian_model_VRAM, "brian_anim_20 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_21_VRAM == 0x80200000, "brian_anim_21: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_21_VRAM + (brian_anim_21_ROM_END - brian_anim_21_ROM_START) <= brian_model_VRAM, "brian_anim_21 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_22_VRAM == 0x80200000, "brian_anim_22: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_22_VRAM + (brian_anim_22_ROM_END - brian_anim_22_ROM_START) <= brian_model_VRAM, "brian_anim_22 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_23_VRAM == 0x80200000, "brian_anim_23: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_23_VRAM + (brian_anim_23_ROM_END - brian_anim_23_ROM_START) <= brian_model_VRAM, "brian_anim_23 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_24_VRAM == 0x80200000, "brian_anim_24: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_24_VRAM + (brian_anim_24_ROM_END - brian_anim_24_ROM_START) <= brian_model_VRAM, "brian_anim_24 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_25_VRAM == 0x80200000, "brian_anim_25: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_25_VRAM + (brian_anim_25_ROM_END - brian_anim_25_ROM_START) <= brian_model_VRAM, "brian_anim_25 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_26_VRAM == 0x80200000, "brian_anim_26: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_26_VRAM + (brian_anim_26_ROM_END - brian_anim_26_ROM_START) <= brian_model_VRAM, "brian_anim_26 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_27_VRAM == 0x80200000, "brian_anim_27: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_27_VRAM + (brian_anim_27_ROM_END - brian_anim_27_ROM_START) <= brian_model_VRAM, "brian_anim_27 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_28_VRAM == 0x80200000, "brian_anim_28: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_28_VRAM + (brian_anim_28_ROM_END - brian_anim_28_ROM_START) <= brian_model_VRAM, "brian_anim_28 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_anim_29_VRAM == 0x80200000, "brian_anim_29: LoadBrianAnimation loads it to 0x80200000, an immediate in its code (BRIAN_ANIM_BUFFER)");
+ASSERT(brian_anim_29_VRAM + (brian_anim_29_ROM_END - brian_anim_29_ROM_START) <= brian_model_VRAM, "brian_anim_29 has outgrown the animation buffer: it would overwrite Brian's model");
+ASSERT(brian_model_VRAM + (brian_model_ROM_END - brian_model_ROM_START) <= npc_held_objects_VRAM, "brian_model has outgrown its room: it would run into the overlay slot (the NPCs' held objects; the title, intro and credits overlays)");
+/* the Controller Pak manager's frame-buffer clear loop (boot only, before InitBrian): splat pairs its lui with the step
+   addiu as one value; fixed, so it is no record of Brian's animation files (symbol_addrs.txt) */
+D_80200010 = 0x80200010;
+
+/* the save system's record read (src/game/save_menu.c, include/game/save_format.h): ScanSaveList reads a note's whole 0x80-byte record into
+   gSaveRecordBuffer, which gSaveRecordBufferTail follows (the two sized to SAVE_RECORD_BYTES): no other variable may lie in
+   those 0x80 bytes, or a load would overwrite it */
+ASSERT(gSaveRecordBufferTail == gSaveRecordBuffer + 0x68,
+       "the save record buffer's tail has moved: a 0x80-byte record read fills gSaveRecordBuffer and the 0x18 bytes after it");
+ASSERT(gPakReadBuffer >= gSaveRecordBuffer + 0x80,
+       "the save record buffer has lost its room: the 0x80-byte record read would overwrite gPakReadBuffer");
+
+/* the boot-time Controller Pak manager: mainproc copies it to D_80100000 and calls ControllerPakMenu there */
+ASSERT(pak_menu_module_VRAM == D_80100000,
+       "the Controller Pak manager is linked away from where mainproc copies it (D_80100000)");
+/* its RAM must end below the two frame buffers it clears and draws into (0x80200000, 0x80225800) */
+ASSERT(pak_menu_module_BSS_END <= 0x80200000,
+       "the Controller Pak manager has outgrown its RAM: it would reach the frame buffers at 0x80200000");

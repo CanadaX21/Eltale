@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/intro.h"
 
 /*

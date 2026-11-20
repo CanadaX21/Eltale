@@ -11,10 +11,13 @@ if [[ "$actual_hash" != "$expected_hash" ]]; then
     echo "Error: baserom.jp.z64 has an invalid SHA1 hash"
     exit 1
 fi
-# the Python environment made by tools/setup.sh, if there is one
-PYTHON=python3
-if [[ -x .venv/bin/python3 ]]; then
-    PYTHON=.venv/bin/python3
+# the Python that runs the build's tools: $PYTHON if it is set, else the repository's .venv when
+# there is one, else python3
+if [[ -z "${PYTHON:-}" ]]; then
+    PYTHON=python3
+    if [[ -x .venv/bin/python3 ]]; then
+        PYTHON=.venv/bin/python3
+    fi
 fi
 for f in tools/splat/split.py tools/asm-processor/build.py tools/ido_5.3/usr/lib/cc include/2.0I/ultra64.h; do
     if [[ ! -e "$f" ]]; then
@@ -27,6 +30,15 @@ if ! command -v "${CPP:-cpp}" > /dev/null; then
     echo "Error: the C preprocessor (cpp) not found: install build-essential (README, step 1)"
     exit 1
 fi
-# stop when the split fails: configure.py would otherwise write a build from the files an earlier split left
-"$PYTHON" tools/splat/split.py eltail.jp.yaml || { echo "Error: splat failed: configure.py not run" >&2; exit 1; }
+# authored asset changes (tools/asset_patches.py): stop before the split would overwrite an edit that is not kept
+"$PYTHON" tools/asset_patches.py guard --begin-split || { echo "Error: an edit in assets/ is not kept: nothing split" >&2; exit 1; }
+# stop when the split fails: configure.py would otherwise write a build from the files an earlier split left (what
+# the split did rewrite becomes the new pristine copies first, so the next guard does not read it as edits)
+"$PYTHON" tools/splat/split.py eltail.jp.yaml || { "$PYTHON" tools/asset_patches.py resync; echo "Error: splat failed: configure.py not run" >&2; exit 1; }
+# the display lists', vertex runs' and textures' pristine copies and kept changes (the record files' are the
+# record types' own)
+"$PYTHON" tools/asset_patches.py extracted || { echo "Error: a kept asset change failed: configure.py not run" >&2; exit 1; }
+# no typed asset file may name another segment's record (splat names display-list addresses from every segment)
+"$PYTHON" tools/check_asset_names.py || { echo "Error: an asset file names another segment's record: configure.py not run" >&2; exit 1; }
+"$PYTHON" tools/check_pak_menu_data.py || { echo "Error: the Controller Pak manager's data names another segment's symbol: configure.py not run" >&2; exit 1; }
 "$PYTHON" configure.py "$@"

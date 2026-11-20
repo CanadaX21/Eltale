@@ -1,11 +1,16 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/sound.h"
 #include "game/audio.h"
+#include "game/start_menu.h"
+#include "segment_symbols.h"
+#include "monster_sets.h"
+#include "maps.h"
+#include "brian.h"
 /* The music and sound requests (InitializeSoundData to SetBGMVolume), and after the code main's game tables (this
    file's .data). The Start menu that followed the sound code in this unit is its own file, start_menu.c: this file's
    .bss ends eight bytes before the menu's, as a .bss padded to sixteen does, and the menu's first function starts
    on a sixteen-byte boundary. */
-extern u8 gSoundVolumes[];
 /* ---- this file's .bss (0x8008FAF0-0x8008FB27), in address order; the object pads it to 0x8008FB30 ---- */
 s8 gMusicPlaying;                 /* the music playing, -1 = none */
 s8 gNextMusic;                    /* the music to play next (RequestMusic) */
@@ -13,14 +18,6 @@ u16 gMusicChangeFlags;            /* 1 change requested, 2 stop the current, 4 s
 u8 gSoundVolume;
 u16 gMusicChangeDelay;
 DelayedSound gDelayedSounds[16];  /* sounds waiting for their delay (PlaySound) */
-/* background music by place: 0x48 entries (FindMapBGM); room -1 = any room of the map */
-typedef struct {
-    s16 map;
-    s16 room;
-    s8 song;
-    s8 pad;
-} BgmEntry;
-extern BgmEntry gMapBgmTable[];
 
 void InitializeSoundData(void) {
     s32 i;
@@ -160,8 +157,6 @@ void PlaySoundNow(s8 id, u8 level) {
         PushSoundQueue(id, volume, 0x40);
     }
 }
-extern u8 gMusicVolumeLevels[];
-extern s8 gMusicVolumeSetting;
 void SetBGMVolume(void) {
     ApplyMusicVolume(gMusicVolumeLevels[gMusicVolumeSetting]);
 }
@@ -173,49 +168,6 @@ void SetBGMVolume(void) {
    way. ROM offsets are the segments' own symbols, so the tables follow the assets if those move or change size;
    addresses inside files loaded at run time (above main's image) stay numbers. Texture, palette and text bytes are
    spans read from the ROM at build time (GLOBAL_ASM .incbin): the source holds their offsets, not their bytes. */
-extern u8 brian_anim_00_ROM_START[], brian_anim_00_ROM_END[];
-extern u8 brian_anim_01_ROM_START[], brian_anim_01_ROM_END[];
-extern u8 brian_anim_02_ROM_START[], brian_anim_02_ROM_END[];
-extern u8 brian_anim_03_ROM_START[], brian_anim_03_ROM_END[];
-extern u8 brian_anim_04_ROM_START[], brian_anim_04_ROM_END[];
-extern u8 brian_anim_05_ROM_START[], brian_anim_05_ROM_END[];
-extern u8 brian_anim_06_ROM_START[], brian_anim_06_ROM_END[];
-extern u8 brian_anim_07_ROM_START[], brian_anim_07_ROM_END[];
-extern u8 brian_anim_08_ROM_START[], brian_anim_08_ROM_END[];
-extern u8 brian_anim_09_ROM_START[], brian_anim_09_ROM_END[];
-extern u8 brian_anim_10_ROM_START[], brian_anim_10_ROM_END[];
-extern u8 brian_anim_11_ROM_START[], brian_anim_11_ROM_END[];
-extern u8 brian_anim_12_ROM_START[], brian_anim_12_ROM_END[];
-extern u8 brian_anim_13_ROM_START[], brian_anim_13_ROM_END[];
-extern u8 brian_anim_14_ROM_START[], brian_anim_14_ROM_END[];
-extern u8 brian_anim_15_ROM_START[], brian_anim_15_ROM_END[];
-extern u8 brian_anim_16_ROM_START[], brian_anim_16_ROM_END[];
-extern u8 brian_anim_17_ROM_START[], brian_anim_17_ROM_END[];
-extern u8 brian_anim_18_ROM_START[], brian_anim_18_ROM_END[];
-extern u8 brian_anim_19_ROM_START[], brian_anim_19_ROM_END[];
-extern u8 brian_anim_20_ROM_START[], brian_anim_20_ROM_END[];
-extern u8 brian_anim_21_ROM_START[], brian_anim_21_ROM_END[];
-extern u8 brian_anim_22_ROM_START[], brian_anim_22_ROM_END[];
-extern u8 brian_anim_23_ROM_START[], brian_anim_23_ROM_END[];
-extern u8 brian_anim_24_ROM_START[], brian_anim_24_ROM_END[];
-extern u8 brian_anim_25_ROM_START[], brian_anim_25_ROM_END[];
-extern u8 brian_anim_26_ROM_START[], brian_anim_26_ROM_END[];
-extern u8 brian_anim_27_ROM_START[], brian_anim_27_ROM_END[];
-extern u8 brian_anim_28_ROM_START[], brian_anim_28_ROM_END[];
-extern u8 brian_anim_29_ROM_START[], brian_anim_29_ROM_END[];
-extern u8 monsters_0_ROM_START[], monsters_0_ROM_END[];
-extern u8 monsters_1_ROM_START[], monsters_1_ROM_END[];
-extern u8 monsters_2_ROM_START[], monsters_2_ROM_END[];
-extern u8 monsters_3_ROM_START[], monsters_3_ROM_END[];
-extern u8 monsters_4_ROM_START[], monsters_4_ROM_END[];
-extern u8 monsters_5_ROM_START[], monsters_5_ROM_END[];
-extern u8 npc_blob_0_ROM_START[], npc_blob_0_ROM_END[];
-extern u8 npc_blob_1_ROM_START[], npc_blob_1_ROM_END[];
-extern u8 npc_blob_2_ROM_START[], npc_blob_2_ROM_END[];
-extern u8 npc_blob_3_ROM_START[], npc_blob_3_ROM_END[];
-extern u8 npc_blob_4_ROM_START[], npc_blob_4_ROM_END[];
-extern u8 npc_blob_5_ROM_START[], npc_blob_5_ROM_END[];
-extern u8 npc_blob_6_ROM_START[], npc_blob_6_ROM_END[];
 
 /* -- the sound tables: this file's own (FindMapBGM, SetBGMVolume, PlaySound) -- */
 BgmEntry gMapBgmTable[0x48] = {      /* map, room (-1 = any room of the map), song */
@@ -249,8 +201,8 @@ u8 gSoundVolumes[72] = {             /* each sound's volume, by sound id (PlaySo
 };
 
 /* -- Brian's tables (read by player.c) -- */
-AnimEntry* gBrianAnims[1] = {        /* his animation table: at 0x64 in his model as InitBrian loads it (to 0x80206000) */
-    (AnimEntry*)0x80206064,
+AnimEntry* gBrianAnims[1] = {        /* his animation table by model (one model): in his model as InitBrian loads it */
+    gBrianModelAnims,
 };
 BrianData1 gNewGameStats = {         /* his stats at a new game (InitBrian copies them to gBrianStats) */
     0, 0,                          /* unk0, unk2 */
@@ -339,12 +291,6 @@ static u32 sZeroAfterBrianTables[2] = { 0, 0 };
 
 /* -- the enemies' and NPCs' tables (read by enemy.c) -- */
 /* the typed sets' tables, each defined by its own set's segment (the six sets load at one RAM range) */
-extern AnimEntry* gMonSet0AnimTables[]; extern MonsterBaseData gMonSet0BaseData[]; extern u8* gMonSet0NameTable[];
-extern AnimEntry* gMonSet1AnimTables[]; extern MonsterBaseData gMonSet1BaseData[]; extern u8* gMonSet1NameTable[];
-extern AnimEntry* gMonSet2AnimTables[]; extern MonsterBaseData gMonSet2BaseData[]; extern u8* gMonSet2NameTable[];
-extern AnimEntry* gMonSet3AnimTables[]; extern MonsterBaseData gMonSet3BaseData[]; extern u8* gMonSet3NameTable[];
-extern AnimEntry* gMonSet4AnimTables[]; extern MonsterBaseData gMonSet4BaseData[]; extern u8* gMonSet4NameTable[];
-extern AnimEntry* gMonSet5AnimTables[]; extern MonsterBaseData gMonSet5BaseData[]; extern u8* gMonSet5NameTable[];
 MonsterSet gMonsterSets[6] = {       /* each monster area's file in ROM; its table of animation tables, base records and name table in the file as LoadMonsterSet loads it to gMonsterFileBuffer (0x8020E6F0) */
     { monsters_0_ROM_START, monsters_0_ROM_END, gMonSet0AnimTables, gMonSet0BaseData, gMonSet0NameTable },
     { monsters_1_ROM_START, monsters_1_ROM_END, gMonSet1AnimTables, gMonSet1BaseData, gMonSet1NameTable },
@@ -437,7 +383,7 @@ BossFxEntry* gBossEffectScripts[20] = {  /* by a boss action's low tag byte (Sta
     sBossFxScript12, sBossFxScript13, sBossFxScript14, NULL,
     sBossFxScript16, NULL, NULL, NULL,
 };
-/* the enemies' effect stages, 16 bytes each: model (in gEffectModels), colour, duration, unk6, size x, size y. The boss
+/* the enemies' effect stages, 16 bytes each: model (in gEffectModels), colour, flags (SpawnEffectObject's), unk6, size x, size y. The boss
    effect scripts count them flat (BossFxEntry.stage); stages 18-21 and the 8 sound bytes after them are read together
    as one SpellAnimDef, the landing burst (SpawnEnemyLandingBurst). */
 SpellAnimStage gEnemySpellEffects[22] = {
@@ -476,219 +422,179 @@ RomRange gNpcBlobs[7] = {            /* each NPC area's blob in ROM: its NPCs' m
     { npc_blob_5_ROM_START, npc_blob_5_ROM_END },
     { npc_blob_6_ROM_START, npc_blob_6_ROM_END },
 };
-/* the ending's NPC text (SetupNPCs hands it to StartEndingText), then zero bytes to 0x80056BB0: read from the ROM at build time */
+/* the opening speech: SetupNPCs hands it to StartNPCTextFromRAM on a new game's first field start, the submap's
+   first NPC speaking; then zero bytes to 0x80056BB0. Read from the ROM at build time */
 GLOBAL_ASM(
 .section .data
-glabel gEndingNpcText
+glabel gOpeningSpeechText
 .incbin "baserom.jp.z64", 0x574B8, 0x2F8
 )
-extern u8 map_00_ROM_START[], map_00_ROM_END[];
-extern u8 map_01_ROM_START[], map_01_ROM_END[];
-extern u8 map_02_ROM_START[], map_02_ROM_END[];
-extern u8 map_03_ROM_START[], map_03_ROM_END[];
-extern u8 map_04_ROM_START[], map_04_ROM_END[];
-extern u8 map_05_ROM_START[], map_05_ROM_END[];
-extern u8 map_06_ROM_START[], map_06_ROM_END[];
-extern u8 map_07_ROM_START[], map_07_ROM_END[];
-extern u8 map_08_ROM_START[], map_08_ROM_END[];
-extern u8 map_09_ROM_START[], map_09_ROM_END[];
-extern u8 map_10_ROM_START[], map_10_ROM_END[];
-extern u8 map_11_ROM_START[], map_11_ROM_END[];
-extern u8 map_12_ROM_START[], map_12_ROM_END[];
-extern u8 map_13_ROM_START[], map_13_ROM_END[];
-extern u8 map_14_ROM_START[], map_14_ROM_END[];
-extern u8 map_15_ROM_START[], map_15_ROM_END[];
-extern u8 map_16_ROM_START[], map_16_ROM_END[];
-extern u8 map_17_ROM_START[], map_17_ROM_END[];
-extern u8 map_18_ROM_START[], map_18_ROM_END[];
-extern u8 map_19_ROM_START[], map_19_ROM_END[];
-extern u8 map_20_ROM_START[], map_20_ROM_END[];
-extern u8 map_21_ROM_START[], map_21_ROM_END[];
-extern u8 map_22_ROM_START[], map_22_ROM_END[];
-extern u8 map_23_ROM_START[], map_23_ROM_END[];
-extern u8 map_24_ROM_START[], map_24_ROM_END[];
-extern u8 map_25_ROM_START[], map_25_ROM_END[];
-extern u8 map_26_ROM_START[], map_26_ROM_END[];
-extern u8 map_27_ROM_START[], map_27_ROM_END[];
-extern u8 map_28_ROM_START[], map_28_ROM_END[];
-extern u8 map_29_ROM_START[], map_29_ROM_END[];
-extern u8 map_30_ROM_START[], map_30_ROM_END[];
-extern u8 map_31_ROM_START[], map_31_ROM_END[];
-extern u8 map_32_ROM_START[], map_32_ROM_END[];
-extern u8 map_33_ROM_START[], map_33_ROM_END[];
-extern u8 map_34_ROM_START[], map_34_ROM_END[];
-extern u8 map_35_ROM_START[], map_35_ROM_END[];
-extern u8 region_0_ROM_START[], region_0_ROM_END[];
-extern u8 region_1_ROM_START[], region_1_ROM_END[];
-extern u8 region_2_ROM_START[], region_2_ROM_END[];
-extern u8 region_3_ROM_START[], region_3_ROM_END[];
-extern u8 region_4_ROM_START[], region_4_ROM_END[];
-extern u8 region_5_ROM_START[], region_5_ROM_END[];
-extern u8 sky_0_ROM_START[], sky_0_ROM_END[];
-extern u8 sky_1_ROM_START[], sky_1_ROM_END[];
-extern u8 sky_2_ROM_START[], sky_2_ROM_END[];
-extern u8 sky_3_ROM_START[], sky_3_ROM_END[];
-extern u8 sky_4_ROM_START[], sky_4_ROM_END[];
-extern u8 sky_5_ROM_START[], sky_5_ROM_END[];
-extern u8 sky_6_ROM_START[], sky_6_ROM_END[];
-extern u8 sky_7_ROM_START[], sky_7_ROM_END[];
 
 
 /* -- the maps' tables (read by map.c) -- */
-extern u8 gFlameTextures0[], gFlameTextures1[], gMapDustPalette[], gMapDustTextures[], gDustTexture2[];
-sMapData gMapTable[36] = {   /* flags, ROM block, load address, then pointers into the map as loaded, encounters, unk34, NPC list, region block, unk40 */
-    /*  0 */ { 0x81, { 0, 0 }, map_00_ROM_START, map_00_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8014F640, (MapModelData*)0x8014FB80, (Submap*)0x8014FF78, (MapLight*)0x8015084C,
-             (MapPropGfx*)0x80150290, (void*)0x80150518, (NavMeshData*)0x80154810, (NavMeshData*)0x801547BC,
-             0x0, 0x0, (sMapList*)0x80154A90, 0, { 0, 0, 0, 5 } },
-    /*  1 */ { 0x1, { 0, 0 }, map_01_ROM_START, map_01_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80140430, (MapModelData*)0x80140790, (Submap*)0x80140A28, (MapLight*)0x80140F3C,
-             (MapPropGfx*)0x80140C20, (void*)0x80140D10, (NavMeshData*)0x80141CA0, (NavMeshData*)0x80141C8C,
-             0x0, 0x0, (sMapList*)0x80141D44, 1, { 0, 0, 0, 1 } },
-    /*  2 */ { 0x4, { 0, 0 }, map_02_ROM_START, map_02_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80144464, (MapModelData*)0x80144710, (Submap*)0x80144858, (MapLight*)0x80144CFC,
-             (MapPropGfx*)0x80144A50, (void*)0x80144AD0, (NavMeshData*)0x80145D70, (NavMeshData*)0x80145D54,
-             0x80146128, 0x80146130, NULL, 1, { 0, 0, 0, 1 } },
-    /*  3 */ { 0x4, { 0, 0 }, map_03_ROM_START, map_03_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8013C564, (MapModelData*)0x8013C870, (Submap*)0x8013C9F0, (MapLight*)0x8013CEEC,
-             (MapPropGfx*)0x8013CC00, (void*)0x8013CCB8, (NavMeshData*)0x8013E190, (NavMeshData*)0x8013E168,
-             0x8013E460, 0x8013E468, (sMapList*)0x8013E4DC, 1, { 0, 0, 0, 2 } },
-    /*  4 */ { 0x1, { 0, 0 }, map_04_ROM_START, map_04_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80149C98, (MapModelData*)0x8014A020, (Submap*)0x8014A3F8, (MapLight*)0x8014AAFC,
-             (MapPropGfx*)0x8014A6B0, (void*)0x8014A8C8, (NavMeshData*)0x8014C1C0, (NavMeshData*)0x8014C190,
-             0x0, 0x0, (sMapList*)0x8014C2A4, 2, { 0, 0, 0, 3 } },
-    /*  5 */ { 0x4, { 0, 0 }, map_05_ROM_START, map_05_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80157D98, (MapModelData*)0x801582C0, (Submap*)0x80158518, (MapLight*)0x80158A1C,
-             (MapPropGfx*)0x80158730, (void*)0x801587E8, (NavMeshData*)0x8015A9C0, (NavMeshData*)0x8015A99C,
-             0x8015AD2C, 0x8015AD34, (sMapList*)0x8015ADAC, 2, { 0, 0, 0, 2 } },
-    /*  6 */ { 0x1, { 0, 0 }, map_06_ROM_START, map_06_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80133438, (MapModelData*)0x80133720, (Submap*)0x80133948, (MapLight*)0x80133DEC,
-             (MapPropGfx*)0x80133B40, (void*)0x80133BC0, (NavMeshData*)0x801348B0, (NavMeshData*)0x80134898,
-             0x0, 0x0, (sMapList*)0x80134974, 2, { 0, 0, 0, 1 } },
-    /*  7 */ { 0x4, { 0, 0 }, map_07_ROM_START, map_07_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8013F1FC, (MapModelData*)0x8013F500, (Submap*)0x8013F6B8, (MapLight*)0x8013FBBC,
-             (MapPropGfx*)0x8013F8D0, (void*)0x8013F988, (NavMeshData*)0x80141550, (NavMeshData*)0x80141528,
-             0x801419CC, 0x801419D4, (sMapList*)0x80141A4C, 3, { 0, 0, 0, 2 } },
-    /*  8 */ { 0x1, { 0, 0 }, map_08_ROM_START, map_08_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8015B89C, (MapModelData*)0x8015BD20, (Submap*)0x8015C090, (MapLight*)0x8015C5FC,
-             (MapPropGfx*)0x8015C270, (void*)0x8015C3D0, (NavMeshData*)0x8015DB50, (NavMeshData*)0x8015DB28,
-             0x0, 0x0, (sMapList*)0x8015DC8C, 3, { 0, 0, 0, 2 } },
-    /*  9 */ { 0x4, { 0, 0 }, map_09_ROM_START, map_09_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8015A824, (MapModelData*)0x8015AE10, (Submap*)0x8015B230, (MapLight*)0x8015B7AC,
-             (MapPropGfx*)0x8015B4F0, (void*)0x8015B580, (NavMeshData*)0x8015E870, (NavMeshData*)0x8015E860,
-             0x8015F1A8, 0x8015F1B0, NULL, 4, { 0, 0, 0, 1 } },
-    /* 10 */ { 0x4, { 0, 0 }, map_10_ROM_START, map_10_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x801343D8, (MapModelData*)0x801345C0, (Submap*)0x80134738, (MapLight*)0x80134CEC,
-             (MapPropGfx*)0x80134920, (void*)0x80134AB8, (NavMeshData*)0x80135DB0, (NavMeshData*)0x80135D90,
+/* map 15, built from typed sources: its load address (the segment's link address) and the records gMapTable names */
+#include "map_format.h"
+/* maps 12 and 32, built from typed sources (the encounter tables are s32 fields in sMapData: their names cast) */
+/* maps 4, 8, 9, 18, 19, 20, 26, 31, 33, 35, built from typed sources */
+/* maps 23, 25, built from typed sources */
+/* maps 10, 13, 14, 16, 24, built from typed sources */
+/* maps 17, 21, 22, built from typed sources */
+/* maps 0, 1, 3, 5, 6, 7, 30, built from typed sources */
+/* maps 2, 11, 27, 28, 29, built from typed sources */
+/* maps 34, built from typed sources */
+sMapData gMapTable[36] = {   /* flags, ROM block, load address, then pointers into the map as loaded, encounters, encounterSets, NPC list, region block, unk40 */
+    /*  0 */ { MAP_TOWN | MAP_FOG_SKY, { 0, 0 }, map_00_ROM_START, map_00_ROM_END, map_00_VRAM,   /* Melrode: typed sources */
+             gMap00Geometry, gMap00ModelSets, gMap00Submaps, gMap00Lights,
+             gMap00PropGfx, gMap00Cameras, gMap00CameraNavmesh, gMap00ActorNavmesh,
+             0x0, 0x0, gMap00NpcList, 0, { 0, 0, 0, 5 } },
+    /*  1 */ { MAP_TOWN, { 0, 0 }, map_01_ROM_START, map_01_ROM_END, map_01_VRAM,   /* Dondoran: typed sources */
+             gMap01Geometry, gMap01ModelSets, gMap01Submaps, gMap01Lights,
+             gMap01PropGfx, gMap01Cameras, gMap01CameraNavmesh, gMap01ActorNavmesh,
+             0x0, 0x0, gMap01NpcList, 1, { 0, 0, 0, 1 } },
+    /*  2 */ { MAP_FIELD, { 0, 0 }, map_02_ROM_START, map_02_ROM_END, map_02_VRAM,   /* Holy Plains: typed sources */
+             gMap02Geometry, gMap02ModelSets, gMap02Submaps, gMap02Lights,
+             gMap02PropGfx, gMap02Cameras, gMap02CameraNavmesh, gMap02ActorNavmesh,
+             (s32)gMap02EncounterZones, gMap02EncounterSets, NULL, 1, { 0, 0, 0, 1 } },
+    /*  3 */ { MAP_FIELD, { 0, 0 }, map_03_ROM_START, map_03_ROM_END, map_03_VRAM,   /* Dondoran Flats: typed sources */
+             gMap03Geometry, gMap03ModelSets, gMap03Submaps, gMap03Lights,
+             gMap03PropGfx, gMap03Cameras, gMap03CameraNavmesh, gMap03ActorNavmesh,
+             (s32)gMap03EncounterZones, gMap03EncounterSets, gMap03NpcList, 1, { 0, 0, 0, 2 } },
+    /*  4 */ { MAP_TOWN, { 0, 0 }, map_04_ROM_START, map_04_ROM_END, map_04_VRAM,   /* Larapool: typed sources */
+             gMap04Geometry, gMap04ModelSets, gMap04Submaps, gMap04Lights,
+             gMap04PropGfx, gMap04Cameras, gMap04CameraNavmesh, gMap04ActorNavmesh,
+             0x0, 0x0, gMap04NpcList, 2, { 0, 0, 0, 3 } },
+    /*  5 */ { MAP_FIELD, { 0, 0 }, map_05_ROM_START, map_05_ROM_END, map_05_VRAM,   /* West Carmagh: typed sources */
+             gMap05Geometry, gMap05ModelSets, gMap05Submaps, gMap05Lights,
+             gMap05PropGfx, gMap05Cameras, gMap05CameraNavmesh, gMap05ActorNavmesh,
+             (s32)gMap05EncounterZones, gMap05EncounterSets, gMap05NpcList, 2, { 0, 0, 0, 2 } },
+    /*  6 */ { MAP_TOWN, { 0, 0 }, map_06_ROM_START, map_06_ROM_END, map_06_VRAM,   /* Normoon: typed sources */
+             gMap06Geometry, gMap06ModelSets, gMap06Submaps, gMap06Lights,
+             gMap06PropGfx, gMap06Cameras, gMap06CameraNavmesh, gMap06ActorNavmesh,
+             0x0, 0x0, gMap06NpcList, 2, { 0, 0, 0, 1 } },
+    /*  7 */ { MAP_FIELD, { 0, 0 }, map_07_ROM_START, map_07_ROM_END, map_07_VRAM,   /* East Limelin: typed sources */
+             gMap07Geometry, gMap07ModelSets, gMap07Submaps, gMap07Lights,
+             gMap07PropGfx, gMap07Cameras, gMap07CameraNavmesh, gMap07ActorNavmesh,
+             (s32)gMap07EncounterZones, gMap07EncounterSets, gMap07NpcList, 3, { 0, 0, 0, 2 } },
+    /*  8 */ { MAP_TOWN, { 0, 0 }, map_08_ROM_START, map_08_ROM_END, map_08_VRAM,   /* Limelin: typed sources */
+             gMap08Geometry, gMap08ModelSets, gMap08Submaps, gMap08Lights,
+             gMap08PropGfx, gMap08Cameras, gMap08CameraNavmesh, gMap08ActorNavmesh,
+             0x0, 0x0, gMap08NpcList, 3, { 0, 0, 0, 2 } },
+    /*  9 */ { MAP_FIELD, { 0, 0 }, map_09_ROM_START, map_09_ROM_END, map_09_VRAM,   /* Dindom Dries: typed sources */
+             gMap09Geometry, gMap09ModelSets, gMap09Submaps, gMap09Lights,
+             gMap09PropGfx, gMap09Cameras, gMap09CameraNavmesh, gMap09ActorNavmesh,
+             (s32)gMap09EncounterZones, gMap09EncounterSets, NULL, 4, { 0, 0, 0, 1 } },
+    /* 10 */ { MAP_FIELD, { 0, 0 }, map_10_ROM_START, map_10_ROM_END, map_10_VRAM,   /* Shamwood: typed sources */
+             gMap10Geometry, gMap10ModelSets, gMap10Submaps, gMap10Lights,
+             gMap10PropGfx, gMap10Cameras, gMap10CameraNavmesh, gMap10ActorNavmesh,
              0x0, 0x0, NULL, 4, { 0, 0, 0, 2 } },
-    /* 11 */ { 0x4, { 0, 0 }, map_11_ROM_START, map_11_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80169190, (MapModelData*)0x80169610, (Submap*)0x80169CE8, (MapLight*)0x8016A510,
-             NULL, (void*)0x8016A018, (NavMeshData*)0x8016D6D8, (NavMeshData*)0x8016D57C,
-             0x8016D9C4, 0x8016D9DC, (sMapList*)0x8016DA7C, 4, { 0, 0, 0, 8 } },
-    /* 12 */ { 0x4, { 0, 0 }, map_12_ROM_START, map_12_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80125DA4, (MapModelData*)0x80126010, (Submap*)0x801261D4, (MapLight*)0x801267BC,
-             (MapPropGfx*)0x801264C0, (void*)0x80126588, (NavMeshData*)0x80127800, (NavMeshData*)0x801277CC,
-             0x8012796C, 0x80127974, (sMapList*)0x801279EC, 5, { 0, 0, 0, 3 } },
-    /* 13 */ { 0x2, { 0, 0 }, map_13_ROM_START, map_13_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x80194B14, (MapModelData*)0x80195480, (Submap*)0x80195E98, (MapLight*)0x801967F8,
-             (MapPropGfx*)0x80196108, (void*)0x80196510, (NavMeshData*)0x80198F84, (NavMeshData*)0x80198980,
-             0x0, 0x0, (sMapList*)0x80199330, 0, { 0, 0, 0, 18 } },
-    /* 14 */ { 0x2, { 0, 0 }, map_14_ROM_START, map_14_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8019DFA0, (MapModelData*)0x8019EC80, (Submap*)0x8019F7E0, (MapLight*)0x8019FFF0,
-             NULL, (void*)0x8019FD88, (NavMeshData*)0x801A3900, (NavMeshData*)0x801A3590,
-             0x0, 0x0, (sMapList*)0x801A3D7C, 1, { 0, 0, 0, 16 } },
-    /* 15 */ { 0x2, { 0, 0 }, map_15_ROM_START, map_15_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x80166974, (MapModelData*)0x80167120, (Submap*)0x80167738, (MapLight*)0x80167EF0,
-             (MapPropGfx*)0x80167948, (void*)0x80167C98, (NavMeshData*)0x801696A0, (NavMeshData*)0x80169530,
-             0x0, 0x0, (sMapList*)0x80169980, 0, { 0, 0, 0, 14 } },
-    /* 16 */ { 0x2, { 0, 0 }, map_16_ROM_START, map_16_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8017DA08, (MapModelData*)0x8017E510, (Submap*)0x8017EF80, (MapLight*)0x8017FB58,
-             (MapPropGfx*)0x8017F300, (void*)0x8017F850, (NavMeshData*)0x8018302C, (NavMeshData*)0x80182D34,
-             0x0, 0x0, (sMapList*)0x8018348C, 1, { 0, 0, 0, 22 } },
-    /* 17 */ { 0x2, { 0, 0 }, map_17_ROM_START, map_17_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x80168D4C, (MapModelData*)0x801691F0, (Submap*)0x80169680, (MapLight*)0x80169BD0,
-             (MapPropGfx*)0x801697F8, (void*)0x80169AA0, (NavMeshData*)0x8016A978, (NavMeshData*)0x8016A75C,
-             0x0, 0x0, (sMapList*)0x8016ABA4, 2, { 0, 0, 0, 8 } },
-    /* 18 */ { 0x2, { 0, 0 }, map_18_ROM_START, map_18_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x801621D4, (MapModelData*)0x80162940, (Submap*)0x80162C10, (MapLight*)0x801630B0,
-             NULL, (void*)0x80162E90, (NavMeshData*)0x80164180, (NavMeshData*)0x801640FC,
-             0x0, 0x0, (sMapList*)0x801643B8, 2, { 0, 0, 0, 8 } },
-    /* 19 */ { 0x2, { 0, 0 }, map_19_ROM_START, map_19_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8015DE28, (MapModelData*)0x8015E010, (Submap*)0x8015E1A0, (MapLight*)0x8015E468,
-             NULL, (void*)0x8015E2E0, (NavMeshData*)0x8015EA70, (NavMeshData*)0x8015EA28,
+    /* 11 */ { MAP_FIELD, { 0, 0 }, map_11_ROM_START, map_11_ROM_END, map_11_VRAM,   /* Baragoon Moor: typed sources */
+             gMap11Geometry, gMap11ModelSets, gMap11Submaps, gMap11Lights,
+             NULL, gMap11Cameras, gMap11CameraNavmesh, gMap11ActorNavmesh,
+             (s32)gMap11EncounterZones, gMap11EncounterSets, gMap11NpcList, 4, { 0, 0, 0, 8 } },
+    /* 12 */ { MAP_FIELD, { 0, 0 }, map_12_ROM_START, map_12_ROM_END, map_12_VRAM,   /* Isle of Skye: typed sources */
+             gMap12Geometry, gMap12ModelSets, gMap12Submaps, gMap12Lights,
+             gMap12PropGfx, gMap12Cameras, gMap12CameraNavmesh, gMap12ActorNavmesh,
+             (s32)gMap12EncounterZones, gMap12EncounterSets, gMap12NpcList, 5, { 0, 0, 0, 3 } },
+    /* 13 */ { MAP_INTERIOR, { 0, 0 }, map_13_ROM_START, map_13_ROM_END, map_13_VRAM,   /* Melrode Monastery: typed sources */
+             gMap13Geometry, gMap13ModelSets, gMap13Submaps, gMap13Lights,
+             gMap13PropGfx, gMap13Cameras, gMap13CameraNavmesh, gMap13ActorNavmesh,
+             0x0, 0x0, gMap13NpcList, 0, { 0, 0, 0, 18 } },
+    /* 14 */ { MAP_INTERIOR, { 0, 0 }, map_14_ROM_START, map_14_ROM_END, map_14_VRAM,   /* Dondoran Castle: typed sources */
+             gMap14Geometry, gMap14ModelSets, gMap14Submaps, gMap14Lights,
+             NULL, gMap14Cameras, gMap14CameraNavmesh, gMap14ActorNavmesh,
+             0x0, 0x0, gMap14NpcList, 1, { 0, 0, 0, 16 } },
+    /* 15 */ { MAP_INTERIOR, { 0, 0 }, map_15_ROM_START, map_15_ROM_END, map_15_VRAM,   /* Melrode buildings: typed sources */
+             gMap15Geometry, gMap15ModelSets, gMap15Submaps, gMap15Lights,
+             gMap15PropGfx, gMap15Cameras, gMap15CameraNavmesh, gMap15ActorNavmesh,
+             0x0, 0x0, gMap15NpcList, 0, { 0, 0, 0, 14 } },
+    /* 16 */ { MAP_INTERIOR, { 0, 0 }, map_16_ROM_START, map_16_ROM_END, map_16_VRAM,   /* Dondoran buildings: typed sources */
+             gMap16Geometry, gMap16ModelSets, gMap16Submaps, gMap16Lights,
+             gMap16PropGfx, gMap16Cameras, gMap16CameraNavmesh, gMap16ActorNavmesh,
+             0x0, 0x0, gMap16NpcList, 1, { 0, 0, 0, 22 } },
+    /* 17 */ { MAP_INTERIOR, { 0, 0 }, map_17_ROM_START, map_17_ROM_END, map_17_VRAM,   /* Larapool inn: typed sources */
+             gMap17Geometry, gMap17ModelSets, gMap17Submaps, gMap17Lights,
+             gMap17PropGfx, gMap17Cameras, gMap17CameraNavmesh, gMap17ActorNavmesh,
+             0x0, 0x0, gMap17NpcList, 2, { 0, 0, 0, 8 } },
+    /* 18 */ { MAP_INTERIOR, { 0, 0 }, map_18_ROM_START, map_18_ROM_END, map_18_VRAM,   /* West Carmagh buildings: typed sources */
+             gMap18Geometry, gMap18ModelSets, gMap18Submaps, gMap18Lights,
+             NULL, gMap18Cameras, gMap18CameraNavmesh, gMap18ActorNavmesh,
+             0x0, 0x0, gMap18NpcList, 2, { 0, 0, 0, 8 } },
+    /* 19 */ { MAP_INTERIOR, { 0, 0 }, map_19_ROM_START, map_19_ROM_END, map_19_VRAM,   /* rooms off Normoon (every exit leads to map 6): typed sources */
+             gMap19Geometry, gMap19ModelSets, gMap19Submaps, gMap19Lights,
+             NULL, gMap19Cameras, gMap19CameraNavmesh, gMap19ActorNavmesh,
              0x0, 0x0, NULL, 2, { 0, 0, 0, 4 } },
-    /* 20 */ { 0x2, { 0, 0 }, map_20_ROM_START, map_20_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8016B158, (MapModelData*)0x8016B920, (Submap*)0x8016BEE8, (MapLight*)0x8016C500,
-             (MapPropGfx*)0x8016C0C8, (void*)0x8016C3A8, (NavMeshData*)0x8016DE70, (NavMeshData*)0x8016DD1C,
-             0x0, 0x0, (sMapList*)0x8016E0BC, 2, { 0, 0, 0, 12 } },
-    /* 21 */ { 0x2, { 0, 0 }, map_21_ROM_START, map_21_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x801A2518, (MapModelData*)0x801A2CE0, (Submap*)0x801A34B8, (MapLight*)0x801A3B08,
-             NULL, (void*)0x801A3938, (NavMeshData*)0x801A6A68, (NavMeshData*)0x801A6644,
-             0x0, 0x0, (sMapList*)0x801A6E68, 3, { 0, 0, 0, 13 } },
-    /* 22 */ { 0x2, { 0, 0 }, map_22_ROM_START, map_22_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8017DA18, (MapModelData*)0x8017E500, (Submap*)0x8017F0A8, (MapLight*)0x8017FDF8,
-             (MapPropGfx*)0x8017F3D8, (void*)0x8017F9D8, (NavMeshData*)0x80182FCC, (NavMeshData*)0x80182D28,
-             0x0, 0x0, (sMapList*)0x80183594, 3, { 0, 0, 0, 26 } },
-    /* 23 */ { 0x2, { 0, 0 }, map_23_ROM_START, map_23_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x80186F78, (MapModelData*)0x801879E0, (Submap*)0x801886D8, (MapLight*)0x80189368,
-             (MapPropGfx*)0x80188A08, (void*)0x80189040, (NavMeshData*)0x8018C910, (NavMeshData*)0x8018C644,
-             0x0, 0x0, (sMapList*)0x8018D010, 4, { 0, 0, 0, 26 } },
-    /* 24 */ { 0x2, { 0, 0 }, map_24_ROM_START, map_24_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x80164FB0, (MapModelData*)0x80165070, (Submap*)0x80165250, (MapLight*)0x80165538,
-             NULL, (void*)0x801653B8, (NavMeshData*)0x80166464, (NavMeshData*)0x801661A0,
-             0x0, 0x0, (sMapList*)0x8016669C, 4, { 0, 0, 0, 3 } },
-    /* 25 */ { 0x2, { 0, 0 }, map_25_ROM_START, map_25_ROM_END, (void*)0x801539F0,
-             (ModelGeometry*)0x8016EEE0, (MapModelData*)0x8016F360, (Submap*)0x8016F860, (MapLight*)0x80170018,
-             (MapPropGfx*)0x8016FAC0, (void*)0x8016FD70, (NavMeshData*)0x801716D0, (NavMeshData*)0x8017162C,
-             0x0, 0x0, (sMapList*)0x801718D0, 5, { 0, 0, 0, 10 } },
-    /* 26 */ { 0x88, { 0, 0 }, map_26_ROM_START, map_26_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x801649D8, (MapModelData*)0x80165460, (Submap*)0x80165A34, (MapLight*)0x80165EB8,
-             NULL, (void*)0x80165C38, (NavMeshData*)0x8016D480, (NavMeshData*)0x8016D430,
-             0x8016DAC0, 0x8016DAC8, (sMapList*)0x8016DB98, 0, { 0, 0, 0, 5 } },
-    /* 27 */ { 0x88, { 0, 0 }, map_27_ROM_START, map_27_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80168D08, (MapModelData*)0x8016A590, (Submap*)0x8016A668, (MapLight*)0x8016A778,
-             NULL, (void*)0x8016A6F0, (NavMeshData*)0x8016E920, (NavMeshData*)0x8016E910,
-             0x8016EFD8, 0x8016EFE0, NULL, 0, { 0, 0, 0, 1 } },
-    /* 28 */ { 0x88, { 0, 0 }, map_28_ROM_START, map_28_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80163770, (MapModelData*)0x80164C90, (Submap*)0x80164D30, (MapLight*)0x80164EE8,
-             NULL, (void*)0x80164E68, (NavMeshData*)0x80169C70, (NavMeshData*)0x80169C5C,
-             0x8016A0B4, 0x8016A0BC, NULL, 0, { 0, 0, 0, 1 } },
-    /* 29 */ { 0x88, { 0, 0 }, map_29_ROM_START, map_29_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8012FC8C, (MapModelData*)0x80130610, (Submap*)0x801306B0, (MapLight*)0x80130868,
-             NULL, (void*)0x801307E8, (NavMeshData*)0x80133440, (NavMeshData*)0x80133428,
-             0x80133ACC, 0x80133AD4, NULL, 0, { 0, 0, 0, 1 } },
-    /* 30 */ { 0x8, { 0, 0 }, map_30_ROM_START, map_30_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8014CFFC, (MapModelData*)0x8014D4A0, (Submap*)0x8014DDF4, (MapLight*)0x8014E6C0,
-             NULL, (void*)0x8014E370, (NavMeshData*)0x80152534, (NavMeshData*)0x80151E6C,
-             0x80152A8C, 0x80152AC4, (sMapList*)0x80152BC4, 0, { 0, 0, 0, 16 } },
-    /* 31 */ { 0x8, { 0, 0 }, map_31_ROM_START, map_31_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x801476DC, (MapModelData*)0x80147D20, (Submap*)0x80147F00, (MapLight*)0x8014838C,
-             NULL, (void*)0x80148068, (NavMeshData*)0x8014BF70, (NavMeshData*)0x8014BF38,
-             0x8014C3F8, 0x8014C400, NULL, 0, { 0, 0, 0, 3 } },
-    /* 32 */ { 0x8, { 0, 0 }, map_32_ROM_START, map_32_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x8013B150, (MapModelData*)0x8013B5F0, (Submap*)0x8013B7D0, (MapLight*)0x8013BBB4,
-             NULL, (void*)0x8013B900, (NavMeshData*)0x8013D580, (NavMeshData*)0x8013D550,
-             0x8013D9A4, 0x8013D9AC, (sMapList*)0x8013DA3C, 0, { 0, 0, 0, 3 } },
-    /* 33 */ { 0x8, { 0, 0 }, map_33_ROM_START, map_33_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80140DC4, (MapModelData*)0x80141190, (Submap*)0x80141370, (MapLight*)0x80141714,
-             NULL, (void*)0x80141468, (NavMeshData*)0x80143300, (NavMeshData*)0x801432C4,
-             0x8014365C, 0x80143664, NULL, 0, { 0, 0, 0, 3 } },
-    /* 34 */ { 0x8, { 0, 0 }, map_34_ROM_START, map_34_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x80139374, (MapModelData*)0x80139680, (Submap*)0x80139ACC, (MapLight*)0x8013A1B0,
-             NULL, (void*)0x80139E80, (NavMeshData*)0x8013D910, (NavMeshData*)0x8013D854,
-             0x8013DCE4, 0x8013DD3C, (sMapList*)0x8013DE48, 0, { 0, 0, 0, 11 } },
-    /* 35 */ { 0x88, { 0, 0 }, map_35_ROM_START, map_35_ROM_END, (void*)0x8010FE00,
-             (ModelGeometry*)0x801269B4, (MapModelData*)0x80127A80, (Submap*)0x80127AE8, (MapLight*)0x80127C28,
-             NULL, (void*)0x80127BA8, (NavMeshData*)0x801281D0, (NavMeshData*)0x801281C0,
+    /* 20 */ { MAP_INTERIOR, { 0, 0 }, map_20_ROM_START, map_20_ROM_END, map_20_VRAM,   /* Normoon buildings: typed sources */
+             gMap20Geometry, gMap20ModelSets, gMap20Submaps, gMap20Lights,
+             gMap20PropGfx, gMap20Cameras, gMap20CameraNavmesh, gMap20ActorNavmesh,
+             0x0, 0x0, gMap20NpcList, 2, { 0, 0, 0, 12 } },
+    /* 21 */ { MAP_INTERIOR, { 0, 0 }, map_21_ROM_START, map_21_ROM_END, map_21_VRAM,   /* Limelin Castle: typed sources */
+             gMap21Geometry, gMap21ModelSets, gMap21Submaps, gMap21Lights,
+             NULL, gMap21Cameras, gMap21CameraNavmesh, gMap21ActorNavmesh,
+             0x0, 0x0, gMap21NpcList, 3, { 0, 0, 0, 13 } },
+    /* 22 */ { MAP_INTERIOR, { 0, 0 }, map_22_ROM_START, map_22_ROM_END, map_22_VRAM,   /* Limelin buildings: typed sources */
+             gMap22Geometry, gMap22ModelSets, gMap22Submaps, gMap22Lights,
+             gMap22PropGfx, gMap22Cameras, gMap22CameraNavmesh, gMap22ActorNavmesh,
+             0x0, 0x0, gMap22NpcList, 3, { 0, 0, 0, 26 } },
+    /* 23 */ { MAP_INTERIOR, { 0, 0 }, map_23_ROM_START, map_23_ROM_END, map_23_VRAM,   /* Highland buildings: typed sources */
+             gMap23Geometry, gMap23ModelSets, gMap23Submaps, gMap23Lights,
+             gMap23PropGfx, gMap23Cameras, gMap23CameraNavmesh, gMap23ActorNavmesh,
+             0x0, 0x0, gMap23NpcList, 4, { 0, 0, 0, 26 } },
+    /* 24 */ { MAP_INTERIOR, { 0, 0 }, map_24_ROM_START, map_24_ROM_END, map_24_VRAM,   /* Shamwood (Lavaar): typed sources */
+             gMap24Geometry, gMap24ModelSets, gMap24Submaps, gMap24Lights,
+             NULL, gMap24Cameras, gMap24CameraNavmesh, gMap24ActorNavmesh,
+             0x0, 0x0, gMap24NpcList, 4, { 0, 0, 0, 3 } },
+    /* 25 */ { MAP_INTERIOR, { 0, 0 }, map_25_ROM_START, map_25_ROM_END, map_25_VRAM,   /* ship and cabin rooms: the Pirate Ship at Skye (0-1, save point), rooms off Skye (2-4), the ferry cabins (5, 8, 9), two rooms off the World of Mammon (6-7): typed sources */
+             gMap25Geometry, gMap25ModelSets, gMap25Submaps, gMap25Lights,
+             gMap25PropGfx, gMap25Cameras, gMap25CameraNavmesh, gMap25ActorNavmesh,
+             0x0, 0x0, gMap25NpcList, 5, { 0, 0, 0, 10 } },
+    /* 26 */ { MAP_DUNGEON | MAP_FOG_SKY, { 0, 0 }, map_26_ROM_START, map_26_ROM_END, map_26_VRAM,   /* Blue Cave (room 2 Crystal Valley, 3-4 Epona's Cottage: typed sources */
+             gMap26Geometry, gMap26ModelSets, gMap26Submaps, gMap26Lights,
+             NULL, gMap26Cameras, gMap26CameraNavmesh, gMap26ActorNavmesh,
+             (s32)gMap26EncounterZones, gMap26EncounterSets, gMap26NpcList, 0, { 0, 0, 0, 5 } },
+    /* 27 */ { MAP_DUNGEON | MAP_FOG_SKY, { 0, 0 }, map_27_ROM_START, map_27_ROM_END, map_27_VRAM,   /* Cull Hazard: typed sources */
+             gMap27Geometry, gMap27ModelSets, gMap27Submaps, gMap27Lights,
+             NULL, gMap27Cameras, gMap27CameraNavmesh, gMap27ActorNavmesh,
+             (s32)gMap27EncounterZones, gMap27EncounterSets, NULL, 0, { 0, 0, 0, 1 } },
+    /* 28 */ { MAP_DUNGEON | MAP_FOG_SKY, { 0, 0 }, map_28_ROM_START, map_28_ROM_END, map_28_VRAM,   /* Baragoon Tunnel (Shilf): typed sources */
+             gMap28Geometry, gMap28ModelSets, gMap28Submaps, gMap28Lights,
+             NULL, gMap28Cameras, gMap28CameraNavmesh, gMap28ActorNavmesh,
+             (s32)gMap28EncounterZones, gMap28EncounterSets, NULL, 0, { 0, 0, 0, 1 } },
+    /* 29 */ { MAP_DUNGEON | MAP_FOG_SKY, { 0, 0 }, map_29_ROM_START, map_29_ROM_END, map_29_VRAM,   /* Boil Hole (Fargo): typed sources */
+             gMap29Geometry, gMap29ModelSets, gMap29Submaps, gMap29Lights,
+             NULL, gMap29Cameras, gMap29CameraNavmesh, gMap29ActorNavmesh,
+             (s32)gMap29EncounterZones, gMap29EncounterSets, NULL, 0, { 0, 0, 0, 1 } },
+    /* 30 */ { MAP_DUNGEON, { 0, 0 }, map_30_ROM_START, map_30_ROM_END, map_30_VRAM,   /* Brannoch Castle: typed sources */
+             gMap30Geometry, gMap30ModelSets, gMap30Submaps, gMap30Lights,
+             NULL, gMap30Cameras, gMap30CameraNavmesh, gMap30ActorNavmesh,
+             (s32)gMap30EncounterZones, gMap30EncounterSets, gMap30NpcList, 0, { 0, 0, 0, 16 } },
+    /* 31 */ { MAP_DUNGEON, { 0, 0 }, map_31_ROM_START, map_31_ROM_END, map_31_VRAM,   /* Connor Forest: typed sources */
+             gMap31Geometry, gMap31ModelSets, gMap31Submaps, gMap31Lights,
+             NULL, gMap31Cameras, gMap31CameraNavmesh, gMap31ActorNavmesh,
+             (s32)gMap31EncounterZones, gMap31EncounterSets, NULL, 0, { 0, 0, 0, 3 } },
+    /* 32 */ { MAP_DUNGEON, { 0, 0 }, map_32_ROM_START, map_32_ROM_END, map_32_VRAM,   /* Glencoe Forest: typed sources */
+             gMap32Geometry, gMap32ModelSets, gMap32Submaps, gMap32Lights,
+             NULL, gMap32Cameras, gMap32CameraNavmesh, gMap32ActorNavmesh,
+             (s32)gMap32EncounterZones, gMap32EncounterSets, gMap32NpcList, 0, { 0, 0, 0, 3 } },
+    /* 33 */ { MAP_DUNGEON, { 0, 0 }, map_33_ROM_START, map_33_ROM_END, map_33_VRAM,   /* Windward Forest: typed sources */
+             gMap33Geometry, gMap33ModelSets, gMap33Submaps, gMap33Lights,
+             NULL, gMap33Cameras, gMap33CameraNavmesh, gMap33ActorNavmesh,
+             (s32)gMap33EncounterZones, gMap33EncounterSets, NULL, 0, { 0, 0, 0, 3 } },
+    /* 34 */ { MAP_DUNGEON, { 0, 0 }, map_34_ROM_START, map_34_ROM_END, map_34_VRAM,   /* World of Mammon: typed sources */
+             gMap34Geometry, gMap34ModelSets, gMap34Submaps, gMap34Lights,
+             NULL, gMap34Cameras, gMap34CameraNavmesh, gMap34ActorNavmesh,
+             (s32)gMap34EncounterZones, gMap34EncounterSets, gMap34NpcList, 0, { 0, 0, 0, 11 } },
+    /* 35 */ { MAP_DUNGEON | MAP_FOG_SKY, { 0, 0 }, map_35_ROM_START, map_35_ROM_END, map_35_VRAM,   /* Nepty's lair (underwater: typed sources */
+             gMap35Geometry, gMap35ModelSets, gMap35Submaps, gMap35Lights,
+             NULL, gMap35Cameras, gMap35CameraNavmesh, gMap35ActorNavmesh,
              0x0, 0x0, NULL, 0, { 0, 0, 0, 1 } },
 };
 u8* gRegionBlocks[18] = {     /* the extra region blocks, 3 words each: ROM start, end, load address (LoadMap, sMapData.regionBlock) */
-    region_0_ROM_START, region_0_ROM_END, (u8*)0x801F8000,
-    region_1_ROM_START, region_1_ROM_END, (u8*)0x801F8000,
-    region_2_ROM_START, region_2_ROM_END, (u8*)0x801F8000,
-    region_3_ROM_START, region_3_ROM_END, (u8*)0x801F8000,
-    region_4_ROM_START, region_4_ROM_END, (u8*)0x801F8000,
-    region_5_ROM_START, region_5_ROM_END, (u8*)0x801F8000,
+    region_0_ROM_START, region_0_ROM_END, region_0_VRAM,   /* region_0 is a code segment linked where it loads */
+    region_1_ROM_START, region_1_ROM_END, region_1_VRAM,   /* region_1 is a code segment linked where it loads */
+    region_2_ROM_START, region_2_ROM_END, region_2_VRAM,   /* region_2 is a code segment linked where it loads */
+    region_3_ROM_START, region_3_ROM_END, region_3_VRAM,   /* region_3 is a code segment linked where it loads */
+    region_4_ROM_START, region_4_ROM_END, region_4_VRAM,   /* region_4 is a code segment linked where it loads */
+    region_5_ROM_START, region_5_ROM_END, region_5_VRAM,   /* region_5 is a code segment linked where it loads */
 };
 /* the tile neighbourhoods, (dx, dz) pairs, one table per tile mode: DrawMapFrame visits the camera's tile plus each */
 s8 gTileOffsets0[2] = {
@@ -777,7 +683,7 @@ static ModelKeyFrame sDoorKeysAlt[11] = {   /* x, y, z, rx, ry, rz, sx, sy, sz, 
     { 0.0f, 128.5f, 0.0f, -54.0f, 0.0f, 0.0f, 14.2857f, 14.2857f, 14.2857f, 1.0f, 1.0f, 0.0f, 0, 78 },
     { 0.0f, 128.5f, 0.0f, 0.0f, 0.0f, 0.0f, 14.2857f, 14.2857f, 14.2857f, 0.0f, 0.0f, 0.0f, 0, 100 },
 };
-ModelPart gDoorAnimAlt = { sDoorKeysAlt, 11, 100, { 0.0f, 0.0f, 0.0f }, 0, 0, 0, 0, NULL, 0, { 0, 0 } };   /* kinds 2 and 3 when the door's flag 1 is set */
+ModelPart gDoorAnimAlt = { sDoorKeysAlt, 11, 100, { 0.0f, 0.0f, 0.0f }, 0, 0, 0, 0, NULL, 0, { 0, 0 } };   /* door kinds 2 and 3 when the door's flags' bit 0 is set */
 static ModelKeyFrame sDoorKeys4[2] = {   /* x, y, z, rx, ry, rz, sx, sy, sz, tension, continuity, bias, linear, frame */
     { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0, 0 },
     { 12.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0, 30 },

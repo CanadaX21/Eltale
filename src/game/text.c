@@ -1,10 +1,9 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/text.h"
 #include "game/dma.h"
-extern u8 text_palettes_ROM_START[];
-extern u16 gTextPalettes[];   /* four palettes of 16 RGBA5551 colours */
-extern u8 font_sheet_ROM_START[];
-extern FontStrip gFontSheet[];
+#include "game/main.h"
+#include "segment_symbols.h"
 
 void string_copy(u8 *dst, u8 *src)
 {
@@ -15,21 +14,14 @@ void string_copy(u8 *dst, u8 *src)
     }
     dst[i] = 0xFF;
 }
+/* ---- text.c's .bss (0x80092C70-0x80092C80): the font state. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h). ---- */
+s32 gFont;                               /* the current font */
+s32 gFontSpacing;                        /* extra spacing */
 void loadTextTextureAndPal(void) {
     dma_write(text_palettes_ROM_START, &gTextPalettes, 0x80);    //text palettes
     dma_write(font_sheet_ROM_START, &gFontSheet, 0xE790);  //text gfx
 }
-typedef struct {
-    s32 width;                      /* a glyph's cell width (texels) */
-    s32 height;
-    s32 advance;                    /* pen advance after a glyph */
-    s32 lineHeight;
-} FontMetrics;                      /* gFontMetrics[16] */
-extern FontMetrics gFontMetrics[];
-extern s32 gFont;              /* the current font */
-extern s32 gFontSpacing;              /* extra spacing */
-extern Gfx gMenuRenderDL[];
-extern Gfx* gDisplayListHead;
 void DrawString(s32 x, s32 y, u8* str) {
     s32 cx;
     s32 cy;

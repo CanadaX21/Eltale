@@ -1,19 +1,15 @@
 #include "common.h"
 #include "game/math.h"
-extern MtxF gScratchMtxF;
+#include "game/camera.h"
 /* This file's six doubles (+-pi/2 twice, pi twice) stay in assembly (the splat config's rodata piece at ROM 0x70170):
  * Atan2 reads two of them from memory and converts them at run time, which no literal reproduces (IDO folds the
  * conversion of a constant), and IDO puts a const double object in .data, not .rodata. So the code names them. */
-extern f64 D_8006F588;
-extern f64 D_8006F580;
-extern f64 D_8006F590;
-extern f64 D_8006F598;
 
 u8 gBitMasks[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 }; /* bit n of a flag byte (story and map object flags) */
 u32 gRandomSeed = 0x9B0;   /* the random seed (Quest D_8004D748) */
-extern f64 D_8006F570;
-extern f64 D_8006F578;
 
+/* ---- math.c's .bss (0x8008CE60-0x8008CEA0): the scratch matrix. ---- */
+MtxF gScratchMtxF;
 u32 getRandomNumber(u32 range) {
     if (range != 0) {
         return ((u32) ((gRandomSeed = (gRandomSeed * 0x41C64E6D) + 0x3039) >> 0x10)) % range;
@@ -423,9 +419,6 @@ void MatrixMultiply(MtxF *a, MtxF *b, MtxF *out)
   out->mf[2][3] = 0.0f;
   out->mf[3][3] = 1.f;
 }
-extern MtxF gViewMtxF;              /* the view-projection matrix */
-extern f32 gNearPlane;               /* near plane distance */
-extern f32 gViewTanHalf;
 s32 WorldToScreen(f32 x, f32 y, f32 z, s32* screenX, s32* screenY) {
     f32 w;
     f32 ox;

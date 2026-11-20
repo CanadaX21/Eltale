@@ -1,12 +1,14 @@
 #include "common.h"
 #include "game/title.h"
 #include "game/audio.h"
+#include "game/controller.h"
+#include "game/main.h"
 
 /*
  * The title screen (game mode 3): its logic. The overlay was built from three source files, this one (the entry, the
  * per-frame function, the state machine, the menu's input and the frames after a choice), title_menu.c (the drawing) and
  * title_fade.c (the fade): each of the overlay's sections is padded to 16 bytes at the same two points. LoadOvl_TitleScreen
- * copies the overlay to 0x8020C0D0, the slot the intro and the ending overlays also use; TitleLoop then calls the
+ * copies the overlay to 0x8020C0D0, the slot the intro and the epilogue overlays also use; TitleLoop then calls the
  * slot's entry, TitleScreen_Init, and BuildFrame calls TitleScreen_Update once a frame. Its art (palettes, textures,
  * the menu's encoded text) lies after the three files' .data as one binary piece; the names into it are defined from
  * that piece's start (undefined_syms.jp.txt).
@@ -18,22 +20,11 @@
  * otherwise Step stays in state 0 and the screen stays undrawn, ignoring the buttons.
  */
 
-extern Gfx* gDisplayListHead;
-extern u16 gButtonsPressed;
-extern s8 gStickX;
-extern s8 gStickY;
-extern u8 D_8007A1CC;  /* main's selection byte: the chosen option in its high nibble */
-extern s8 D_8006CC80;  /* main's: set as the splash and intro end; the screen clears it on its first frame */
 
 
 /* title_menu.c: the drawing */
-extern Gfx gTitleSetupDL[];
-extern s8 gTitleOptionCursor;
-extern s32 gTitleBlinkAlpha;
 
 /* title_fade.c: the fade */
-extern s32 gTitleFadeKind;
-extern s32 gTitleFadeFrames;
 
 /* ---- .data ---- */
 /* 0 nothing under way (the step holds the timer); 1 a choice, B or the push-start screen's timeout under way (the
@@ -197,7 +188,7 @@ s32 TitleScreen_Step(void) {
             TitleScreen_UpdateMenu();
             if (sChoiceDelay < 2) {
                 sChoiceDelay++;
-            } else if ((D_8007A1CC & 0xF0) == 0x10) {
+            } else if ((gTitleChoice & TITLE_CHOICE_MASK) == TITLE_CHOICE_NEW_GAME) {
                 /* NOTE: the original tests the chosen option, then does the same for both: every choice goes to
                    state 8, so state 7 is never entered */
                 gTitleState = 8;

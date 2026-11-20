@@ -1,12 +1,18 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/model.h"
 #include "game/math.h"
 #include "game/spline.h"
-typedef struct {
-    char unk0[8];
-    Vec3f unk8;                     /* a point ApplyPivotOffset moves a matrix's origin by */
-} unk20A28s;
-extern s32 gPartPositionCount;
+#include "game/camera.h"
+#include "game/main.h"
+
+/* ---- model.c's .bss (0x8008BFC0-0x8008C040): the recorded part positions and the
+   billboard matrix. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of
+   8 bytes or more. ---- */
+Vec3f gPartPositions[4];                 /* recorded part positions: 4 fill the space to gPartPositionCount */
+s32 gPartPositionCount;
+MtxF gBillboardMtx;
 
 void SetAnimation(ActorTransform* actor, s32 nextAnim, s32 nextFramerate, s32 afterAnim, s32 afterFramerate, u16 flags) {
     if (nextAnim != -1) {
@@ -107,12 +113,6 @@ void DrawModel(s32 flags, ActorTransform* actor, AnimEntry* anim, Mtx* mtxList) 
         }
     }
 }
-extern Camera gCamera;     /* the camera */
-extern MtxF gBillboardMtx;
-extern Vec3f gPartPositions[];           /* recorded part positions */
-extern s32 gMatrixHead;               /* matrices used this frame */
-extern Gfx* gDisplayListHead;
-extern Mtx D_2000000[];              /* segment 2: the matrix buffer */
 void DrawModelPart(MtxF* parent, Vec3f scale, s32 flags, s32 index, s32 frame, s32 frames, AnimEntry* anim,
                    ModelPart* parts, Mtx* mtxBuf) {
     s32* dlistFrames;
@@ -141,7 +141,7 @@ void DrawModelPart(MtxF* parent, Vec3f scale, s32 flags, s32 index, s32 frame, s
             key.y = 0.0f;
         }
     }
-    BuildSRTMatrix(&mtx, key.x, key.y, key.z, key.unk10, key.unkC, key.unk14, key.scaleX, key.scaleY, key.scaleZ);
+    BuildSRTMatrix(&mtx, key.x, key.y, key.z, key.xrot, key.yrot, key.zrot, key.scaleX, key.scaleY, key.scaleZ);
     ApplyPivotOffset(&mtx, part);
     scale.x *= key.scaleX;
     scale.y *= key.scaleY;

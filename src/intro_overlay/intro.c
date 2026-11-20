@@ -1,14 +1,15 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/intro.h"
 #include "scene2d.h"
 
 /*
  * The splash and intro (game mode 4): the first of the overlay's two source files. LoadOvl_Splash_and_Intro copies the
- * overlay to 0x8020C0D0, the slot the title and the ending overlays also use; IntroLoop then calls the slot's entry
+ * overlay to 0x8020C0D0, the slot the title and the epilogue overlays also use; IntroLoop then calls the slot's entry
  * (Intro_Init), and BuildFrame calls Intro_Update once a frame while the game mode is MODE_SPLASH (0: on to the title;
  * 1: on to the title with main's D_8006CC80 set; anything else: stay). This file holds the entry, the state machine
  * (Intro_Update, with the Controller Pak check), the scene player and its drawing, and between them the 18 functions the
- * ending overlay holds word for word (its own copy, addresses apart: the two overlays share their source). The second
+ * epilogue overlay holds word for word (its own copy, addresses apart: the two overlays share their source). The second
  * file, intro_screens.c, holds ten functions the state machine calls.
  *
  * Its .data: variables, three display lists, the scene tables (scene2d.h) and the scene images. Each image and palette
@@ -18,51 +19,6 @@
  * The .bss is not cleared by the loader.
  */
 
-extern u16 D_80217100_DD12E0[];
-extern u8 D_80217300_DD14E0[];
-extern u16 D_80217A80_DD1C60[];
-extern u8 D_80217C80_DD1E60[];
-extern u16 D_80218400_DD25E0[];
-extern u16 D_80218600_DD27E0[];
-extern u8 D_80218800_DD29E0[];
-extern u16 D_8021C1A0_DD6380[];
-extern u8 D_8021C3A0_DD6580[];
-extern u16 D_8022CDA0_DE6F80[];
-extern u8 D_8022CFA0_DE7180[];
-extern u16 D_8022D330_DE7510[];
-extern u8 D_8022D530_DE7710[];
-extern u16 D_80232DE0_DECFC0[];
-extern u8 D_80232FE0_DED1C0[];
-extern u16 D_80238890_DF2A70[];
-extern u8 D_80238A90_DF2C70[];
-extern u16 D_8023D6D0_DF78B0[];
-extern u8 D_8023D8D0_DF7AB0[];
-extern u16 D_80243180_DFD360[];
-extern u8 D_80243380_DFD560[];
-extern u16 D_80248C30_E02E10[];
-extern u8 D_80248E30_E03010[];
-extern u8 D_8024B348_E05528[];
-extern u16 D_8024BB30_E05D10[];
-extern u8 D_8024BD38_E05F18[];  /* not referenced by the code or the sprites */
-extern u16 D_8024C2E0_E064C0[];  /* not referenced by the code or the sprites */
-extern u8 D_8024C4E8_E066C8[];
-extern u16 D_8024CC70_E06E50[];
-extern u8 D_8024CE78_E07058[];
-extern u16 D_8024E050_E08230[];
-extern u8 D_8024E258_E08438[];
-extern u16 D_802510B0_E0B290[];
-extern u8 D_802512B8_E0B498[];
-extern u16 D_802531B0_E0D390[];
-extern u8 D_802533B8_E0D598[];
-extern u16 D_80254E90_E0F070[];
-extern u8 D_80255098_E0F278[];
-extern u16 D_802566F8_E108D8[];
-extern u8 D_80256900_E10AE0[];
-extern u16 D_80257538_E11718[];
-extern u8 D_80257740_E11920[];
-extern u16 D_80258378_E12558[];
-extern u8 D_80258580_E12760[];
-extern u16 D_80259048_E13228[];
 
 /* ---- .data ---- */
 s32 D_80212230_DCC410 = 0;       /* its address is passed (Intro_Init, Intro_Update, intro_screens.c) */

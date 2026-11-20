@@ -1,8 +1,9 @@
 #include "common.h"
 #include "game/dma.h"
-extern OSIoMesg gDmaIoMesg;
-extern OSMesgQueue gDmaQueue;
+#include "game/main.h"
 
+/* ---- dma.c's .bss (0x8008CEA0-0x8008CEC0): dma_write's request. ---- */
+OSIoMesg gDmaIoMesg;
 void dma_write(u8* devAddr, void* vaddr, u32 nbytes) {
     u32 chunk;
 

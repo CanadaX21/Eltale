@@ -1,12 +1,12 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/shadow.h"
 #include "game/math.h"
-extern Gfx* gDisplayListHead;
-extern s16 gFogFar;
-extern s16 gFogNear;
-extern s32 gMatrixHead;
-extern s32 gShadowCount;
-extern ShadowRec gShadows[];
+#include "game/main.h"
+/* ---- shadow.c's .bss (0x80084B80-0x80085290): the shadows. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h). ---- */
+ShadowRec gShadows[0x40];                /* AddShadow adds one while gShadowCount < 0x40 */
+s32 gShadowCount;
 
 void ResetShadows(void) {
     gShadowCount = 0;
@@ -16,18 +16,15 @@ void AddShadow(f32 x, f32 y, f32 z, f32 xrot, f32 yrot, f32 zrot, f32 size) {
 
     if (gShadowCount < 0x40U) {        
         shadow = &gShadows[gShadowCount++];
-        shadow->unk0 = x;
-        shadow->unk4 = y;
-        shadow->unk8 = z;
-        shadow->unkC = xrot;
-        shadow->unk10 = yrot;
-        shadow->unk14 = zrot;
-        shadow->unk18 = size;
+        shadow->x = x;
+        shadow->y = y;
+        shadow->z = z;
+        shadow->xrot = xrot;
+        shadow->yrot = yrot;
+        shadow->zrot = zrot;
+        shadow->size = size;
     }
 }
-extern Gfx D_1000270[];         /* segment 1: the shadows' render setup */
-extern Vtx D_1000230[];         /* segment 1: the shadow quad */
-extern Mtx D_2000000[];         /* segment 2: this frame's matrices */
 void DrawShadows(mkst* dyn) {
     s32 count;
     ShadowRec* shadow;
@@ -40,11 +37,11 @@ void DrawShadows(mkst* dyn) {
         gSPFogPosition(gDisplayListHead++, gFogFar, gFogNear);
     }
     while (count != 0) {
-        MatrixFromDirection(&mtx, shadow->unkC, shadow->unk10, shadow->unk14);
-        mtx.mf[3][0] = shadow->unk0;
-        mtx.mf[3][1] = shadow->unk4;
-        mtx.mf[3][2] = shadow->unk8;
-        ScaleMatrix(&mtx, shadow->unk18, shadow->unk18, shadow->unk18);
+        MatrixFromDirection(&mtx, shadow->xrot, shadow->yrot, shadow->zrot);
+        mtx.mf[3][0] = shadow->x;
+        mtx.mf[3][1] = shadow->y;
+        mtx.mf[3][2] = shadow->z;
+        ScaleMatrix(&mtx, shadow->size, shadow->size, shadow->size);
         guMtxF2L(mtx.mf, &dyn->drawMtx[gMatrixHead]);
         gSPMatrix(gDisplayListHead++, &D_2000000[gMatrixHead] + 3, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         gMatrixHead++;

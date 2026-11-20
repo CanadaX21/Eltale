@@ -7,6 +7,6 @@
 
 void LoadOvl_TitleScreen(void);
 void LoadOvl_Splash_and_Intro(void);
-void LoadOvl_Ending(void);
+void LoadOvl_Epilogue(void);   /* the epilogue overlay; its segment keeps the historical name credits_overlay */
 
 #endif

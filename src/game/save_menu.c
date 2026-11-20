@@ -1,52 +1,52 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/save_menu.h"
 #include "game/controller.h"
 #include "game/sound.h"
 #include "game/start_menu.h"
 #include "game/text.h"
-/* The save / load menu (split from sound.c: the original is two files; Quest 64 splits its twin
-   code at the same function, and this file's .rodata starts with its own string) */
-extern Gfx* gDisplayListHead;
-extern Gfx gMenuRenderDL[];
-typedef struct {
-    BrianData1 stats;               /* 0x00: gBrianStats */
-    u16 playTime;                   /* 0x38: minutes (gPlayTime) */
-    u16 dayCount;                   /* 0x3A: gDayCount (counts up to 9999) */
-    s32 map;                        /* 0x3C: where the save was made (the save list names it, DrawSaveList) */
-    s32 room;                       /* 0x40 */
-    s32 returnMap;                  /* 0x44: the Return destination (gReturnDest-D8) */
-    s32 returnRoom;
-    s32 returnEntrance;
-    s32 exitMap;                    /* 0x50: the Exit destination (gExitDest-E4) */
-    s32 exitRoom;
-    s32 exitEntrance;
-    u16 respawnMap;                 /* 0x5C: gSavedMap-B0 */
-    u16 respawnRoom;
-    u16 respawnEntrance;
-    s8 messageSpeed;                /* gMessageSpeed */
-    s8 musicVolume;                 /* gMusicVolumeSetting */
-    u16 cleared;                    /* gGameState bit 0x20000: the game has been finished */
-} SaveSlot;                         /* 0x68 */
-typedef struct {
-    u8 c[14];
-} SaveListText;                     /* a short game-encoded text, 0xFF-terminated (DrawSaveList copies one to the stack) */
-extern s8 gSaveSlots[];   /* per save slot: [0] pak file, [1] its letter */
-extern s8 gControllerChannel;
-extern s32 gSavePakError;
-extern u16 gMenuState;
-extern u16 gGameMode;
-extern u16 gSaveMenuState;
-extern u8 gSavePromptHand;
-extern s8 gSaveSlotCursor;
-extern s8 gSaveInputDelay;
-extern u8 gSavePrompt;                /* the save menu's message box (index into gSavePromptBoxes / gLoadScreenTexts / gSaveScreenTexts) */
-extern u8 gSaveListRepeat;                /* the save list's stick repeat counter (DrawSaveList) */
-extern u8 gPakRepairCount;
+#include "game/save_format.h"
+#include "game/boss.h"
+#include "game/hud.h"
+#include "game/lighting.h"
+#include "game/main.h"
+#include "game/map.h"
+#include "game/map_objects.h"
+#include "game/player.h"
+#include "game/spirits.h"
+/* ---- save_menu.c's .bss (0x8008FB70-0x80090450): the save menu. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more. The D_ name
+   marked unreferenced is space no code addresses (an unknown variable). ---- */
+u16 gSaveMenuState;
+u8 gSavePrompt;                          /* the save menu's message box (index into gSavePromptBoxes /
+                                            gSaveModePromptTexts / gTitleModePromptTexts) */
+u8 gSaveMessage;                         /* the save menu's current message (index into gSaveMessageBoxes /
+                                            gSaveMessageTexts) */
+s32 gSavePakError;
+u8 gSavePromptHand;
+s8 gSaveInputDelay;
+s8 gSaveSlotCursor;
+u8 gSaveListRepeat;                      /* the save list's stick repeat counter (DrawSaveList) */
+u8 gPakRepairCount;
+s8 gSaveSlots[2 * (SAVE_SLOTS + 1)];                       /* per save slot: [0] pak file, [1] its letter; 17 pairs (ScanSaveList
+                                            fills 17): the 17th, after gSaveList's 16, ends the list */
+SaveSlot gSaveList[SAVE_SLOTS];                  /* the save list: one record per pak save. A save's pak file holds the record
+                                            at 0 (0x80 bytes) and the save data at 0x80 (0xE0 bytes), each written
+                                            from a smaller variable (an entry here, 0x68; gSaveData, 0xC8), so each
+                                            part also carries the 0x18 bytes of RAM after its variable: the next
+                                            entry's start (after the 16th entry, gSaveData's), or after gSaveData,
+                                            gSaveRecordBuffer's. The reads copy back only the first 0x68 and 0xC8 */
+SaveData gSaveData;                      /* the save data (WritePakNote writes 0xE0 bytes from it: its 0xC8 and
+                                            the first 0x18 of gSaveRecordBuffer) */
+SaveSlot gSaveRecordBuffer;              /* one save record read from the pak */
+u8 gSaveRecordBufferTail[SAVE_RECORD_BYTES - sizeof(SaveSlot)];                     /* the rest of the 0x80-byte pak record ReadPakNote reads into
+                                            gSaveRecordBuffer (the code copies its first 0x68) */
+u8 gPakReadBuffer[SAVE_DATA_BYTES];      /* the pak read buffer: a note's whole save data (LoadSaveSlot) */
 /* the save menu's step, its low three bits (the macro is why the target has a write of the state to itself on step 0) */
 #define SET_SAVE_STATE(n) gSaveMenuState &= ~7; gSaveMenuState |= (n)
-void EnterSaveMode(s32 returnMode) {
-    gGameMode = MODE_PAUSED;
-    gMenuState = gMenuState | returnMode | 0x4000;
+void EnterSaveMode(s32 saveMode) {
+    gGameMode = MODE_MENU;
+    gMenuState = gMenuState | saveMode | MENU_SAVE;
     gSaveMenuState = 0x1000;
     gSavePromptHand = 0xFF;
     gSaveSlotCursor = 0;
@@ -55,37 +55,6 @@ void EnterSaveMode(s32 returnMode) {
     gSaveListRepeat = 0;
     gPakRepairCount = 0;
 }
-extern u8 gSaveMessage;                /* the save menu's current message (index into gSaveMessageBoxes / gSaveMessageTexts) */
-typedef struct {
-    s16 x;
-    s16 y;
-    s16 w;
-    s16 h;
-} MenuBox;
-extern MenuBox gSaveMessageBoxes[];         /* the save menu's message boxes */
-extern char* gSaveMessageTexts[];           /* their texts */
-extern SaveSlot gSaveList[];          /* the save list: one record per pak save */
-extern BrianData1 gBrianStats;
-extern u16 gPlayTime;
-extern u16 gDayCount;
-extern s32 gCurrentMap;
-extern s32 gCurrentSubmap;
-extern s32 gReturnDest;
-extern s32 gReturnRoom;
-extern s32 gReturnEntrance;
-extern s32 gExitDest;
-extern s32 gExitRoom;
-extern s32 gExitEntrance;
-extern u16 gSavedMap;
-extern u16 gSavedSubmap;
-extern u16 gSavedEntrance;
-extern s8 gMessageSpeed;
-extern s8 gMusicVolumeSetting;
-extern s32 gGameState;
-extern u8 gObjectsOpened[];
-extern u8 gSpiritsFound[];
-extern u8 gInventory[];
-extern u8 gStoryFlags[];
 void SaveMenu(void) {
     DrawSaveListFrame();
     if (!(gSaveMenuState & 0x4000)) {
@@ -128,7 +97,7 @@ void SaveMenu(void) {
         DrawSaveMessage();
     }
     if (gSaveMenuState & 0x8000) {
-        gMenuState &= ~0x8000;
+        gMenuState &= ~MENU_OPEN;
     }
 }
 void DrawSaveMessage(void) {
@@ -155,16 +124,13 @@ void DrawSaveMessage(void) {
     DrawString(x + 6, y + 6, gSaveMessageTexts[gSaveMessage]);
     EndMenuDraw();
 }
-extern OSMesgQueue gSiMesgQueue;
-extern OSPfs gPfs[];
-extern PakNoteExts gPakNotes[];
 s32 osGbpakInit(OSMesgQueue *mq, OSPfs *pfs, int channel);
 void OpenSaveMenu(void) {
     s32 mode;
     s32 err;
     PakNoteExts* pak;
 
-    mode = gMenuState & 0xC;
+    mode = gMenuState & SAVE_MODE_MASK;
     if (gSaveMenuState & 0x1000) {
         err = osPfsInitPak(&gSiMesgQueue, &gPfs[gControllerChannel], gControllerChannel);
         if (err == 2) {
@@ -186,7 +152,7 @@ void OpenSaveMenu(void) {
     if (err != 0) {
         gSavePakError = err;
         if (-PakErrorCode(err) == 1) {
-            if (mode == 4) {
+            if (mode == SAVE_MODE_SAVE) {
                 gSavePrompt = 0xD;
                 gSaveInputDelay = 10;
             } else {
@@ -200,9 +166,9 @@ void OpenSaveMenu(void) {
         SET_SAVE_STATE(5);
         return;
     }
-    if (mode == 4) {
+    if (mode == SAVE_MODE_SAVE) {
         pak = &gPakNotes[gControllerChannel];
-        if (pak->freePages < 2) {
+        if (pak->freePages < SAVE_NOTE_PAGES) {
             if (pak->flags & 0x4000) {
                 gSavePrompt = 0x15;
             } else {
@@ -227,7 +193,7 @@ void OpenSaveMenu(void) {
     } else {
         if (gPakRepairCount != 0) {
             pak = &gPakNotes[gControllerChannel];
-            if (pak->freePages < 2 || (pak->flags & 0x2000)) {
+            if (pak->freePages < SAVE_NOTE_PAGES || (pak->flags & 0x2000)) {
                 gSavePrompt = 0x18;
                 gSaveInputDelay = 10;
                 ScanSaveList();
@@ -238,7 +204,7 @@ void OpenSaveMenu(void) {
             }
         }
         if (!(gPakNotes[gControllerChannel].flags & 0x4000)) {
-            if (mode == 0) {
+            if (mode == SAVE_MODE_LOAD) {
                 gSavePrompt = 9;
                 gSaveInputDelay = 10;
             } else {
@@ -254,12 +220,6 @@ void OpenSaveMenu(void) {
     gSaveSlotCursor = 0;
     gSaveMenuState &= ~0x20;
 }
-extern MenuBox gSavePromptBoxes[];         /* the save menu's message boxes, by message */
-extern char* gLoadScreenTexts[];           /* message texts on the load screen (gMenuState & 4); [0..3] also the Yes / No texts */
-extern char* gSaveScreenTexts[];           /* message texts on the save screen */
-extern s16 gYesNoHandPositions[][2];          /* the Yes / No hand positions: [0..1] one box, [2..3] the other */
-extern s8 gStickY;                /* stick y */
-extern u16 gButtonsPressed;               /* buttons pressed */
 void SaveMenuPrompt(void) {
     s32 x;
     s32 y;
@@ -274,10 +234,10 @@ void SaveMenuPrompt(void) {
     y = gSavePromptBoxes[gSavePrompt].y;
     w = gSavePromptBoxes[gSavePrompt].w;
     h = gSavePromptBoxes[gSavePrompt].h;
-    if (gMenuState & 4) {
-        text = gLoadScreenTexts[gSavePrompt];
+    if (gMenuState & SAVE_MODE_SAVE) {
+        text = gSaveModePromptTexts[gSavePrompt];
     } else {
-        text = gSaveScreenTexts[gSavePrompt];
+        text = gTitleModePromptTexts[gSavePrompt];
     }
     DrawMenuSprite(0, x, y, w, h);
     DrawMenuSprite(0x37, x + 3, y + h, w, 3);
@@ -407,14 +367,14 @@ void SaveMenuPrompt(void) {
         DrawMenuSprite(0x39, x + 1, y + h - 2, w - 2, 1);
         DrawMenuSprite(0x39, x + w - 2, y + 1, 1, h - 3);
         if (gSaveMenuState & 0x10) {
-            text = gLoadScreenTexts[1];
+            text = gSaveModePromptTexts[1];
             DrawString(x + 6, y + 6, text);
-            text = gLoadScreenTexts[0];
+            text = gSaveModePromptTexts[0];
             DrawString(x + 6, y + 0x13, text);
         } else {
-            text = gLoadScreenTexts[2];
+            text = gSaveModePromptTexts[2];
             DrawString(x + 6, y + 6, text);
-            text = gLoadScreenTexts[3];
+            text = gSaveModePromptTexts[3];
             DrawString(x + 6, y + 0x13, text);
         }
         EndMenuDraw();
@@ -543,10 +503,6 @@ void SaveMenuPrompt(void) {
         }
     }
 }
-extern s32 gMenuFrame;
-extern s8 gArrowBobOffsets[];
-extern SaveListText D_80061650;
-extern u8* D_8006CC28[];
 void DrawSaveList(s32 arg0) {
     s32 slot;               /* the first row's slot; later the menu state's mode bits (RULE-EXCEPTION R30: one stack word for both; a separate local moves the frame) */
     s32 n;                  /* set when the first row is the new-save line; later the arrows' bob offset (RULE-EXCEPTION R30: one stack word for both; a separate local moves the frame) */
@@ -780,7 +736,7 @@ void DrawSaveList(s32 arg0) {
         DrawMenuSprite(5, 0x38, 0x4D, 7, 7);
         DrawMenuSprite(0x53, 0x36, n + 0x3F, 0xC, 0x10);
     }
-    if (slot < 16 && gSaveSlots[(slot + 1) * 2] != -1) {
+    if (slot < SAVE_SLOTS && gSaveSlots[(slot + 1) * 2] != -1) {
         DrawMenuSprite(5, 0x38, 0xA4, 7, 7);
         DrawMenuSprite(0x54, 0x36, 0xAC - n, 0xE, 0xB);
     }
@@ -829,20 +785,20 @@ void DrawSaveList(s32 arg0) {
             gSaveListRepeat = 0;
         }
         if (gButtonsPressed & 0x8000) {
-            slot = gMenuState & 0xC;
+            slot = gMenuState & SAVE_MODE_MASK;
             PlaySound(0, 1, 0xFF);
             switch (slot) {
-                case 0:
+                case SAVE_MODE_LOAD:
                     gSaveMenuState |= 0x2000;
                     gSaveMessage = 1;
                     SET_SAVE_STATE(2);
                     break;
-                case 8:
+                case SAVE_MODE_DELETE:
                     gSavePrompt = 5;
                     gSaveInputDelay = 10;
                     SET_SAVE_STATE(5);
                     break;
-                case 4:
+                case SAVE_MODE_SAVE:
                     if (gSaveSlots[gSaveSlotCursor * 2] == -2) {
                         gSaveMenuState |= 0x2000;
                         gSaveMessage = 2;
@@ -902,12 +858,10 @@ void DeleteSaveSlot(void) {
         gSaveSlots[gSaveSlotCursor * 2 + 1] = -1;
     }
 }
-extern SaveData gSaveData;      /* the save data */
-extern u8 gPakReadBuffer[0xE0];          /* the pak read buffer */
 void LoadSaveSlot(void) {
     s32 err;
 
-    err = ReadPakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], 0x80, 0xE0, gPakReadBuffer);
+    err = ReadPakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], SAVE_DATA_OFFSET, SAVE_DATA_BYTES, gPakReadBuffer);
     gSaveData = *(SaveData*)gPakReadBuffer;
     if (err != 0) {
         gSavePakError = err;
@@ -941,7 +895,7 @@ void SaveToPak(void) {
 
     if (gSaveSlots[gSaveSlotCursor * 2] == -2) {
         n = gPakNotes[gControllerChannel].flags & 0xF;
-        for (letter = 0xF; letter >= 0;) {
+        for (letter = SAVE_NOTE_FIRST_EXTENSION - 1; letter >= 0;) {
             i = 0;
             letter++;
             do {
@@ -957,7 +911,7 @@ void SaveToPak(void) {
             }
         }
         gSaveSlots[gSaveSlotCursor * 2 + 1] = n;
-        if (gSaveSlotCursor + 1 < 16) {
+        if (gSaveSlotCursor + 1 < SAVE_SLOTS) {
             gSaveSlots[(gSaveSlotCursor + 1) * 2 + 1] = -2;
         }
         ret = AllocateSaveNote(gControllerChannel, n);
@@ -969,7 +923,8 @@ void SaveToPak(void) {
     } else {
         WriteSaveRecord(gSaveSlotCursor);
     }
-    ret = WritePakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], 0, 0x80, (u8*) &gSaveList[gSaveSlotCursor]);
+    ret = WritePakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], SAVE_RECORD_OFFSET, SAVE_RECORD_BYTES,
+                       (u8*) &gSaveList[gSaveSlotCursor]);
     if (ret != 0) {
         gSavePakError = ret;
         switch (-PakErrorCode(ret)) {
@@ -990,7 +945,8 @@ void SaveToPak(void) {
         gSaveMenuState &= ~0x2000;
         return;
     }
-    ret = WritePakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], 0x80, 0xE0, (u8*) &gSaveData);
+    ret = WritePakNote(gControllerChannel, gSaveSlots[gSaveSlotCursor * 2], SAVE_DATA_OFFSET, SAVE_DATA_BYTES,
+                       (u8*) &gSaveData);
     if (ret != 0) {
         gSavePakError = ret;
         switch (-PakErrorCode(ret)) {
@@ -1049,7 +1005,6 @@ void RepairSaveSlot(void) {
         gPakRepairCount++;
     }
 }
-extern SaveSlot gSaveRecordBuffer;          /* one save record read from the pak */
 /* Build the save list for the pak in controller gControllerChannel (Quest func_8002DD18; spelling from Rainchus's
    decomp.me scratch Fus0c): clear the 17 slot records, list this game's notes (pak file, letter), add a
    "new save" slot (-2) when the pak has room, then read every listed note's record into gSaveList. */
@@ -1060,27 +1015,28 @@ void ScanSaveList(void) {
     s32 err;
 
     err = 0;
-    for (i = 0; i < 17; i++) {
+    for (i = 0; i < SAVE_SLOTS + 1; i++) {
         gSaveSlots[i * 2] = -1;
         gSaveSlots[i * 2 + 1] = -1;
     }
     n = 0;
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < PAK_NOTES; i++) {
         if (gPakNotes[gControllerChannel].ext[i] != 0x7F && gPakNotes[gControllerChannel].ext[i] >= 0) {
             gSaveSlots[n * 2] = i;
             gSaveSlots[n * 2 + 1] = gPakNotes[gControllerChannel].ext[i];
             n++;
         }
     }
-    if (gMenuState & 4) {
-        if (gPakNotes[gControllerChannel].freePages >= 2 && !(gPakNotes[gControllerChannel].flags & 0x2000)) {
+    if (gMenuState & SAVE_MODE_SAVE) {
+        if (gPakNotes[gControllerChannel].freePages >= SAVE_NOTE_PAGES && !(gPakNotes[gControllerChannel].flags & 0x2000)) {
             gSaveSlots[n * 2] = -2;
         }
     }
     gSaveSlotCursor = 0;
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < SAVE_SLOTS; i++) {
         if (gSaveSlots[i * 2] >= 0) {
-            ret = ReadPakNote(gControllerChannel, gSaveSlots[i * 2], 0, 0x80, (u8*)&gSaveRecordBuffer);
+            ret = ReadPakNote(gControllerChannel, gSaveSlots[i * 2], SAVE_RECORD_OFFSET, SAVE_RECORD_BYTES,
+                              (u8*)&gSaveRecordBuffer);
             gSaveList[i] = gSaveRecordBuffer;
             if (ret != 0) {
                 gSavePakError = err;                  /* BUG: stores and decodes err (0 the first time), not ret */
@@ -1094,7 +1050,7 @@ void ScanSaveList(void) {
                 }
                 SET_SAVE_STATE(5);
             } else if (gSaveList[i].cleared != 0) {
-                gGameState |= 0x20000;
+                gGameState |= GAME_STATE_CLEARED;
             }
         }
     }
@@ -1150,35 +1106,35 @@ void WriteSaveRecord(u32 slot) {
     s->respawnEntrance = gSavedEntrance;
     s->messageSpeed = gMessageSpeed;
     s->musicVolume = gMusicVolumeSetting;
-    if (gGameState & 0x20000) {
+    if (gGameState & GAME_STATE_CLEARED) {
         s->cleared = 1;
     } else {
         s->cleared = 0;
     }
-    dst = gSaveData.spirits;
+    dst = gSaveData.objectsOpened;
     src = gObjectsOpened;
-    i = 0x20;
+    i = sizeof(gSaveData.objectsOpened);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    dst = gSaveData.flags;
+    dst = gSaveData.spiritsFound;
     src = gSpiritsFound;
-    i = 0x10;
+    i = sizeof(gSaveData.spiritsFound);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    dst = gSaveData.items;
+    dst = gSaveData.inventory;
     src = gInventory;
-    i = 0x97;
+    i = sizeof(gSaveData.inventory);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    dst = &gSaveData.story;
+    dst = &gSaveData.storyFlags;
     src = gStoryFlags;
-    i = 1;
+    i = sizeof(gSaveData.storyFlags);
     while (i != 0) {
         *dst++ = *src++;
         i--;
@@ -1208,32 +1164,32 @@ void ReadSaveRecord(s32 slot) {
     gMessageSpeed = s->messageSpeed;
     gMusicVolumeSetting = s->musicVolume;
     if (s->cleared != 0) {
-        gGameState |= 0x20000;
+        gGameState |= GAME_STATE_CLEARED;
     }
-    src = gSaveData.spirits;
+    src = gSaveData.objectsOpened;
     dst = gObjectsOpened;
-    i = 0x20;
+    i = sizeof(gSaveData.objectsOpened);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    src = gSaveData.flags;
+    src = gSaveData.spiritsFound;
     dst = gSpiritsFound;
-    i = 0x10;
+    i = sizeof(gSaveData.spiritsFound);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    src = gSaveData.items;
+    src = gSaveData.inventory;
     dst = gInventory;
-    i = 0x97;
+    i = sizeof(gSaveData.inventory);
     while (i != 0) {
         *dst++ = *src++;
         i--;
     }
-    src = &gSaveData.story;
+    src = &gSaveData.storyFlags;
     dst = gStoryFlags;
-    i = 1;
+    i = sizeof(gSaveData.storyFlags);
     while (i != 0) {
         *dst++ = *src++;
         i--;

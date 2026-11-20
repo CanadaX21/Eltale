@@ -8,9 +8,6 @@
  * by the loader (title_screen.c).
  */
 
-extern u8 D_8020FE10_DAF330[];  /* the push-start image's palette (256 RGBA16 entries) */
-extern u8 D_80210010_DAF530[];  /* the push-start image (CI8, 100 wide) */
-extern u8 D_80210D20_DB0240[];  /* the menu words' image (CI4, 176 wide, three words side by side) */
 
 /* ---- .data ---- */
 s32 D_8020F200_DAE720 = 0; /* TitleScreen_DrawMenu's first-call flag */

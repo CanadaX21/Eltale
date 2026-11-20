@@ -12,4 +12,10 @@ void DrawModelPart(MtxF* parent, Vec3f scale, s32 flags, s32 index, s32 frame, s
 void AdvanceAnimation(s32 framerate, ActorTransform* model, AnimEntry* anim);
 void ApplyPivotOffset(MtxF* mtx, ModelPart* part);
 
+/* The state src/game/model.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern Vec3f gPartPositions[4];   /* recorded part positions: 4 fill the space to gPartPositionCount */
+extern s32 gPartPositionCount;
+extern MtxF gBillboardMtx;
+
 #endif

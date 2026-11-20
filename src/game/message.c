@@ -1,33 +1,20 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/message.h"
 #include "game/sound.h"
 #include "game/text.h"
-extern Message gMessageWindows[];         /* 4 message windows, 0x9FC each */
-typedef struct {
-    s16 x;
-    s16 y;
-    s16 width;
-    s16 height;
-} WindowPlacement;
-extern WindowPlacement gChoiceBoxSize;     /* the message window being sized */
-typedef struct {
-    u8 v[8];
-} QuillOffsets;                     /* per animation frame (DrawMoreTextQuill) */
-typedef struct {
-    s32 width;
-    s32 height;
-    s32 cms;
-    s32 cmt;
-    s32 masks;
-    s32 maskt;
-} BoxTexture;                       /* one window texture (DrawBoxTexture) */
-typedef struct {
-    BoxTexture e[5];
-} BoxTextures;                      /* D_800616E4, copied to the stack */
-typedef struct {
-    u8* tex[5];
-} BoxTextureImages;                 /* D_800616D0, copied to the stack */
-extern Gfx* gDisplayListHead;
+#include "game/controller.h"
+#include "game/enemy.h"
+#include "game/main.h"
+#include "game/save_menu.h"
+/* ---- message.c's .bss (0x80090450-0x80092C70): the message windows. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more. ---- */
+s32 gMessageWindowsOpen;                 /* windows opened */
+s32 gMessageChoice;
+MessageLines gMessageLines;
+Message gMessageWindows[4];              /* 4 message windows, 0x9FC each */
+u8 gControllerConnected;                 /* a controller is connected */
+u16 gStickHoldFrames;                    /* frames the stick has been held past radius 60 */
 
 void ResetMessageWindows(s32 unused) {
     s32 i;
@@ -56,7 +43,7 @@ void ResetMessageWindow(s32 slot, u8 keepPos) {
     for (i = 0; i < 0x20; i++) {
         gMessageWindows[slot].name[i] = 0xFF;
     }
-    for (i = 0; i < 0x4B0; i++) {
+    for (i = 0; i < MESSAGE_TEXT_SIZE; i++) {
         gMessageWindows[slot].text[i] = 0xFF;
         gMessageWindows[slot].page[i] = 0xFF;
     }
@@ -69,15 +56,6 @@ void ResetMessageWindow(s32 slot, u8 keepPos) {
     }
 }
 /* opening a window (OpenMessageWindow) */
-extern s32 gMessageWindowsOpen;              /* windows opened */
-extern MessageLines gMessageLines;
-extern s8 D_80061660[8];             /* the character delay for each speed code, by its low three bits */
-extern s8 gMessageSpeed;
-extern WindowPlacement D_80061668[];   /* window placement by type */
-extern u8 gSpeakerName[0x20];         /* the speaker name being set up */
-extern u8 gTextBuffer[0x4B0];        /* the text being set up */
-extern u8 gControllerConnected;   /* a controller is connected */
-extern s32 gGameState;              /* game state flags */
 s32 OpenMessageWindow(s32 type) {
     s32 found;
     s32 i;
@@ -113,7 +91,7 @@ s32 OpenMessageWindow(s32 type) {
                 for (j = 0; j < 0x20; j++) {
                     gMessageWindows[i].name[j] = gSpeakerName[j];
                 }
-                for (j = 0; j < 0x4B0; j++) {
+                for (j = 0; j < MESSAGE_TEXT_SIZE; j++) {
                     gMessageWindows[i].text[j] = gTextBuffer[j];
                 }
                 for (k = 0; k < gMessageLines.lineCount; k++) {
@@ -147,22 +125,16 @@ s32 OpenMessageWindow(s32 type) {
             gMessageWindowsOpen++;
         }
     }
-    gGameState |= 2;
+    gGameState |= GAME_STATE_MESSAGE;
     gControllerConnected = 0;
     return found;
 }
 
-extern s8 gStickY;   /* stick y */
-extern u8 gSavePromptHand;
-extern s32 gMessageChoice;
-extern u16 gButtonsPressed;
-extern Gfx gMenuRenderDL[];
-extern u16 gQuillPalette[];
 void DrawDialogueBox(void) {
     typedef struct {
         s8 slot[4];
     } WindowOrder;     /* the draw order: a window index per place, -1 = none */
-    extern WindowOrder D_800616B4;  /* all -1 */
+    extern WindowOrder D_800616B4;  /* all -1; a local declaration: its type, WindowOrder, is DrawDialogueBox's own */
     s32 i;                  /* the page-full routine's index; then the skipping run's line limit (RULE-EXCEPTION R30: one local, as the compiled code requires; a local per job makes the frame a word too big) */
     s32 place;
     u8 c;                   /* a window's kind; then the page-full routine's character; then the typed character (RULE-EXCEPTION R30: one local, as the compiled code requires; a local per job takes other registers) */
@@ -240,7 +212,7 @@ void DrawDialogueBox(void) {
                 ResetMessageWindow(slot, 0);
                 gMessageWindowsOpen--;
                 if (open <= 0) {
-                    gGameState &= ~2;
+                    gGameState &= ~GAME_STATE_MESSAGE;
                 }
             }
         } else {
@@ -331,12 +303,12 @@ void DrawDialogueBox(void) {
                             gMessageWindows[slot].heldChar = gMessageWindows[slot].text[1];
                             gMessageWindows[slot].text[1] = 0xFF;
                             gMessageWindows[slot].flags &= ~0x04000000;
-                            for (n = 0; n != 0x4B0; n++) {
+                            for (n = 0; n != MESSAGE_TEXT_SIZE; n++) {
                                 gMessageWindows[slot].page[n] = 0xFF;
                             }
                         }
                     } else {
-                        /* typing: one character per unkF frames; gMessageSpeed 0 = the whole page at once */
+                        /* typing: one character per charDelay frames; gMessageSpeed 0 = the whole page at once */
                         out = gMessageSpeed;
                         if (out != 0) {
                             if (!(gMessageWindows[slot].flags & 0x100000) && (gButtonsPressed & 0xA000)) {
@@ -691,9 +663,6 @@ void PageMessage(s32 slot) {
     }
 }
 
-extern QuillOffsets gQuillLift;
-extern QuillOffsets gQuillWidth;
-extern QuillOffsets gQuillShift;
 void DrawMoreTextQuill(s32 slot) {
     s32 x;
     s32 y;
@@ -771,8 +740,6 @@ s32 FindMessageWindow(s32 id, s32 type) {
     }
     return ret;
 }
-extern BoxTextureImages D_800616D0;
-extern BoxTextures D_800616E4;
 void DrawBoxTexture(s32 texture, s32 x, s32 y, s32 w, s32 h) {
     s32 i;
     BoxTextureImages images = D_800616D0;
@@ -812,8 +779,6 @@ void DrawMenuBox(s32 x, s32 y, s32 w, s32 h) {
     DrawBoxTexture(3, x, y, 1, h);
     DrawBoxTexture(3, x + w - 1, y, 1, h);
 }
-extern u16 gStickHoldFrames;  /* frames the stick has been held past radius 60 */
-extern s8 gStickX;   /* stick x (src/game/controller.c) */
 void ResetStickHeld(void) {
     gStickHoldFrames = 0;
 }

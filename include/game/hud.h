@@ -40,7 +40,7 @@ void LoadHUDTexture(HudImage* tex, s32 s, s32 t, s32 width, s32 height);
 void DrawClippedTexRect(s32 ulx, s32 uly, s32 lrx, s32 lry, s32 s, s32 t, s32 dsdx, s32 dtdy);
 void DrawTexturePart(HudImage* image, s32 ulx, s32 uly, s32 lrx, s32 lry, s32 s, s32 t, s32 dsdx, s32 dtdy);
 void Inventory_Init(void);
-s32 CheckIfInventoryFull(void);
+s32 InventoryHasRoom(void);
 u32 CountItem(u8 itemID);
 u32 CountInventory(void);
 void AddItemToInventory(u8 itemID);
@@ -57,5 +57,64 @@ void UseHealingItem(MonsterBattleData* BrianData, ItemData* item);
 void UseWings(ActorTransform* brian, ItemData* item);
 void UseSpellItem(MonsterBattleData* brian, ItemData* item);
 void DrawItemBox(s32 ulx, s32 uly, s32 width, s32 height);
+
+/* The state src/game/hud.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern u16 gTalkMarkerBobPhase;   /* the talk marker's bob phase */
+extern u16 gSpiritGainFlags;
+extern s32 gClipLeft;   /* clip rectangle: left */
+extern s32 gClipTop;   /* top */
+extern s32 gClipRight;   /* right */
+extern u16 gSpiritMarkerBobPhase;   /* the icon's bob phase */
+extern s32 gClipBottom;   /* bottom */
+extern MissIcon gMISSData[8];
+extern u32 gSpiritFlashTimer;   /* unsigned: DrawSpiritCounters fades it with a divu */
+extern u32 gSpiritGainElement;
+extern OddVector gHudVector;   /* (Quest D_8008C748) a scratch: the compass marker's rotated offset (x, y; DrawCompass)
+                                   and a status visual's effect size (UpdateStatusVisuals) */
+extern u16 gMarkerBobPhase;   /* the object marker icon's bob phase */
+extern u16 gSignMarkerBobPhase;   /* the sign marker icon's bob phase */
+extern u16 gEnemyMarkerBobPhase;   /* the enemy marker's bob phase */
+extern u16 gItemBarSlide;   /* the item bar's slide */
+extern u16 gHudSlideState;   /* 1 = sliding in, 2 = sliding out */
+extern u16 gHudHpBarWidth;   /* the HP bar width drawn last (eases toward the stat) */
+extern u16 gHudMpBarWidth;   /* the MP bar width drawn last */
+extern u16 gSpellBannerFade;   /* spell-name banner fade-in frames */
+extern u16 gSpellCrossFlags;
+extern u16 gSpellBannerTimer;
+extern u16 gSpiritGainGlow;   /* the spirit-gain window's glow frames */
+extern u16 gMonsterCardTimer;   /* the enemy info window's slide-in counter */
+extern s32 D_8008C164;   /* hud.c does not use it; lighting.c declares and reads it */
+extern s32 gFieldFreeze;
+extern s32 gInputFreeze;
+extern s32 gPendingSound;   /* a sound waiting to start, -1 = none */
+extern s32 gScreenOffsetX;   /* the 2D draw offset x */
+extern s32 gScreenOffsetY;   /* the 2D draw offset y */
+extern s32 gMarkerScreenY;   /* the marker's screen y (0xF0 = off screen) */
+extern u16 gSpiritGlowAngle;
+extern s32 D_8008C188[2];   /* unreferenced (8 bytes: gItemLightRingSize, 8-aligned, starts after them) */
+extern OddVector gItemLightRingSize;   /* the item lights' effect size (UseHealingItem, UseWings) */
+extern s32 gItemScroll;
+extern s32 gItemCursor;
+extern s32 D_8008C1A4;
+extern s32 D_8008C1A8[2];   /* unreferenced (8 bytes: gVisibleInvItemIDs, 8-aligned, starts after them) */
+extern u8 gVisibleInvItemIDs[8];
+extern u8 D_8008C1B8[0x800];   /* the eight cached item icons, 16 x 16 CI8 (0x100 bytes each) */
+extern u8 gInventory[151];   /* the inventory: item ids, 0xFF = empty (Quest gInventory): 150 slots
+                                            the item code walks, and a 151st byte Inventory_Init clears and the
+                                            save copies with them (0x97, SaveData.inventory) */
+
+/* The data src/game/hud.c defines. */
+extern const char D_8006F530[];
+
+typedef struct {
+    s16 s;
+    s16 t;
+    u16 w;
+    u16 h;
+} IconRect;                          /* a rectangle in the icon sheet */
+
+/* Storage the C does not define yet (assembly or binary), declared here for its type. */
+extern IconRect gStatusIcons[];   /* the status icons */
 
 #endif

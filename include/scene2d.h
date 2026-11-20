@@ -4,9 +4,9 @@
 #include "common.h"
 
 /*
- * The 2D scene format of the splash-and-intro overlay (game mode 4) and the ending overlay (game mode 5): both hold the
+ * The 2D scene format of the splash-and-intro overlay (game mode 4) and the epilogue overlay (game mode 5): both hold the
  * same three tables, read by the same code (18 functions the two overlays hold word for word, apart from addresses).
- * The intro's: 108 cues in 36 lists, 459 sprites, the header; the ending's: 24 cues in 8 lists, 97 sprites, the header.
+ * The intro's: 108 cues in 36 lists, 459 sprites, the header; the epilogue's: 24 cues in 8 lists, 97 sprites, the header.
  * The structures and their counts are verified by how the tables chain in the ROM; the fields' meanings are not yet read
  * from the code (still assembly) unless a comment says so.
  */

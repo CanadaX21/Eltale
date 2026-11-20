@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "sched/nnsched.h"
 
 /* The scheduler's state, in this order in .bss: a stack for each of its three threads, and the retrace count. */

@@ -6,10 +6,7 @@
  * lives in its own set's segment. Names are by set and by monster index (gMonSet<set>Mon<index>...); a monster's
  * model is its own index in every set. Only the generated asset files include this header. */
 
-/* Raw data: bytes that nothing the game's C code is known to do reads as a type, kept as they are in the ROM.
- * No type is claimed for them. A RawWord that is the address of a named record is written as that name. */
-typedef u32 RawWord;
-typedef u8 RawByte;
+#include "raw_data.h"   /* RawWord, RawByte: raw data, no type claimed */
 
 /* Inferred lengths: no field or constant in the game states how long these tables are: a set's base records
  * (BaseData), its table of animation tables (AnimTables), its name table (NameTable), and each model's animation

@@ -1,5 +1,6 @@
 /*same as 1D160.c from Quest64*/
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/encounter.h"
 #include "game/boss.h"
 #include "game/camera.h"
@@ -10,58 +11,11 @@
 #include "game/player.h"
 #include "game/sound.h"
 #include "game/spells.h"
+#include "game/boss_anims.h"
+#include "game/map.h"
 
 
-extern sMapData* gMapHeader;
-extern s32 gCurrentSubmap;
-extern u16 gSubmapFlags;               /* the submap's flags (bit 0: random battles and monsters here (FieldLoop, ResetEnemies; SetupNPCs only without it)) */
-extern EncounterZoneList* gSubmapEncounterZones;
-typedef struct {
-    s16 x;
-    s16 z;
-} EncounterCircle; /* names from vbhayden's Quest 64 scratches */
-extern f32 gEncounterWalkDistance;               /* distance walked toward the next encounter roll */
-extern u16 gEncounterChance;               /* encounter chance out of 2000, +50 per 50 units walked */
-extern s16 gBattleIntroStep;          /* the battle intro camera's step: 0 looks at gBattleIntroEnemy first, 1 the view behind Brian */
-extern s16 gBattleIntroTimer;         /* frames left in the intro step */
-extern s16 gBattleIntroEnemy;         /* the enemy (gEnemies index) the intro looks at */
-extern u16 gTurnDelay;
-extern s16 D_8008BE56;
-extern u16 gTurnIndex;   /* whose turn: index into gTurnOrder */
-extern u16 gBattleState;              /* battle state flags */
-extern f32 gBattleCenterX;
-extern f32 gBattleCenterZ;
-extern f32 gBattleRadius;
-extern u16 gBattleCircleRing;
-extern u16 gTurnOrder[];   /* turn order: enemy indices */
-EncounterCircle* IsInEncounterCircle(f32 brian_x, f32 brian_z);
-extern s32 gEnemyCount;              /* enemy count (Quest D_8007C990) */
-extern EnemyAction gEnemies[];    /* enemy table (Quest D_8007C998) */
-extern MonsterBattleData* gEnemyGroupHeads[];
-extern s32 gEnemyGroupCount;
-extern Coordinates2D gBattleCameraOffset;
-extern u16 gTurnCount;
-
-/* encounter packs (names from vbhayden's Quest 64 scratches) */
-typedef struct {
-    s32 enemy_type;
-    s32 base_count;
-    s32 count_variance;
-} EnemySpawnData;
-
-typedef struct {
-    EnemySpawnData* spawn_data;
-    u16 num_enemy_types;
-    u16 position_index;
-} EncounterPack;
-
-typedef struct {
-    Vec3f** position_lists;
-    EncounterPack* pack_list;
-    EncounterCircle* circles;
-    s32 circle_count;
-} EncounterSet;                      /* 0x10: a submap's circles and packs */
-extern EncounterSet* gSubmapEncounterSet;
+#include "map_format.h"   /* the encounter records a map holds: EncounterCircle, EnemySpawnData, EncounterPack, EncounterSet */
 
 typedef struct {
     s32 enemy_type;
@@ -69,15 +23,49 @@ typedef struct {
 } EnemySpawnInfo;
 
 //#pragma GLOBAL_ASM("asm/nonmatchings/game/encounter/InitEncounters.s")
+/* ---- encounter.c's .bss (0x8008BE40-0x8008BFC0): the battle and encounter state. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more. The
+   D_ names marked unreferenced are space no code addresses (unknown variables). ---- */
+Coordinates2D gBattleCameraOffset;
+s32 D_8008BE48;                          /* unreferenced: the offset's third word (offsets of this kind -
+                                            gSpellOffset, gEnemyStep, gHudVector - are OddVectors whose third
+                                            word is a scale; no code reads this one) */
+s16 gBattleIntroStep;                    /* the battle intro camera's step: 0 looks at gBattleIntroEnemy first, 1 the
+                                            view behind Brian */
+s16 gBattleIntroTimer;                   /* frames left in the intro step */
+s16 gBattleIntroEnemy;                   /* the enemy (gEnemies index) the intro looks at */
+u16 gBattleState;                        /* the BATTLE_ bits (game/encounter.h) */
+u16 gTurnDelay;
+s16 D_8008BE56;
+u16 gTurnIndex;                          /* whose turn: index into gTurnOrder */
+u16 gTurnCount;
+f32 gBattleCenterX;
+f32 gBattleCenterZ;
+f32 gTurnCenterX;                        /* the turn's movement circle centre x */
+f32 gTurnCenterZ;
+f32 gBattleRadius;
+u8 D_8008BE70[0x100];                    /* unreferenced (256 bytes; Quest 64 has the same span after its radius) */
+MonsterBattleData* gEnemyGroupHeads[8];  /* 8 fill the space to gEnemyGroupCount */
+s32 gEnemyGroupCount;
+u16 gBattleCircleRing;
+u16 gTurnRing;
+EncounterZoneList* gSubmapEncounterZones;
+EncounterSet* gSubmapEncounterSet;
+AnimEntry** gFieldMonsterAnims;          /* the field's gMonsterAnims, kept while a boss battle uses gBossAnimTables */
+u8** gFieldEnemyNames;                   /* the field's gEnemyNames, kept while a boss battle uses gBossNames */
+s32 gBattleBoss;
+f32 gEncounterWalkDistance;              /* distance walked toward the next encounter roll */
+u16 gEncounterChance;                    /* encounter chance out of 2000, +50 per 50 units walked */
+
 void InitEncounters(void) {
 
-    gBattleState &= 0x8000;
+    gBattleState &= BATTLE_NO_ENCOUNTERS;
     gEncounterWalkDistance = 0.0f;
     gEncounterChance = 0;
-    if (gSubmapFlags & 1) {
+    if (gSubmapFlags & SUBMAP_ENCOUNTERS) {
         if (gMapHeader->encounters != 0) {
             gSubmapEncounterZones = (EncounterZoneList*)gMapHeader->encounters + gCurrentSubmap;
-            gSubmapEncounterSet = (EncounterSet*)gMapHeader->unk34 + gCurrentSubmap;
+            gSubmapEncounterSet = gMapHeader->encounterSets + gCurrentSubmap;
             return;
         }
         gSubmapEncounterZones = NULL;
@@ -85,8 +73,6 @@ void InitEncounters(void) {
     }
 }
 
-extern f32 gBrianStepDistance;               /* distance Brian walked this frame */
-extern PlayerState gPlayerState;
 void RollRandomEncounter(void) {
     f32 x;
     f32 z;
@@ -97,7 +83,7 @@ void RollRandomEncounter(void) {
     EncounterCircle* circle;
     f32 angle;
 
-    if (!(gBattleState & 1) && !(gBattleState & 0x8000) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && gBrianStepDistance != 0.0f) {
+    if (!(gBattleState & BATTLE_ACTIVE) && !(gBattleState & BATTLE_NO_ENCOUNTERS) && !(gPlayerState.brian.transform.stateFlags & ACTOR_BUSY) && gBrianStepDistance != 0.0f) {
         gEncounterWalkDistance += gBrianStepDistance;
         if (gEncounterWalkDistance >= 50.0) {
             gEncounterChance += 50;
@@ -115,12 +101,12 @@ void RollRandomEncounter(void) {
                         CreateEncounter(circle->x, circle->z, angle, region->encounters);
                         gBattleCenterX = circle->x;
                         gBattleCenterZ = circle->z;
-                        gBattleState = 0x205;
+                        gBattleState = BATTLE_ACTIVE | BATTLE_TURN_START | BATTLE_INTRO;
                         D_8008BE56 = 0;
                         gTurnDelay = 20;
                         if (gPlayerState.stats->agi < gEnemies[gTurnOrder[0]].monBaseData->agi) {
                             gTurnIndex = 0;
-                            gBattleState |= 2;
+                            gBattleState |= BATTLE_ENEMY_TURN;
                         } else {
                             gTurnIndex = gTurnCount - 1;
                         }
@@ -140,20 +126,10 @@ void RollRandomEncounter(void) {
         }
     }
 }
-extern f32 gBossBattleRadii[];
-extern AnimEntry** gMonsterAnims;
-extern u8** gEnemyNames;
-extern s32 gBossLoaded;
-extern EnemyAction gBoss;
-extern AnimEntry** gFieldMonsterAnims;  /* the field's gMonsterAnims, kept while a boss battle uses gBossAnimTables */
-extern u8** gFieldEnemyNames;           /* the field's gEnemyNames, kept while a boss battle uses gBossNames */
-extern s32 gBattleBoss;
-extern AnimEntry* gBossAnimTables[];
-extern u8* gBossNames[];                /* the bosses' names, by monsterID */
 void StartScriptedBattle(void) {
     s32 music;
 
-    if (gBossLoaded == 7) {
+    if (gBossLoaded == 7) {   /* boss 6 (gBossLoaded is the boss number + 1): its battle is centred at 0, 0 */
         gBattleCenterX = 0.0f;
         gBattleCenterZ = 0.0f;
     } else {
@@ -161,7 +137,7 @@ void StartScriptedBattle(void) {
         gBattleCenterZ = gBoss.battleData.transform.pos.z;
     }
 
-    gBattleState = 0x305;
+    gBattleState = BATTLE_ACTIVE | BATTLE_TURN_START | BATTLE_BOSS | BATTLE_INTRO;
     D_8008BE56 = 0;
     gTurnDelay = 0;
     gFieldMonsterAnims = gMonsterAnims;
@@ -182,7 +158,7 @@ void StartScriptedBattle(void) {
     gBattleIntroEnemy = 0;
     gTurnIndex = gTurnCount - 1;
 
-    if (gBattleBoss != 8) {
+    if (gBattleBoss != LAST_BOSS + 1) {   /* gBattleBoss is the placement row + 1 */
         music = 0;
     } else {
         music = 0x29;
@@ -194,17 +170,6 @@ void StartScriptedBattle(void) {
     gBattleRadius = gBossBattleRadii[gBattleBoss];
     gBattleCircleRing = SpawnBattleRing(0, gBattleCenterX, gBoss.battleData.transform.pos.y, gBattleCenterZ, gBattleRadius * 1.04);
 }
-extern u16 gTurnRing;
-extern s32 gDroppedItem;               /* the item dropped */
-extern u16 gMonsterCardTimer;
-extern s32 gCameraSetupIndex;
-extern s32 gCurrentMap;
-extern f32 gTurnCenterX;               /* the turn\'s movement circle centre x */
-extern f32 gTurnCenterZ;
-extern Camera gCamera;
-extern CameraTransition gCameraTransition;
-extern f32 gBattleCameraYawOffset;
-extern Vec3f gBattleCameraMapAdjust[];          /* per map: battle camera height / distance adjustments */
 void BattleStartCamera(void) {
     f32 dx;
     f32 dz;
@@ -260,7 +225,7 @@ void BattleStartCamera(void) {
             break;
         case 1:
             if ((u16)(gBattleIntroTimer = (u16)gBattleIntroTimer - 1) == 0) {
-                gBattleState &= ~0x200;
+                gBattleState &= ~BATTLE_INTRO;
                 LoadCameraSetup(gCameraSetupIndex);
                 dx = gBattleCenterX - gPlayerState.brian.transform.pos.x;
                 dz = gBattleCenterZ - gPlayerState.brian.transform.pos.z;
@@ -280,7 +245,7 @@ void BattleStartCamera(void) {
                 gCamera.cam_z = gPlayerState.brian.transform.pos.z + gBattleCameraOffset.y;
                 gCamera.cam_speed_x = gCamera.cam_speed_y = gCamera.cam_speed_z = 0.0f;
                 gCamera.orbit_speed = 0.0f;
-                if ((gBattleState & 0x100) && gBattleBoss == 8) {
+                if ((gBattleState & BATTLE_BOSS) && gBattleBoss == LAST_BOSS + 1) {
                     gCamera.local_camera_height = 50.0f;
                     gCamera.local_focus_height = 28.0f;
                     gCamera.ideal_planar_distance = 180.0f;
@@ -300,66 +265,66 @@ void StepBattleRound(void) {
     f32 size;
     MonsterBattleData* actor;
 
-    if (!(gBattleState & 4)) {
+    if (!(gBattleState & BATTLE_TURN_START)) {
         return;
     }
     if (gTurnDelay != 0) {
         gTurnDelay--;
         return;
     }
-    actor = (gBattleState & 2) ? &gEnemies[gTurnOrder[gTurnIndex]].battleData : &gPlayerState.brian;
+    actor = (gBattleState & BATTLE_ENEMY_TURN) ? &gEnemies[gTurnOrder[gTurnIndex]].battleData : &gPlayerState.brian;
     if (actor->transform.stateFlags & ACTOR_BUSY) {
         return;
     }
     done = FALSE;
-    if (gEnemyCount == 0 || (gBattleState & 0x400)) {
-        gBattleState |= 8;
+    if (gEnemyCount == 0 || (gBattleState & BATTLE_ENEMIES_DOWN)) {
+        gBattleState |= BATTLE_WON;
         done = TRUE;
-        if (gBattleState & 0x100) {
+        if (gBattleState & BATTLE_BOSS) {
             SetStoryFlag(gBattleBoss - 1);
             OnBossDefeated(gBattleBoss - 1);
             gMonsterAnims = gFieldMonsterAnims;
             gEnemyNames = gFieldEnemyNames;
         }
         gDroppedItem = RollItemDrop();
-    } else if (gBattleState & 0x10) {
+    } else if (gBattleState & BATTLE_ESCAPED) {
         done = TRUE;
-    } else if (!(gBattleState & 0x100) && (gPlayerState.flags & 0x20)) {
-        gBattleState |= 0x10;
+    } else if (!(gBattleState & BATTLE_BOSS) && (gPlayerState.flags & PLAYER_OUTSIDE_CIRCLE)) {
+        gBattleState |= BATTLE_ESCAPED;
         done = TRUE;
     }
     if (done) {
-        gBattleState &= ~1;
+        gBattleState &= ~BATTLE_ACTIVE;
         gMonsterCardTimer = 0;
         StartGroundRing(gBattleCircleRing, gPlayerState.brian.transform.pos.x, gPlayerState.brian.transform.pos.y,
                         gPlayerState.brian.transform.pos.z);
         ClearEnemies();
         StartAfterBattleCamera(gCameraSetupIndex);
-        if (gBattleState & 0x100) {
-            gBattleState &= ~0x100;
+        if (gBattleState & BATTLE_BOSS) {
+            gBattleState &= ~BATTLE_BOSS;
         }
-        if (gBattleState & 0x10) {
+        if (gBattleState & BATTLE_ESCAPED) {
             FindMapBGM(gCurrentMap, gCurrentSubmap, 0);
         } else {
             UpdateBGMDelay(0x2B, 8);
         }
         return;
     }
-    gBattleState &= ~4;
-    if (gBattleState & 2) {
+    gBattleState &= ~BATTLE_TURN_START;
+    if (gBattleState & BATTLE_ENEMY_TURN) {
         FlagTurnEnemy();
     }
     gTurnCenterX = actor->transform.pos.x;
     gTurnCenterZ = actor->transform.pos.z;
-    if (gBattleState & 2) {
+    if (gBattleState & BATTLE_ENEMY_TURN) {
         size = gEnemies[gTurnOrder[gTurnIndex]].movementBoundSize;
     } else {
         size = gPlayerState.moveRadius;
     }
-    actor = (gBattleState & 2) ? &gEnemies[gTurnOrder[gTurnIndex]].battleData : &gPlayerState.brian;
+    actor = (gBattleState & BATTLE_ENEMY_TURN) ? &gEnemies[gTurnOrder[gTurnIndex]].battleData : &gPlayerState.brian;
     size *= actor->stats->moveScale;
     size += actor->transform.base.monster->radius * actor->transform.scale;
-    gTurnRing = SpawnBattleRing((gBattleState & 2) ? 1 : 2, gTurnCenterX, actor->transform.pos.y, gTurnCenterZ,
+    gTurnRing = SpawnBattleRing((gBattleState & BATTLE_ENEMY_TURN) ? 1 : 2, gTurnCenterX, actor->transform.pos.y, gTurnCenterZ,
                                size * 1.04);
 }
 void EndBattleTurn(MonsterBattleData* actor) {
@@ -368,8 +333,8 @@ void EndBattleTurn(MonsterBattleData* actor) {
     u16 index;
 
     CountDownStatuses(actor);
-    if (gBattleState & 1) {
-        if (!(gBattleState & 2)) {
+    if (gBattleState & BATTLE_ACTIVE) {
+        if (!(gBattleState & BATTLE_ENEMY_TURN)) {
             left = gTurnCount;
             while (left != 0) {
                 if (++gTurnIndex >= gTurnCount) {
@@ -383,15 +348,15 @@ void EndBattleTurn(MonsterBattleData* actor) {
                 left--;
             }
             if (left == 0) {
-                gBattleState |= 0x400;
+                gBattleState |= BATTLE_ENEMIES_DOWN;
             }
             gTurnDelay = 20;
         } else {
             gTurnDelay = 0;
         }
         StartGroundRing(gTurnRing, actor->transform.pos.x, actor->transform.pos.y, actor->transform.pos.z);
-        gBattleState ^= 2;
-        gBattleState |= 4;
+        gBattleState ^= BATTLE_ENEMY_TURN;
+        gBattleState |= BATTLE_TURN_START;
     }
 }
 EncounterZone* FindEncounterZone(f32 x, f32 z, EncounterZoneList* zones) {
@@ -519,12 +484,12 @@ u8 RollItemDrop(void) {
     /* RULE-EXCEPTION R30: item first holds the drop chance (1 in 3 with earth at 50, else 1 in 4); a separate chance
        local (any type, either declaration order, a ternary, an early return, item preset to 0xFF) keeps the result
        in v1 where the target has a0. */
-    if (gPlayerState.flags & 0x2000) {
+    if (gPlayerState.flags & PLAYER_AT_50(ELEMENT_EARTH)) {
         item = 3;
     } else {
         item = 4;
     }
-    if ((gBattleState & 0x100) || (getRandomNumber(item) == 0)) {
+    if ((gBattleState & BATTLE_BOSS) || (getRandomNumber(item) == 0)) {
         item = gEnemies[getRandomNumber(gTurnCount)].monBaseData->itemDrop;
     } else {
         item = 0xFF;    /* none */

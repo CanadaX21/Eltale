@@ -42,12 +42,12 @@ checked against the C.
 | 0xD86170-0xD86770 | 1,536 | `sky_palettes` | sky palettes, 3 x 256 colours, loaded with `gameplay_common` | `LoadMap` (`src/game/map.c`) | 0x800814B0 (`gSkyFadePalettes`) |
 | 0xD86770-0xD86970 | 512 | `rotating_palette` | the rotating palette (0x200 bytes), loaded with `gameplay_common` | `LoadMap` (`src/game/map.c`) | 0x80081AB0 (`gRotatingPalette`) |
 | 0xD86970-0xDA4570 | 121,856 | `sky_records` | 8 sky records, `sky_0`-`sky_7` (`gSkyRecords`): 0x800 bytes of palettes, then the sky texture | `LoadMap` (`src/game/map.c`) | 0x800808B0 (`gSkyPalettes`), 0x8007C6B0 (`gSkyTexture`) |
-| 0xDA4570-0xDAB5F0 | 28,800 | `pak_menu_module` | Controller Pak menu module | `mainproc` (`src/game/main.c`) | 0x80100000 |
+| 0xDA4570-0xDAB5F0 | 28,800 | `pak_menu_module` | Controller Pak manager | `mainproc` (`src/game/main.c`) | 0x80100000 |
 | 0xDAB5F0-0xDC62B0 | 109,760 | `title_overlay` | title screen overlay | `LoadOvl_TitleScreen` (`src/game/overlay.c`) | 0x8020C0D0 |
 | 0xDC62B0-0xE22690 | 377,824 | `intro_overlay` | splash and intro overlay | `LoadOvl_Splash_and_Intro` (`src/game/overlay.c`) | 0x8020C0D0 |
-| 0xE22690-0xE420D0 | 129,600 | `credits_overlay` | ending and credits overlay | `LoadOvl_Ending` (`src/game/overlay.c`) | 0x8020C0D0 |
+| 0xE22690-0xE420D0 | 129,600 | `credits_overlay` | epilogue overlay (the segment keeps its historical name) | `LoadOvl_Epilogue` (`src/game/overlay.c`) | 0x8020C0D0 |
 | 0xE420D0-0xE43780 | 5,808 | `event_blob_a` | event blob A | `EndingLoop` (`src/game/main.c`) | 0x801C0000 (`gEventBlob`) |
-| 0xE43780-0xE5BF60 | 100,320 | `event_blob_b` | event blob B | `AfterCreditsLoop` (`src/game/main.c`) | 0x801C0000 (`gEventBlob`) |
+| 0xE43780-0xE5BF60 | 100,320 | `event_blob_b` | event blob B | `StaffCreditsLoop` (`src/game/main.c`) | 0x801C0000 (`gEventBlob`) |
 | 0xE5BF60-0xE5ED70 | 11,792 | `instrument_ctl` | instrument bank, `.ctl` (libaudio B1: 1 bank, 47 waves) | `InitMusicPlayer` (`src/game/audio.c`), given the address by `mainproc` | the audio heap |
 | 0xE5ED70-0xE98330 | 234,944 | `instrument_tbl` | instrument samples, `.tbl` | `__amDma` (`src/game/audio.c`), streamed in 0x500-byte chunks | streamed |
 | 0xE98330-0xECB7B0 | 210,048 | `sequence_bank` | sequence bank (S1: 44 songs, compressed MIDI) | `LoadSequence` (`src/game/audio.c`), one song at a time; `InitMusicPlayer` reads the song table | a music slot's 0x8000-byte buffer (audio heap) |
@@ -82,14 +82,16 @@ sky records, its start).
 
 The figures in the README count only the CPU code at 0x1000-0x4C580. Code elsewhere in the ROM:
 
-- **Blocks the game loads at run time.** The title, intro and credits overlays share the overlay area at 0x8020C0D0
-  (`LoadOvl_TitleScreen`, `LoadOvl_Splash_and_Intro` and `LoadOvl_Ending` in `src/game/overlay.c` load them), and
-  `src/game/main.c` calls into them through `func_8020C0D0`, the loaded overlay's entry. The title and the intro
-  overlays are C units (`src/title_overlay/`, `src/intro_overlay/`), counted apart from the README's main figures;
-  their functions not yet in C, and the whole credits overlay, are assembly that splat disassembles from your ROM
-  during the build, with every reference by name. The Controller Pak menu module loads to 0x80100000, where
-  `gameplay_common` goes, and `mainproc` calls `func_801009EC` in it: assembly as well. The event blobs and the spell
-  and cutscene banks may hold code too; nothing in the C calls into them, and they are extracted as binary data.
+- **Blocks the game loads at run time.** The title, intro and epilogue overlays share the overlay area at 0x8020C0D0
+  (`LoadOvl_TitleScreen`, `LoadOvl_Splash_and_Intro` and `LoadOvl_Epilogue` in `src/game/overlay.c` load them; the
+  epilogue overlay's segment keeps its historical name, `credits_overlay`), and `src/game/main.c` calls into them
+  through `func_8020C0D0`, the loaded overlay's entry. The title and the intro overlays are C units
+  (`src/title_overlay/`, `src/intro_overlay/`), counted apart from the README's main figures; their functions not
+  yet in C, and the whole epilogue overlay, are assembly that splat disassembles from your ROM during the build, with
+  every reference by name. The Controller Pak manager loads to 0x80100000, where `gameplay_common` goes later, and
+  `mainproc` calls `ControllerPakMenu` in it: a C unit (`src/pak_menu_module/`), two of its 16 functions still
+  assembly. The event blobs and the spell and cutscene banks may hold code too; nothing in the C calls into them,
+  and they are extracted as data.
 - **In the main image,** the RSP microcode text after the CPU code (from 0x4C580), binary data.
 - **In `boot`,** the cartridge's IPL3.
 

@@ -6,9 +6,9 @@ This is where the game's own code meets the N64's system software: which service
 
 ## Summary
 
-- Game code scanned: 601 functions in 41 objects (main's C units, the title and intro overlays' C units, and the code blocks kept as assembly).
+- Game code scanned: 602 functions in 41 objects (main's C units, the C units of the title and intro overlays and of the Controller Pak module, and the code blocks kept as assembly).
 - The library linked into main: 329 functions (verified 284, probable 24, unresolved 21).
-- The game calls 90 of them directly, at 375 call sites, in 15 services: intro overlay (C units) 3, main (C) 344, Controller Pak module (assembly) 28.
+- The game calls 90 of them directly, at 375 call sites, in 15 services: intro overlay (C units) 3, main (C) 344, Controller Pak module (C unit) 28.
 - Every call site was found twice: from the build's relocations and by scanning the ROM's own instruction words; the two agree (check 2 below).
 
 ## Services the game uses
@@ -16,20 +16,20 @@ This is where the game's own code meets the N64's system software: which service
 | Service | Library functions the game calls | Call sites | Calling game functions | For a port |
 |---|---|---|---|---|
 | debug output | osSyncPrintf | 2 | Intro_Update [intro_overlay], RepairSaveSlot | empty stubs in the shipped library: calls to them do nothing |
-| threads and messages | osCreateMesgQueue, osCreateThread, osRecvMesg, osSendMesg, osSetEventMesg, osStartThread | 64 | AfterCreditsLoop, AudioThread, CreditsLoop, EndingLoop, FieldLoop, InitAudio, InitControllers, IntroLoop, ReadAudioRom, ReadController, SaveModeLoop, StartAudioThread, TitleLoop, WaitForScheduler, boot, dma_write, func_8010055C_DA4ACC [pak_menu_module], func_801009EC_DA4F5C [pak_menu_module], idle, mainproc, nnScCreateScheduler, nnScEventBroadcast, nnScEventHandler, nnScExecuteAudio, nnScExecuteGraphics, nnScStartScheduler, nnScWaitTaskReady | the OS kernel: a native port provides threads and message queues itself |
+| threads and messages | osCreateMesgQueue, osCreateThread, osRecvMesg, osSendMesg, osSetEventMesg, osStartThread | 64 | AudioThread, ControllerPakMenu [pak_menu_module], EndingLoop, EpilogueLoop, FieldLoop, InitAudio, InitControllers, IntroLoop, MenuLoop, PakMenu_SwapFrame [pak_menu_module], ReadAudioRom, ReadController, StaffCreditsLoop, StartAudioThread, TitleLoop, WaitForScheduler, boot, dma_write, idle, mainproc, nnScCreateScheduler, nnScEventBroadcast, nnScEventHandler, nnScExecuteAudio, nnScExecuteGraphics, nnScStartScheduler, nnScWaitTaskReady | the OS kernel: a native port provides threads and message queues itself |
 | timers and clock | osGetTime | 2 | FieldLoop | CPU count register and the OS timer list: replaced by host timing |
-| CPU, caches, TLB and interrupts | osInitialize, osInvalDCache, osInvalICache, osSetIntMask, osVirtualToPhysical, osWritebackDCache, osWritebackDCacheAll | 19 | AudioThread, BuildFrame, ReadAudioRom, __amDma, boot, dma_write, func_8010055C_DA4ACC [pak_menu_module], nnScAddClient, nnScExecuteAudio, nnScRemoveClient | N64 CPU state (cache, TLB, interrupts, exceptions): no counterpart on a host; cache calls become no-ops, addresses need no translation |
-| video interface | osCreateViManager, osViBlack, osViGetCurrentFramebuffer, osViSetEvent, osViSetMode, osViSetSpecialFeatures, osViSwapBuffer | 15 | func_8010055C_DA4ACC [pak_menu_module], func_801009EC_DA4F5C [pak_menu_module], mainproc, nnScCreateScheduler, nnScEventHandler, nnScExecuteGraphics, nnScWaitTaskReady | the VI: frame buffer swap, video mode and retrace events; replaced by the host's presentation |
+| CPU, caches, TLB and interrupts | osInitialize, osInvalDCache, osInvalICache, osSetIntMask, osVirtualToPhysical, osWritebackDCache, osWritebackDCacheAll | 19 | AudioThread, BuildFrame, PakMenu_SwapFrame [pak_menu_module], ReadAudioRom, __amDma, boot, dma_write, nnScAddClient, nnScExecuteAudio, nnScRemoveClient | N64 CPU state (cache, TLB, interrupts, exceptions): no counterpart on a host; cache calls become no-ops, addresses need no translation |
+| video interface | osCreateViManager, osViBlack, osViGetCurrentFramebuffer, osViSetEvent, osViSetMode, osViSetSpecialFeatures, osViSwapBuffer | 15 | ControllerPakMenu [pak_menu_module], PakMenu_SwapFrame [pak_menu_module], mainproc, nnScCreateScheduler, nnScEventHandler, nnScExecuteGraphics, nnScWaitTaskReady | the VI: frame buffer swap, video mode and retrace events; replaced by the host's presentation |
 | RCP tasks (RSP and RDP) | osSpTaskLoad, osSpTaskStartGo, osSpTaskYield, osSpTaskYielded | 8 | nnScExecuteAudio, nnScExecuteGraphics | starts the RSP microcode tasks (graphics and audio); a port runs the display lists and audio command lists through its own renderer and mixer |
 | cartridge DMA (PI) | osCreatePiManager, osPiStartDma | 4 | ReadAudioRom, __amDma, dma_write, idle | ROM reads by DMA: a port reads its asset data from files or memory instead |
-| Controller Pak (saves) | osPfsAllocateFile, osPfsDeleteFile, osPfsFileState, osPfsFreeBlocks, osPfsInitPak, osPfsNumFiles, osPfsReadWriteFile, osPfsRepairId | 25 | AllocateSaveNote, DeleteSaveNote, OpenSaveMenu, ReadPakNote, RepairPak, ScanControllerPak, WritePakNote, func_80036124, func_801009EC_DA4F5C [pak_menu_module] | the Controller Pak file system the game saves to; a port keeps the save format or converts it |
-| Rumble Pak | osMotorInit | 5 | Intro_Update [intro_overlay], OpenSaveMenu, RepairPak, ScanControllerPak, func_801009EC_DA4F5C [pak_menu_module] | the rumble accessory's detection and control |
-| Transfer Pak | osGbpakInit | 6 | Intro_Update [intro_overlay], OpenSaveMenu, RepairPak, ScanControllerPak, func_80036184, func_801009EC_DA4F5C [pak_menu_module] | the Game Boy Transfer Pak's initialisation |
-| controllers (SI) | osContGetQuery, osContGetReadData, osContInit, osContSetCh, osContStartQuery, osContStartReadData | 13 | InitControllers, ReadController, func_80036144, func_80036164, func_801009EC_DA4F5C [pak_menu_module] | controller polling through the serial interface and its PIF RAM; replaced by host input |
+| Controller Pak (saves) | osPfsAllocateFile, osPfsDeleteFile, osPfsFileState, osPfsFreeBlocks, osPfsInitPak, osPfsNumFiles, osPfsReadWriteFile, osPfsRepairId | 25 | AllocateSaveNote, ControllerPakMenu [pak_menu_module], CountPakFiles, DeleteSaveNote, OpenSaveMenu, ReadPakNote, RepairPak, ScanControllerPak, WritePakNote | the Controller Pak file system the game saves to; a port keeps the save format or converts it |
+| Rumble Pak | osMotorInit | 5 | ControllerPakMenu [pak_menu_module], Intro_Update [intro_overlay], OpenSaveMenu, RepairPak, ScanControllerPak | the rumble accessory's detection and control |
+| Transfer Pak | osGbpakInit | 6 | ControllerPakMenu [pak_menu_module], InitGbPak, Intro_Update [intro_overlay], OpenSaveMenu, RepairPak, ScanControllerPak | the Game Boy Transfer Pak's initialisation |
+| controllers (SI) | osContGetQuery, osContGetReadData, osContInit, osContSetCh, osContStartQuery, osContStartReadData | 13 | ControllerPakMenu [pak_menu_module], GetContQuery, InitControllers, ReadController, StartContQuery | controller polling through the serial interface and its PIF RAM; replaced by host input |
 | audio output (AI) | osAiGetLength, osAiSetFrequency, osAiSetNextBuffer | 3 | AudioThread, InitAudio | the audio interface's DMA buffers and sample rate; replaced by the host's audio output |
 | audio library | alAudioFrame, alBnkfNew, alCSPGetState, alCSPGetVol, alCSPNew, alCSPPlay, alCSPSetBank, alCSPSetChlFXMix, alCSPSetSeq, alCSPSetVol, alCSPStop, alCSeqNew, alHeapDBAlloc, alHeapInit, alInit, alLink, alSeqFileNew, alSndpAllocate, alSndpGetState, alSndpNew, alSndpPlay, alSndpSetFXMix, alSndpSetPan, alSndpSetPitch, alSndpSetSound, alSndpSetVol, alSndpStop, alUnlink | 71 | ApplyMusicVolume, AudioThread, GetMusicSlotState, GetSoundState, InitAudio, InitMusicPlayer, InitSoundEffects, LoadMusicSequences, LoadSeqFileHeader, StartSequence, StartSound, StepLoopingSound, StepMusicFadeIn, StepMusicFadeOut, StopMusicSlot, StopSound, SwitchMusic, __amDma, __amDmaNew, __clearAudioDMA | libultra's audio library runs on the CPU: sequence and sound players and the synthesizer, which builds command lists for the aspMain microcode; a port runs it natively with an audio-microcode replacement, or swaps the audio stack |
 | graphics utilities | guLookAtReflectF, guMtxCatF, guMtxF2L, guMtxIdent, guMtxXFMF, guOrtho, guPerspectiveF, guPosition, guTranslate | 36 | BuildActorMtx, BuildLookAtMtx, BuildRotationMtx, DrawCompass, DrawDust, DrawGlows, DrawGroundRings, DrawHUD, DrawMapBillboards, DrawMapFrame, DrawMapProps, DrawModelPart, DrawScreenFade, DrawShadows, DrawSpellCross, DrawSpiritCounters, DrawStaffHitEffects, InitRoomCamera, MtxFromDirection, SpawnSparkleBurst, SpawnStaffHitEffect, SpiritGainWindow, UpdateCamera, UpdateLightDirections, UpdateSparkleBursts, WorldToScreen | matrix and view helpers (gu); portable C a port can compile natively (fixed-point matrix layout to keep) |
-| math and C library | __ll_mul, __ull_div, cosf, sinf, sins, sqrtf | 102 | BrianBattleMovement, BrianState_Run, BrianState_Stand, BrianState_Walk, BuildActorMatrix, BuildLookAtMatrix, BuildRotationMatrix, BuildSRTMatrix, CameraAboveNpcs, CameraMode_Field, CameraMode_Fixed, CountBattleAgility, DamageBrian, DamageEnemy, DrawCompass, DrawDamageNumbers, DrawEnemyMarker, DrawGroundRings, DrawMapProps, DrawMenuDigits, DrawMenuNumber, DrawMenuNumberZeros, DrawObjectMarker, DrawSignMarker, DrawSpiritCounters, DrawSpiritMarker, DrawSpiritSparkle, DrawStaffHitEffects, EnemyMeleeAttack, FieldLoop, FindStaffTarget, IsNearBoss, ItemMenu, MatrixFromDirection, MoveEnemy, Normalize2D, PickEnemyAIOption, PushBrianOutOfEnemies, PushEnemyOut, PushNPCOutOfBrian, PushOutOfWallSegment, SelectEnemyAction, SortMapModels, SpawnBoss, SpellCollision0, SpellMovement0, SpellOrigin_Ahead, TryReadSign, UpdateBrian, UpdateCamera, UpdateCameraBob, UpdateNPCs, UpdateTalkMarker, rotateCoordinatesByAngle | portable C library code; a host's C library provides the same |
+| math and C library | __ll_mul, __ull_div, cosf, sinf, sins, sqrtf | 102 | BrianBattleMovement, BrianState_Run, BrianState_Stand, BrianState_Walk, BuildActorMatrix, BuildLookAtMatrix, BuildRotationMatrix, BuildSRTMatrix, CameraAboveNpcs, CameraMode_Field, CameraMode_Fixed, CountBattleAgility, DamageBrian, DamageEnemy, DrawCompass, DrawDamageNumbers, DrawEnemyMarker, DrawGroundRings, DrawMapProps, DrawMenuDigits, DrawMenuNumber, DrawMenuNumberZeros, DrawObjectMarker, DrawSignMarker, DrawSpiritCounters, DrawSpiritMarker, DrawSpiritSparkle, DrawStaffHitEffects, EnemyMeleeAttack, FieldLoop, FindSignTarget, FindStaffTarget, IsNearBoss, ItemMenu, MatrixFromDirection, MoveEnemy, Normalize2D, PickEnemyAIOption, PushBrianOutOfEnemies, PushEnemyOut, PushNPCOutOfBrian, PushOutOfWallSegment, SelectEnemyAction, SortMapModels, SpawnBoss, SpellCollision0, SpellMovement0, SpellOrigin_Ahead, UpdateBrian, UpdateCamera, UpdateCameraBob, UpdateNPCs, UpdateTalkMarker, rotateCoordinatesByAngle | portable C library code; a host's C library provides the same |
 
 ## Calls by game function
 
@@ -50,7 +50,7 @@ Each game function that calls the library, with what it calls (segment and unit 
 - UpdateLightDirections [lighting.c]: guMtxXFMF
 - DrawShadows [shadow.c]: guMtxF2L
 - DrawSpiritSparkle [spirits.c]: sinf
-- TryReadSign [signs.c]: sqrtf
+- FindSignTarget [signs.c]: sqrtf
 - InitRoomCamera [camera.c]: guOrtho x2
 - UpdateCamera [camera.c]: guPerspectiveF, guLookAtReflectF, guMtxF2L x2, guTranslate, sinf, cosf
 - CameraMode_Field [camera.c]: sqrtf x2
@@ -64,11 +64,11 @@ Each game function that calls the library, with what it calls (segment and unit 
 - BuildFrame [main.c]: osVirtualToPhysical x5, osWritebackDCache
 - FieldLoop [main.c]: osGetTime x2, __ll_mul, __ull_div, osRecvMesg, osSendMesg
 - EndingLoop [main.c]: osRecvMesg, osSendMesg
-- AfterCreditsLoop [main.c]: osRecvMesg, osSendMesg
-- SaveModeLoop [main.c]: osSendMesg
+- StaffCreditsLoop [main.c]: osRecvMesg, osSendMesg
+- MenuLoop [main.c]: osSendMesg
 - TitleLoop [main.c]: osSendMesg
 - IntroLoop [main.c]: osSendMesg
-- CreditsLoop [main.c]: osSendMesg
+- EpilogueLoop [main.c]: osSendMesg
 - WaitForScheduler [main.c]: osRecvMesg
 - DrawDamageNumbers [effects.c]: sins
 - UpdateSparkleBursts [effects.c]: guMtxXFMF
@@ -139,10 +139,10 @@ Each game function that calls the library, with what it calls (segment and unit 
 - ReadPakNote [controller.c]: osPfsReadWriteFile
 - WritePakNote [controller.c]: osPfsFreeBlocks, osPfsReadWriteFile
 - RepairPak [controller.c]: osMotorInit, osGbpakInit, osPfsInitPak x2, osPfsRepairId
-- func_80036124 [controller.c]: osPfsNumFiles
-- func_80036144 [controller.c]: osContStartQuery
-- func_80036164 [controller.c]: osContGetQuery
-- func_80036184 [controller.c]: osGbpakInit
+- CountPakFiles [controller.c]: osPfsNumFiles
+- StartContQuery [controller.c]: osContStartQuery
+- GetContQuery [controller.c]: osContGetQuery
+- InitGbPak [controller.c]: osGbpakInit
 - UpdateBrian [player.c]: sqrtf
 - BrianState_Stand [player.c]: sqrtf
 - BrianState_Walk [player.c]: sqrtf x2
@@ -166,9 +166,9 @@ Each game function that calls the library, with what it calls (segment and unit 
 - DrawMapBillboards [map.c]: guPosition x2
 - SortMapModels [map.c]: sqrtf, sins x3
 - DrawMapProps [map.c]: sqrtf, guMtxF2L
+- PakMenu_SwapFrame [pak_menu.c]: osWritebackDCacheAll, osRecvMesg, osViBlack, osViSwapBuffer
+- ControllerPakMenu [pak_menu.c]: osContStartReadData x2, osRecvMesg x3, osContGetReadData x2, osPfsInitPak x7, osMotorInit, osGbpakInit, osViBlack, osPfsNumFiles, osPfsFileState, osPfsFreeBlocks, osPfsDeleteFile, osPfsRepairId, osContStartQuery, osContGetQuery
 - Intro_Update [intro.c]: osSyncPrintf, osMotorInit, osGbpakInit
-- func_8010055C_DA4ACC [pak_menu_module]: osWritebackDCacheAll, osRecvMesg, osViBlack, osViSwapBuffer
-- func_801009EC_DA4F5C [pak_menu_module]: osContStartReadData x2, osRecvMesg x3, osContGetReadData x2, osPfsInitPak x7, osMotorInit, osGbpakInit, osViBlack, osPfsNumFiles, osPfsFileState, osPfsFreeBlocks, osPfsDeleteFile, osPfsRepairId, osContStartQuery, osContGetQuery
 
 ## Data and callbacks crossing the boundary
 
@@ -212,9 +212,9 @@ Fixed RAM places the game loads ROM blocks to (block loads; the loader in bracke
 - RAM 0x80100000: ROM 0xDA4570-0xDAB5F0 (mainproc@0x196C)
 - RAM 0x8020C0D0: ROM 0xDAB5F0-0xDC62B0 (LoadOvl_TitleScreen@0x36DD0)
 - RAM 0x8020C0D0: ROM 0xDC62B0-0xE22690 (LoadOvl_Splash_and_Intro@0x36E08)
-- RAM 0x8020C0D0: ROM 0xE22690-0xE420D0 (LoadOvl_Ending@0x36E40)
+- RAM 0x8020C0D0: ROM 0xE22690-0xE420D0 (LoadOvl_Epilogue@0x36E40)
 - RAM 0x801C0000: ROM 0xE420D0-0xE43780 (EndingLoop@0x2CA8)
-- RAM 0x801C0000: ROM 0xE43780-0xE5BF60 (AfterCreditsLoop@0x303C)
+- RAM 0x801C0000: ROM 0xE43780-0xE5BF60 (StaffCreditsLoop@0x303C)
 
 The two audio bank files (`.ctl`, ROM 0xE5BF60-0xE5ED70 and 0xECB7B0-0xECD470) have no fixed place: InitMusicPlayer and InitSoundEffects read them into buffers allocated from the audio heap at run time.
 
@@ -224,14 +224,14 @@ The two audio bank files (`.ctl`, ROM 0xE5BF60-0xE5ED70 and 0xECB7B0-0xECD470) h
 - **Scheduling:** Nintendo's sample scheduler (nnSc*, compiled into the game in unit nnsched.c) asks for a VI retrace message every field and for the RSP, RDP and pre-NMI events; its threads start the audio and graphics RSP tasks, and an audio task may yield the running graphics task and resume it. *Evidence:* src/sched/nnsched.c nnScCreateScheduler (nnScCreateScheduler(&gScheduler, 1) in src/game/main.c mainproc), nnScExecuteAudio, nnScExecuteGraphics *(read from the code)*
 - **Frame rate:** Field play sends a new frame only after the previous frame's done message and at least two retraces (at most 30 frames a second on NTSC; the first frame waits for one): FieldLoop waits on the scheduler for the done message, then counts retraces, and takes each frame's duration in microseconds from osGetTime. *Evidence:* src/game/main.c FieldLoop (WaitForScheduler(2): NN_SC_DONE_MSG; the gRetraceCount loop; gFrameDeltaMicros) *(read from the code)*
 - **Video mode:** mainproc starts the VI manager and sets NTSC LAN1 (320 by 240, 16-bit, anti-aliased, not interlaced) when osTvType is NTSC and MPAL LAN1 otherwise; nothing selects a PAL mode. The special features word 0x5A sets gamma off, gamma dithering off, divot on and the dither filter on. *Evidence:* src/game/main.c mainproc (osViModeTable[OS_VI_NTSC_LAN1] / [OS_VI_MPAL_LAN1], osViSetSpecialFeatures(0x5A)) *(read from the code)*
-- **Presentation:** The scheduler's graphics thread shows each finished frame buffer with osViSwapBuffer. The screen is blanked (osViBlack) while mainproc sets the video mode, unblanked by the graphics thread after its first task, blanked again by the event handler on a pre-NMI (reset) message, and blanked by the Controller Pak module while it runs. *Evidence:* src/game/main.c mainproc; src/sched/nnsched.c nnScExecuteGraphics, nnScEventHandler; the Pak module's assembly *(read from the code)*
+- **Presentation:** The scheduler's graphics thread shows each finished frame buffer with osViSwapBuffer. The screen is blanked (osViBlack) while mainproc sets the video mode, unblanked by the graphics thread after its first task, blanked again by the event handler on a pre-NMI (reset) message, and blanked by the Controller Pak module while it runs. *Evidence:* src/game/main.c mainproc; src/sched/nnsched.c nnScExecuteGraphics, nnScEventHandler; the Pak module's PakMenu_SwapFrame (C) and ControllerPakMenu (assembly) *(read from the code)*
 - **Graphics microcode:** Graphics tasks run the F3DEX 1.23 microcode: InitFrameTask points the task at rspboot and F3DEX's text and data, which the ROM map places in main. *Evidence:* src/game/main.c InitFrameTask; the microcode ranges above *(read from the code)*
 - **Audio:** Audio is libultra's audio library: InitAudio asks the AI for 22050 Hz (keeping the rate it gets), 16 voices and the small-room reverb; music plays through compressed-sequence players and sound effects through a sound player. AudioThread builds one command list per video field (about 368 samples) for the aspMain microcode and queues the output with osAiSetNextBuffer. *Evidence:* src/game/audio.c InitAudio, InitMusicPlayer, InitSoundEffects, AudioThread (NUM_FIELDS 1) *(read from the code)*
 - **Audio data:** The audio library reads its samples through the game: InitAudio registers __amDmaNew as the synthesizer's DMA routine, and __amDma and ReadAudioRom read the ROM with osPiStartDma (__amDma in fixed 0x500-byte chunks). *Evidence:* src/game/audio.c InitAudio, __amDma, ReadAudioRom *(read from the code)*
 - **Cartridge reads:** Every other ROM read goes through dma_write, which invalidates the instruction and data caches over the destination and reads in chunks of at most 0x4000 bytes with osPiStartDma. *Evidence:* src/game/dma.c dma_write *(read from the code)*
 - **Controllers:** InitControllers routes serial-interface events to its queue and initialises the controllers; ReadController polls them each time it runs (osContStartReadData, then osContGetReadData). *Evidence:* src/game/controller.c InitControllers, ReadController *(read from the code)*
 - **Saves:** Saves live in the Controller Pak's file system (notes allocated, read, written and deleted through osPfs*). The game calls no EEPROM or flash routine, and no EPI access or cartridge-handle set-up (the route SRAM would take): its ROM reads go through osPiStartDma. *Evidence:* src/game/controller.c AllocateSaveNote, ReadPakNote, WritePakNote, DeleteSaveNote, ScanControllerPak; src/game/save_menu.c OpenSaveMenu *(read from the code)*
-- **Accessories:** When osPfsInitPak reports a broken pak ID (PFS_ERR_ID_FATAL), OpenSaveMenu and ScanControllerPak probe for a Rumble Pak (osMotorInit) and then a Transfer Pak (osGbpakInit) and report PFS_ERR_NOPACK (no Controller Pak) if either answers; RepairPak returns PFS_ERR_CONTRFAIL in that case. The Controller Pak module and the intro probe too, with outcomes of their own (the module tries the Transfer Pak only after osMotorInit reports PFS_ERR_DEVICE; the intro does not call osPfsInitPak and keeps codes of its own). The game never drives the rumble motor. *Evidence:* src/game/save_menu.c OpenSaveMenu; src/game/controller.c ScanControllerPak, RepairPak; the Pak module's and the intro overlay's assembly *(read from the code)*
+- **Accessories:** When osPfsInitPak reports a broken pak ID (PFS_ERR_ID_FATAL), OpenSaveMenu and ScanControllerPak probe for a Rumble Pak (osMotorInit) and then a Transfer Pak (osGbpakInit) and report PFS_ERR_NOPACK (no Controller Pak) if either answers; RepairPak returns PFS_ERR_CONTRFAIL in that case. The Controller Pak module and the intro probe too, with outcomes of their own (the module tries the Transfer Pak only after osMotorInit reports PFS_ERR_DEVICE; the intro does not call osPfsInitPak and keeps codes of its own). The game never drives the rumble motor. *Evidence:* src/game/save_menu.c OpenSaveMenu; src/game/controller.c ScanControllerPak, RepairPak; the Pak module's ControllerPakMenu and the intro overlay's assembly *(read from the code)*
 - **Debug output:** The game's debug messages (RepairSaveSlot's "Repair Info", one in the intro) go to an empty stub: nothing is printed in the shipped game. *Evidence:* src/game/save_menu.c RepairSaveSlot; the intro overlay's assembly; the library's two identical empty stubs *(read from the code)*
 - **Memory:** The game stays inside the base 4 MB: its two 320 by 240 16-bit frame buffers sit at 0x803B5000 and 0x803DA800, the second ending exactly at 0x80400000; every fixed load the ROM map records ends below that (the highest, Inventory_Init's palette block, at 0x803AC860); no instruction in its code forms an address at or above 0x80400000; and it never asks for the memory size (no osGetMemSize call). *Evidence:* src/game/main.c (gFramebuffer0 and gFramebuffer1, the frame setup); the fixed loads above; the inventory's measures *(read from the code and measured)*
 

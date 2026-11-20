@@ -14,7 +14,8 @@ It writes objdiff.ninja (included from build.ninja) and objdiff.json.
 """
 import json, os, re
 
-BUILD = re.compile(r'^build (build/(src/\S+\.c)\.o): (\S+) (src/\S+\.c)\s*$')
+# a compile's implicit (|) and order-only (||) inputs follow its source (the dialogue headers)
+BUILD = re.compile(r'^build (build/(src/\S+\.c)\.o): (\S+) (src/\S+\.c)((?: \|\|? [^|]+)*?)\s*$')
 
 with open('build.ninja', encoding='utf-8') as f:
     raw = f.read().splitlines()
@@ -44,10 +45,10 @@ for line in lines:
     m = BUILD.match(line)
     if not m:
         continue
-    obj, rel, rule, src = m.groups()
+    obj, rel, rule, src, deps = m.groups()
     stripped = f'build/objdiff/{rel}'
     out.append(f'build {stripped}: strip_global_asm {src}')
-    out.append(f'build build/objdiff/{rel}.o: {rule} {stripped}')
+    out.append(f'build build/objdiff/{rel}.o: {rule} {stripped}{deps}')
     # quoted #includes are found next to the original file
     out.append(f'  CFLAGS = $CFLAGS -I {os.path.dirname(src)}')
     out.append(f'  dep_include = -I {os.path.dirname(src)}')   # the same path for its dependency list

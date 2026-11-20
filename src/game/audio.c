@@ -1,6 +1,8 @@
 #include "common.h"
+BSS_ORDER_PAD(128)
 #include "game/audio.h"
 #include "sched/nnsched.h"
+BSS_ORDER_PAD(128)
 
 /* ---- audio.c's .data (0x8004F780-0x80055B40, ROM 0x50380-0x56740). In address order:
    IDO writes .data in definition order. ---- */
@@ -1845,42 +1847,49 @@ s32 nextDMA = 0;                                 /* nextDMA, as in the SDK's aud
 u32 audFrameCt = 0;                              /* audFrameCt, as in the SDK's audiomgr.c */
 
 
-/* The audio DMA buffers, as in the N64 SDK's audiomgr.c (AMDMABuffer / AMDMAState). */
-typedef struct {
-    ALLink node;            /* 0x00 */
-    s32 startAddr;          /* 0x08 (signed here: __amDma compares it with slt) */
-    u32 lastFrame;          /* 0x0C: the audio frame it was last used in */
-    char* ptr;              /* 0x10 */
-} AMDMABuffer;
-typedef struct {
-    u8 initialized;
-    AMDMABuffer* firstUsed; /* 0x04 */
-    AMDMABuffer* firstFree; /* 0x08 */
-} AMDMAState;
-extern AMDMAState dmaState;       /* dmaState */
-extern OSMesgQueue audDMAMessageQ;   /* audDMAMessageQ */
-extern OSIoMesg audDMAIOMesgBuf[];   /* audDMAIOMesgBuf */
 void SwitchMusic();               /* RULE-EXCEPTION R25: unprototyped; ChangeMusicIfIdle calls it with no argument (an unreferenced function: no call or pointer to it in the ROM) */
-typedef struct {
-    ALSeqpConfig config;    /* 0x000 */
-    ALCSPlayer player;      /* 0x01C */
-    ALCSeq seq;             /* 0x098: what the player plays, alCSeqNew'd from seqBuffer (StartSequence) */
-    u8* seqBuffer;          /* 0x190: the sequence data (0x8000 bytes, InitMusicPlayer) */
-    s32 seqId;              /* 0x194: the sequence loaded into it (LoadSequence) */
-    char unk198[4];
-} MusicSlot;                /* 0x19C */
-extern MusicSlot gMusicSlots[2];     /* the two music slots */
-extern s32 gSoundQueueVolumeScale[];
-extern s32 gSoundQueuePan[];
-extern s32 gSoundQueueRead;
-extern u32 gSlotVolumeScale[5];
-extern s32 gSlotPan[5];
-extern u32* gSoundScriptPos;
-extern s16* gSoundIds;
-extern ALSndPlayer gSndPlayer;
-extern ALHeap gAudioHeap;
-extern OSThread gAudioThread;           /* the audio thread (StartAudioThread) */
-extern OSMesgQueue gAudioDmaQueue;
+
+/* ---- audio.c's .bss (0x8008CEC0-0x8008FAF0): the audio thread and its stack, the heap, the DMA queues and buffers, the synthesizer and
+   sound player, the sound scripts' slots and the two music slots. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), before the functions whose statics follow them, and it 8-aligns every variable of 8
+   bytes or more. ---- */
+OSThread gAudioThread;                   /* the audio thread (StartAudioThread) */
+u64 gAudioStack[1024];                   /* the audio thread's stack (8 KB: 0x400 x 8 fill the space) */
+ALHeap gAudioHeap;
+Acmd* gAcmdLists[2];                     /* the two ACMD lists (0x8000 bytes each) */
+void* D_8008F088[2];                     /* (0x40 bytes each) */
+s16* gAudioBuffers[3];                   /* the three audio output buffers (0x8000 bytes each) */
+OSMesgQueue audDMAMessageQ;              /* audDMAMessageQ */
+OSMesgQueue gAudioDmaQueue;
+OSMesg audDMAMessageBuf;
+OSMesg gAudioDmaMesgBuf;
+OSIoMesg audDMAIOMesgBuf[32];            /* audDMAIOMesgBuf (32 x 0x18 fill the space) */
+ALGlobals gAudioGlobals;
+ALSynConfig gSynConfig;
+ALSndPlayer gSndPlayer;
+ALSndpConfig gSndpConfig;
+ALInstrument* gSfxInstrument;            /* its instrument 0: one sound per effect */
+ALBank* gSfxBank;
+s16* gSoundIds;
+s32 gSoundIdsAllocated;                  /* sound ids allocated */
+AMDMAState dmaState;                     /* dmaState */
+AMDMABuffer dmaBuffs[32];                /* dmaBuffs */
+s32 gAcmdLen;                            /* alAudioFrame's command count */
+u32* gSoundScriptPos;
+u32* gSoundScriptLoop;
+s32 gLoopingSoundSlot;                   /* the slot being updated (StepLoopingSound reads it) */
+u32 gSlotLastVolume[5];                  /* last volume per slot */
+u32* gSlotScriptPos0;
+u32* gSlotScriptPos1;
+u32* gSlotScriptPos2;
+u32* gSlotScriptPos3;
+u32* gSlotScriptPos4;
+u32* gSlotScriptLoop0;
+u32* gSlotScriptLoop1;
+u32* gSlotScriptLoop2;
+u32* gSlotScriptLoop3;
+u32* gSlotScriptLoop4;
+MusicSlot gMusicSlots[2];                /* the two music slots */
 
 void ReadAudioRom(u32 rom, void* dst, s32 size) {
     OSIoMesg msg;
@@ -1889,15 +1898,6 @@ void ReadAudioRom(u32 rom, void* dst, s32 size) {
     osPiStartDma(&msg, 0, 0, rom, dst, (u32) size, &gAudioDmaQueue);
     osRecvMesg(&gAudioDmaQueue, NULL, OS_MESG_BLOCK);
 }
-extern u8 gAudioHeapMemory[];             /* the audio heap's memory (0x68000 bytes) */
-extern Acmd* gAcmdLists[2];         /* the two ACMD lists (0x8000 bytes each) */
-extern void* D_8008F088[2];         /* (0x40 bytes each) */
-extern s16* gAudioBuffers[3];          /* the three audio output buffers (0x8000 bytes each) */
-extern OSMesg audDMAMessageBuf;
-extern OSMesg gAudioDmaMesgBuf;
-extern ALGlobals gAudioGlobals;
-extern ALSynConfig gSynConfig;
-ALDMAproc __amDmaNew(AMDMAState** state);                /* __amDmaNew */
 void InitAudio(void) {
     alHeapInit(&gAudioHeap, gAudioHeapMemory, 0x68000);
     gAcmdLists[0] = alHeapDBAlloc(0, 0, &gAudioHeap, 1, 0x8000);
@@ -1972,7 +1972,6 @@ s32 __amDma(s32 addr, s32 len, void* state) {
 
     return osVirtualToPhysical(foundBuffer) + delta;
 }
-extern AMDMABuffer dmaBuffs[32];  /* dmaBuffs */
 ALDMAproc __amDmaNew(AMDMAState** state) {
     s32 i;
 
@@ -2014,7 +2013,6 @@ void __clearAudioDMA(void) {
     audFrameCt++;
 }
 #define NUM_FIELDS 1               /* video fields per audio frame, as in the SDK's audiomgr.h */
-extern s32 gAcmdLen;             /* alAudioFrame's command count */
 /* The audio thread: the SDK audio manager's frame loop on the nnsched scheduler. On each retrace it builds one audio
    frame into one of two command lists, runs it as an RSP task and hands the output buffer (one of three) to the AI.
    After PRE-NMI it fades both music players out over 28 frames, then stops making frames. */
@@ -2174,7 +2172,6 @@ void LoadSeqFileHeader(u8* seqFile) {
     gSeqFile = alHeapDBAlloc(0, 0, &gAudioHeap, 1, size);
     ReadAudioRom((u32)seqFile, gSeqFile, size);
 }
-extern u64 gAudioStack[];                 /* the audio thread's stack */
 void StartAudioThread(void* sched) {
     osCreateThread(&gAudioThread, 5, (void *)&AudioThread, sched, gAudioStack + 0x2000 / sizeof(u64), 0x32);
     osStartThread(&gAudioThread);
@@ -2247,10 +2244,6 @@ void StopMusicSlot(s32 slot) {
 s32 GetMusicSlotState(s32 slot) {
     return alCSPGetState(MUSIC_PLAYER(slot));
 }
-extern ALSndpConfig gSndpConfig;
-extern ALBank* gSfxBank;
-extern ALInstrument* gSfxInstrument;    /* its instrument 0: one sound per effect */
-extern s32 gSoundIdsAllocated;              /* sound ids allocated */
 void InitSoundEffects(u8* bankStart, u8* bankEnd, u8* table) {
     s32 size = bankEnd - bankStart;
     u32 i;
@@ -2288,18 +2281,6 @@ void GetSoundState(s32 id) {
     alSndpSetSound(&gSndPlayer, gSoundIds[id]);
     alSndpGetState(&gSndPlayer);
 }
-extern u32* gSoundScriptLoop;
-extern s32 gLoopingSoundSlot;              /* the slot being updated (StepLoopingSound reads it) */
-extern u32* gSlotScriptPos0;
-extern u32* gSlotScriptPos1;
-extern u32* gSlotScriptPos2;
-extern u32* gSlotScriptPos3;
-extern u32* gSlotScriptPos4;
-extern u32* gSlotScriptLoop0;
-extern u32* gSlotScriptLoop1;
-extern u32* gSlotScriptLoop2;
-extern u32* gSlotScriptLoop3;
-extern u32* gSlotScriptLoop4;
 void UpdateSoundPlayer(void) {
     for (gLoopingSoundSlot = 0; gLoopingSoundSlot < 5; gLoopingSoundSlot++) {
         if (gLoopingSoundFrames[gLoopingSoundSlot] != 0) {
@@ -2417,7 +2398,6 @@ void PushSoundQueue(s32 sound, s32 volumeScale, s32 pan) {
     gSoundQueueWrite = i & 7;
 }
 
-extern s32 gSoundQueueWrite;
 void ProcessSoundQueue(void) {
     s32 idx = gSoundQueueRead;
     u32 sound;
@@ -2469,7 +2449,6 @@ void ProcessSoundQueue(void) {
     }
 }
 
-extern u32 gSlotLastVolume[5];            /* last volume per slot */
 void StepLoopingSound(void) {
     s32 snd;
     u32 vol;

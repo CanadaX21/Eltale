@@ -1,24 +1,54 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/map_objects.h"
 #include "game/collision.h"
 #include "game/math.h"
 #include "game/model.h"
 #include "game/shadow.h"
 #include "game/sound.h"
-extern u8 gBitMasks[];
-extern u8 gObjectsOpened[];
-extern s32 gCurrentMap;              /* current map */
-extern s32 gCurrentSubmap;              /* current submap */
-extern MapObjTable gMapObjectTable[];
-extern s32 gMapObjectCount;   /* objects in gMapObjects */
-extern MapObject gMapObjects[];
-extern CollisionPollingResult gMapObjectPoll;
+#include "game/enemy.h"
+#include "game/map.h"
+#include "maps.h"
+/* ---- map_objects.c's .bss (0x80085290-0x800859B0): the map objects. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or more. The D_ name
+   marked unreferenced is space no code addresses (an unknown variable). ---- */
+MapObject gMapObjects[16];               /* 16 fill the space to gMapObjectCount (no code bound states it) */
+s32 gMapObjectCount;                     /* objects in gMapObjects */
+Coordinates2D gMapObjectOffset;
+s32 D_80085960;                          /* unreferenced: the offset's third word (offsets of this kind -
+                                            gSpellOffset, gEnemyStep, gHudVector - are OddVectors whose third
+                                            word is a scale; no code reads this one) */
+CollisionPollingResult gMapObjectPoll;
+u8 gObjectsOpened[32];                   /* a bit per map object id (ResetMapObjectFlags clears 32 bytes) */
 
-extern u8* gItemNamePtrs[];
-extern u8 gPickupMessageHead[];
-extern u8 gPickupMessageTail[];
-extern u8 gTextBuffer[];             /* 0x4B0-byte buffer (enemy.c and ending_text.c fill it too) */
-extern u8 gSpeakerName[];             /* 0x20-byte buffer */
+/* ---- map_objects.c's .data (0x8004DF00-0x8004DFC0), in address order. The pickup message's two
+   halves, in the dialogue font's encoding: BuildPickupMessage copies each up to its 0xFF (the byte after it is never
+   read). Then the maps that place objects: SpawnMapObjects finds gCurrentMap and takes its submap's list from the
+   map's own table, which lies in the map as loaded. Every map is built from typed sources, so each row names its
+   map's table. ---- */
+u8 gPickupMessageHead[8] = { 0xA0, 0xC0, 0x7F, 0xE0, 0x80, 0x0E, 0xFF, 0x00 };
+u8 gPickupMessageTail[20] = { 0xA0, 0xC0, 0x80, 0x0F, 0x84, 0x0E, 0x8F, 0x0C, 0x83, 0x15, 0x95, 0x19, 0x84, 0x0B, 0x83, 0x0F, 0x80, 0x0A, 0xFF, 0x00 };
+MapObjTable gMapObjectTable[19] = {
+    { 13, gMap13MapObjects },   /* Melrode Monastery: built from typed sources */
+    { 14, gMap14MapObjects },   /* Dondoran Castle: built from typed sources */
+    { 15, gMap15MapObjects },   /* Melrode buildings: built from typed sources */
+    { 17, gMap17MapObjects },   /* Larapool inn: built from typed sources */
+    { 19, gMap19MapObjects },   /* rooms off Normoon: built from typed sources */
+    { 21, gMap21MapObjects },   /* Limelin Castle: built from typed sources */
+    { 22, gMap22MapObjects },   /* Limelin buildings: built from typed sources */
+    { 23, gMap23MapObjects },   /* Highland buildings: built from typed sources */
+    { 24, gMap24MapObjects },   /* Shamwood: built from typed sources */
+    { 25, gMap25MapObjects },   /* ship and cabin rooms: built from typed sources */
+    { 26, gMap26MapObjects },   /* Blue Cave: built from typed sources */
+    { 27, gMap27MapObjects },   /* Cull Hazard: built from typed sources */
+    { 28, gMap28MapObjects },   /* Baragoon Tunnel: built from typed sources */
+    { 29, gMap29MapObjects },   /* Boil Hole: built from typed sources */
+    { 30, gMap30MapObjects },   /* Brannoch Castle: built from typed sources */
+    { 31, gMap31MapObjects },   /* Connor Forest: built from typed sources */
+    { 32, gMap32MapObjects },   /* Glencoe Forest: built from typed sources */
+    { 33, gMap33MapObjects },   /* Windward Forest: built from typed sources */
+    { 9, gMap09MapObjects },   /* Dindom Dries: built from typed sources */
+};
 
 void ResetMapObjectFlags(void) {
 
@@ -59,14 +89,14 @@ void SpawnMapObjects(void) {
             obj->transform.shadowXRot = gMapObjectPoll.sn_x;
             obj->transform.shadowYRot = gMapObjectPoll.sn_y;
             obj->transform.shadowZRot = gMapObjectPoll.sn_z;
-            obj->transform.yspeed = rec->unk14;
-            obj->transform.xspeed = rec->unk18;
-            obj->transform.zspeed = rec->unk1C;
-            obj->transform.rootMoveX = rec->unkC;
-            obj->transform.rootMoveZ = rec->unk10;
+            obj->transform.yspeed = rec->useYaw;
+            obj->transform.xspeed = rec->useHalfWidth;
+            obj->transform.zspeed = rec->useHalfDepth;
+            obj->transform.rootMoveX = rec->useX;
+            obj->transform.rootMoveZ = rec->useZ;
             obj->transform.scale = 0.07f;
-            obj->transform.floorFlags = rec->flags;
-            obj->transform.modelID = rec->unk21;
+            obj->transform.floorFlags = rec->openedFlagId;
+            obj->transform.modelID = rec->item;
             obj->transform.stateFlags = 0;
             anim = IsMapObjectOpened(obj->transform.floorFlags) ? 3 : 0;
             SetAnimation(&obj->transform, anim, 1, anim, 1, 1);
@@ -76,7 +106,6 @@ void SpawnMapObjects(void) {
     }
 }
 
-extern AnimEntry gMapObjectAnims[];        /* their animations */
 void DrawMapObjects(Mtx* mtxList) {
     s32 i;
     MapObject* obj;
@@ -105,7 +134,6 @@ void DrawMapObjects(Mtx* mtxList) {
         obj++;
     }
 }
-extern Coordinates2D gMapObjectOffset;
 MapObject* FindMapObjectInFront(ActorTransform* brian) {
     MapObject* obj;
     s32 n;

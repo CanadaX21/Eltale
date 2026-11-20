@@ -1,25 +1,25 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/controller.h"
-extern OSPfs gPfs[];
-typedef struct {
-    u8 name[4];
-} PfsExtName;                       /* a Controller Pak note's extension */
-extern PfsExtName gSaveNoteExtName;       /* the save note's extension template */
-extern u8 gSaveNoteName[];             /* the save note's name */
-extern PakNoteExts gPakNotes[];
-extern OSMesgQueue gSiMesgQueue;
+#include "game/save_format.h"
 s32 osGbpakInit(OSMesgQueue *mq, OSPfs *pfs, int channel);
-extern OSContPad gContPads[4];
-extern u16 gButtonsHeld;
-extern u16 gButtonsPrevInv;
-extern s8 gStickX;
-extern s8 gStickY;
-extern u16 gButtonsPressed;
-
-extern s8 gControllerChannel;   /* the first usable controller */
-extern OSMesg gSiMesgBuf;
-extern u8 gControllerBits;                /* controllers present (bit per port) */
-extern OSContStatus gContStatus[];
+/* ---- controller.c's .bss (0x80092C80-0x80092ED0): the controllers and the Controller Pak.
+   Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8 bytes or
+   more. ---- */
+s8 gControllerChannel;                   /* the first usable controller */
+s8 gStickX;
+s8 gStickY;
+u16 gButtonsHeld;
+u16 gButtonsPressed;
+u16 gButtonsPrevInv;
+OSMesgQueue gSiMesgQueue;
+OSPfs gPfs[4];                           /* one per controller port */
+PakNoteExts gPakNotes[4];
+u8 gControllerBits;                      /* controllers present (bit per port) */
+OSContStatus gContStatus[4];
+OSMesg gSiMesgBuf;
+OSContPad gContPads[4];
 s32 InitControllers(void) {
     s32 count;
     s32 i;
@@ -103,7 +103,7 @@ s32 ScanControllerPak(s32 channel) {
     used = 0;
     gPakNotes[channel].freePages = 0xFF;
     gPakNotes[channel].flags = 0;
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < PAK_NOTES; i++) {
         gPakNotes[channel].ext[i] = -1;
     }
     pfs = &gPfs[channel];
@@ -120,11 +120,16 @@ s32 ScanControllerPak(s32 channel) {
         }
         return ret;
     }
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < PAK_NOTES; i++) {
         ret = osPfsFileState(pfs, i, &state);
         if (ret == 0) {
-            if (state.game_code == 0x4E45544A && state.company_code == 0x3943) {
-                if (CompareBytes(gSaveNoteName, state.game_name, 16) == 0) {
+            if (state.game_code == SAVE_NOTE_GAME_CODE && state.company_code == SAVE_NOTE_COMPANY_CODE) {
+                /* CompareBytes makes n + 1 comparisons (its loop tests n before counting it down), so this call
+                   compares 17 bytes: the name's 16, then gSaveNoteName[16] (0x30, the first byte of the data that
+                   follows the name) with the byte after game_name, OSPfsState's padding at 0x1E, which
+                   osPfsFileState never writes. It returns 0 only when the name matches and that 17th pair
+                   differs: a note of this game counts as one while the stack byte there is not 0x30 (ares: 0x00) */
+                if (CompareBytes(gSaveNoteName, state.game_name, PFS_FILE_NAME_LEN) == 0) {
                     count++;
                     gPakNotes[channel].ext[i] = ((u8*)state.ext_name)[0];   /* RULE-EXCEPTION R19: the SDK's ext_name is char; read unsigned */
                     gPakNotes[channel].flags |= 0x4000;
@@ -145,16 +150,16 @@ s32 ScanControllerPak(s32 channel) {
     if (ret == 0) {
         gPakNotes[channel].flags &= ~0xF;
         gPakNotes[channel].flags |= count;
-        if (count >= 16) {
+        if (count >= SAVE_SLOTS) {
             gPakNotes[channel].flags |= 0x2000;
         }
-        if (used >= 16) {
+        if (used >= PAK_NOTES) {
             gPakNotes[channel].flags |= 0x2000;
         }
         osPfsFreeBlocks(pfs, &i);
         i /= 256;
         gPakNotes[channel].freePages = i;
-        if (i < 2) {
+        if (i < SAVE_NOTE_PAGES) {
             gPakNotes[channel].flags |= 0x2000;
         }
     }
@@ -173,7 +178,7 @@ u8 FindNoteExtension(s32 channel) {
         letter++;
         i = 0;
         found = 0;
-        for (; i < 16; i++) {
+        for (; i < PAK_NOTES; i++) {
             if (gPakNotes[channel].ext[i] == letter + 0x1A) {
                 found = -1;
                 break;
@@ -189,7 +194,6 @@ u8 FindNoteExtension(s32 channel) {
     }
     return found;
 }
-extern PfsExtName gNewNoteExtName;       /* the extension template for a new note */
 u8 AllocateSaveNote(s32 channel, u8 ext0) {
     s32 ret;
     s32 fileNo = -1;
@@ -197,7 +201,8 @@ u8 AllocateSaveNote(s32 channel, u8 ext0) {
     s32 err;
 
     ext.name[0] = ext0;
-    err = osPfsAllocateFile(&gPfs[channel], 0x3943, 0x4E45544A, gSaveNoteName, ext.name, 0x200, &fileNo);
+    err = osPfsAllocateFile(&gPfs[channel], SAVE_NOTE_COMPANY_CODE, SAVE_NOTE_GAME_CODE, gSaveNoteName, ext.name,
+                            SAVE_NOTE_BYTES, &fileNo);
     if (err == 0) {
         ret = fileNo;
         gPakNotes[channel].ext[ret] = ext0;
@@ -211,7 +216,7 @@ u8 DeleteSaveNote(s32 channel, u8 ext0) {
     PfsExtName ext = gSaveNoteExtName;
 
     ext.name[0] = ext0;
-    err = osPfsDeleteFile(&gPfs[channel], 0x3943, 0x4E45544A, gSaveNoteName, ext.name);
+    err = osPfsDeleteFile(&gPfs[channel], SAVE_NOTE_COMPANY_CODE, SAVE_NOTE_GAME_CODE, gSaveNoteName, ext.name);
     return err;
 }
 s32 ReadPakNote(s32 channel, s32 file, s32 offset, s32 size, u8* buf) {
@@ -286,15 +291,15 @@ s32 CompareBytes(u8* a, u8* b, s32 n) {
     } while (n--);
     return n;
 }
-void func_80036124(OSPfs* pfs, s32* max_files, s32* files_used) {
+void CountPakFiles(OSPfs* pfs, s32* max_files, s32* files_used) {
     osPfsNumFiles(pfs, max_files, files_used);
 }
-void func_80036144(OSMesgQueue* mq) {
+void StartContQuery(OSMesgQueue* mq) {
     osContStartQuery(mq);
 }
-void func_80036164(OSContStatus* data) {
+void GetContQuery(OSContStatus* data) {
     osContGetQuery(data);
 }
-void func_80036184(OSMesgQueue* mq, OSPfs* pfs, int channel) {
+void InitGbPak(OSMesgQueue* mq, OSPfs* pfs, int channel) {
     osGbpakInit(mq, pfs, channel);
 }

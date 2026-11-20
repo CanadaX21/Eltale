@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/boss.h"
 #include "game/camera.h"
 #include "game/collision.h"
@@ -6,24 +7,18 @@
 #include "game/message.h"
 #include "game/model.h"
 #include "game/shadow.h"
-extern PlayerState gPlayerState;
-extern f32 gBossTalkRadii[];  /* per boss placement, how near Brian must be for its scene; gBossLoaded is the placement + 1 */
-extern BossPlacement gBossPlacements[];
-extern s32 gCurrentMap;
-extern s32 gCurrentSubmap;
-extern bossFile gBossFiles[];
-extern void* gBossVAddr;
-extern u8 gBitMasks[];
+#include "game/boss_anims.h"
+#include "game/boss_tables.h"
+#include "game/enemy.h"
+#include "game/main.h"
+#include "game/map.h"
+#include "game/math.h"
+#include "game/player.h"
 
-typedef struct {
-    ActorTransform transform;
-    ActorStats* stats;
-} BossSpawnTransform;               /* 0x6C: the head of a MonsterBattleData, the boss's as StartBossScene copies it */
-/* ---- boss.c's .bss (0x8007C0B0-0x8007C280), in address order. IDO 5.3 lays out the
-   variables first declared among a file's first 32 declarations (typedefs and variables, externs too) after all
-   later ones; this block is all inside those 32 and the file declares no other .bss, so it keeps its order.
-   Adding declarations above it (headers included: recount after a header edit), or declaring these
-   variables there, moves them.
+/* ---- boss.c's .bss (0x8007C0B0-0x8007C280), in address order. IDO 5.3 lays a unit's .bss
+   out by its variables' block numbers, so a declaration added or removed before them, in a header too, can change
+   their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix` recomputes it
+   (docs/DECLARATIONS.md).
    ---- */
 CollisionPollingResult gBossFloorPoll;      /* the boss spawn's floor poll (SpawnBoss) */
 s32 D_8007C0CC;                         /* unreferenced */
@@ -59,7 +54,7 @@ void LoadMapBoss(void)
         fileStart = gBossFiles[data->bossNumber].fileStart;
         fileEnd = gBossFiles[data->bossNumber].fileEnd;
         fileSize = fileEnd - fileStart;
-        dma_write((u8*)fileStart, &gBossVAddr, fileSize); //load boss file from RAM
+        dma_write((u8*)fileStart, &gBossVAddr, fileSize); // load the boss file from the ROM
         SpawnBoss(i, data->x, data->z, data->yrot, &gBoss);
         gBossLoaded = i + 1;
       }
@@ -68,8 +63,6 @@ void LoadMapBoss(void)
   }
 
 }
-extern AnimEntry* gBossAnimTables[];      /* the boss models' animation tables */
-extern Gfx* gDisplayListHead;
 void DrawBoss(Mtx* mtxList) {
     EnemyAction* boss;
     MonsterBattleData* actor;
@@ -104,9 +97,6 @@ s32 IsNearBoss(void) {
     }
     return boss;
 }
-extern MonsterBaseData gBossBaseData[];    /* the bosses' base data */
-extern MonsterBaseData D_803AB9A8;      /* Mammon's base data (boss 7) */
-extern MonsterBaseData gMammonBaseData; /* Mammon's base data again (= D_803AB9A8): the second test names it so */
 void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     MonsterBaseData* base;
     MonsterBattleData* m;
@@ -122,7 +112,7 @@ void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     e->monBaseData = base;
     e->currHP = base->maxHP;
     e->currMP = base->maxHP;   /* from maxHP: maxMP is 0 in every record */
-    e->actionID = 0;
+    e->actionID = ENEMY_ACTION_IDLE;
     e->flags = 0;
     e->movementBoundSize = sqrtf((u32)base->agi) * 3.846 + 17.838;
     e->battleData.statsBuf.statusFlags = 0;
@@ -135,7 +125,7 @@ void SpawnBoss(s32 id, f32 x, f32 z, f32 yrot, EnemyAction* e) {
     m->transform.pos.y = gBossFloorPoll.y;
     m->transform.pos.z = gBossFloorPoll.z;
     if (base == &D_803AB9A8) {
-        e->flags |= 4;
+        e->flags |= ENEMY_FLAG_SUNK;
         m->transform.pos.y -= 30.0;
     }
     m->transform.yrot = yrot;
@@ -155,11 +145,6 @@ u32 IsStoryFlagSet(u32 flag) {
 void SetStoryFlag(u16 flag) {
     gStoryFlags[flag >> 3] |= gBitMasks[flag & 7];
 }
-extern u8* gBossSceneNames[];             /* boss scene names (0x20 bytes each) */
-extern u8* gBossSceneTexts[];             /* boss scene texts (0x4B0 bytes each) */
-extern u8 gTextBuffer[];
-extern u8 gSpeakerName[];
-extern CameraValues gBossCameraSetups[][2]; /* per boss: two camera setups */
 void StartBossScene(s32 boss) {
     s32 i;
     u8* src;
@@ -172,32 +157,23 @@ void StartBossScene(s32 boss) {
     }
     src = gBossSceneTexts[boss];
     dst = gTextBuffer;
-    for (i = 0x4B0; i != 0; i--) {
+    for (i = MESSAGE_TEXT_SIZE; i != 0; i--) {
         *dst++ = *src++;
     }
     gBossSpawnTransform = *(BossSpawnTransform*)&gBoss.battleData;
-    if (boss == 7) {
+    if (boss == LAST_BOSS) {
         gBossSpawnTransform.transform.pos.x = -31.0f;
         gBossSpawnTransform.transform.pos.y = 139.0f;
         gBossSpawnTransform.transform.pos.z = -328.0f;
     }
     ApplyCameraSetup(gBossCameraSetups[boss], (MonsterBattleData*)&gBossSpawnTransform);
 }
-extern u16 gBossHpBonus[];
-extern u16 gBossMpBonus[];
-extern u16 gFieldMode;
-extern u16 gTransitionStyle;
-extern u16 gFadeOutAt;
-extern u8 gLastBossDefeatText[];
-extern BrianData1 gBrianStats;
-extern s32 gGameState;
-extern s32 gModeCountdown;
 void OnBossDefeated(s32 boss) {
     u8* src;
     u8* dst;
     s32 count;
 
-    if (boss == 7) {
+    if (boss == LAST_BOSS) {
         src = gBossSceneNames[boss];
         dst = gSpeakerName;
         count = 0x20;
@@ -208,19 +184,19 @@ void OnBossDefeated(s32 boss) {
 
         src = gLastBossDefeatText;
         dst = gTextBuffer;
-        count = 0x4B0;
+        count = MESSAGE_TEXT_SIZE;
         do {
             *dst++ = *src++;
             count--;
         } while (count != 0);
 
         OpenMessageWindow(1);
-        gPlayerState.flags |= 0x10;
-        gGameState |= 0x80;
+        gPlayerState.flags |= PLAYER_MESSAGE_HOLD;
+        gGameState |= GAME_STATE_MAP_CHANGE;
         gModeCountdown = 0x40;
-        gTransitionStyle = 3;
+        gTransitionStyle = TRANSITION_WHITE_SLOW;
         gFadeOutAt = 0x3E;
-        gFieldMode = 4;
+        gFieldMode = FIELD_MODE_LAST_BOSS;
     } else {
         gBrianStats.maxHP += gBossHpBonus[boss];
         if (gBrianStats.maxHP > 500) {

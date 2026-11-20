@@ -8,4 +8,8 @@
 void dma_write(u8* devAddr, void* vaddr, u32 nbytes);   /* DMA from ROM */
 s32 count_digits(s32 value, u8 *str_ptr, u16 flags);
 
+/* The state src/game/dma.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern OSIoMesg gDmaIoMesg;
+
 #endif

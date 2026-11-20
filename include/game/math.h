@@ -25,4 +25,12 @@ void ScaleMatrix(MtxF* m, f32 x, f32 y, f32 z);
 void MatrixMultiply(MtxF *a, MtxF *b, MtxF *out);
 s32 WorldToScreen(f32 x, f32 y, f32 z, s32* screenX, s32* screenY);   /* world to screen; 0 = off screen */
 
+/* The state src/game/math.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern MtxF gScratchMtxF;
+
+/* The data src/game/math.c defines. */
+extern u8 gBitMasks[8];   /* bit n of a flag byte (story and map object flags) */
+extern u32 gRandomSeed;   /* the random seed (Quest D_8004D748) */
+
 #endif

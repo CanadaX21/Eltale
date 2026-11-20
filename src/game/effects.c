@@ -1,126 +1,39 @@
 /*same as 191F0.c from Quest64*/
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/effects.h"
 #include "game/collision.h"
 #include "game/dma.h"
 #include "game/dust.h"
 #include "game/math.h"
 #include "game/model.h"
+#include "game/camera.h"
+#include "game/lighting.h"
+#include "game/main.h"
+#include "game/player.h"
+#include "spell_bank.h"
 
-typedef struct {
-    s32 timer;                      /* counts down; a puff on odd frames */
-    ActorTransform* actor;              /* the puff starts at its feet */
-} DustEmitter;                      /* a running-dust emitter */
 
-/* env object timers walked by UpdatePuffTimers (0x18 each; Quest D_80087250/D_80087310) */
-typedef struct {
-    s32 timer;
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 size;
-    ModelTransform* model;
-} EnvTimer;
 
-extern Dust gFadingPuffTemplate;              /* the fading puff template */
-extern Dust gRunDustTemplate;              /* the dust puff template (player.c's running dust uses it too) */
-extern s32 gCurrentFrame;
-extern Camera gCamera;   /* camera data (Quest D_80086DC0) */
-extern Gfx gDigitRenderSetup[];             /* digit render setup */
 
 /* projectile slots (0x58 each, 32 of them at gProjSlots; Quest UnkProjectileX34Struct at D_800875A8) */
 
-typedef struct {
-    u16 flags;              /* 1: 16 x 16 (else 32 x 32), 2: intensity (else CI with a gProjPalettes palette),
-                               4 / 8: animated frames, 0x10: mirrored, 0x20: texgen (environment mapped), 0x40 */
-    u16 frameMask;          /* 0x02: with flag 8 */
-    u16 frameShift;         /* 0x04: the slot's timer >> this picks the frame */
-    u16 palette;            /* 0x06: index into gProjPalettes */
-    u8* texture;            /* 0x08: NULL = untextured */
-    s16 s;                  /* 0x0C: texture scroll position, 10.2 */
-    s16 t;
-    s16 ds;                 /* 0x10: scroll per frame */
-    s16 dt;
-} ProjModelDef;         /* a projectile's material: gProjModelDefs[], 0x14 each (Quest D_800DA828); SetProjectileTexture */
+#include "proj_material.h"
 
-typedef struct {
-    u16 timer;              /* frames left */
-    u16 period;             /* 0x02: its start, to loop (flags 1) */
-    u16 age;                /* 0x04: frames so far */
-    u16 colour;             /* 0x06: into gParticleColours */
-    u16 flags;              /* 0x08: 1 = loops, 2 = flickers, 4 = faces its velocity, 8 = culls backfaces, 0x20 = lit, 0x80 = fades in */
-    u16 unkA;
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 angle;
-    f32 scaleX;
-    f32 scaleY;
-    f32 scaleZ;
-    f32 vx;
-    f32 vy;
-    f32 vz;
-    s32 frame;              /* 0x34: the animation's frame */
-    AnimEntry anim;         /* 0x38: from gProjAnims */
-    ProjModelDef tex;       /* 0x44 */
-} ProjSlot;                 /* 0x58: gProjSlots[32]; spells.c's SpellFx and the header's StatusFxObject are views of it */
 
-extern AnimEntry gProjAnims[];       /* the projectile animations (Quest D_800EB9EC) */
-extern Gfx* gProjGfx[];            /* the projectile display lists */
-extern ProjModelDef gProjModelDefs[];
 
 /* animated effect whose frame (unk0) picks a texture (gFramedPuffTextures, every 4th frame), a size and an alpha (UpdateFramedPuff) */
-extern Gfx* gDisplayListHead;
 
-/* gSparkleBursts seen as its 8 slots of 0x18 (ResetSparkleBursts clears them, QueueSparkleBurst fills the first free one) */
-typedef struct {
-    s32 frames;
-    s32 kind;
-    f32 x;
-    f32 y;
-    f32 z;
-    f32 size;
-} SparkleBurst;
 
-/* 32 slots of 0x28 ending at gGlowSlots (ResetStaffHitEffects clears them); gGlowSlots: 4-byte entries (StartLevelUpEffect) */
-typedef struct {
-    u16 timer;               /* frames left, 0 = free */
-    char unk2[2];
-    f32 x;               /* start position (SpawnStaffHitEffect) */
-    f32 y;
-    f32 z;
-    f32 vx;              /* velocity */
-    f32 vy;
-    f32 vz;
-    f32 startX;              /* position */
-    f32 startY;
-    f32 startZ;
-} StaffHitSlot;
-typedef struct {
-    u16 timer;
-    u16 unk2;
-} GlowSlot;
 
-/* 0x194-byte effect slots right after gGlowSlots[4] (StartGroundRing starts one) */
-typedef struct {
-    u16 phase;
-    u16 time;
-    u16 duration;
-    u16 type;
-    f32 x;
-    f32 y;
-    f32 z;
-    Vec3f points[16];               /* 0x14: a ground ring (SpawnBattleRing samples 16 points on a circle) */
-    Vec3f normals[16];              /* 0xD4: the floor normal under each point */
-} GroundRing;
 
 /* the effect lists' reset (ResetEffects) and update (UpdateEffects) calls */
 
-/* ---- effects.c's .bss (0x800863F0-0x80087E30), in address order. IDO 5.3 lays a variable
-   out by its FIRST declaration, and those first declared among the file's first 32 declarations (typedefs and
-   variables, externs too) after all later ones: this block sits past them, so it comes out in order. Declaring
-   any of these variables above it moves them. The D_ names marked unreferenced are space no code addresses
-   (unknown variables). ---- */
+/* ---- effects.c's .bss (0x800863F0-0x80087E30), in address order. IDO 5.3 lays a unit's .bss
+   out by its variables' block numbers, so a declaration added or removed before them, in a header too, can change
+   their order; BSS_ORDER_PAD keeps the original order and `python3 tools/bss_order.py fix` recomputes it
+   (docs/DECLARATIONS.md). The D_ names marked unreferenced are space no code addresses (unknown
+   variables). ---- */
 s32 gEnvTimersAdded;                         /* env timers added this frame (UpdateEnvironmentObjects; main.c resets it) */
 u16 gProjFrameCounter;                         /* the projectiles' frame counter (DrawProjectiles: lhu / sh only) */
 s32 gEnvTimersLast;                         /* and the count UpdatePuffTimers walks */
@@ -174,7 +87,7 @@ void ResetDustEmitters(void) {
     } while (i != 0);
 }
 
-void FindFreeEffectSlot(ActorTransform* actor) {
+void StartDustEmitter(ActorTransform* actor) {
     DustEmitter* emitter;
     s32 i;
 
@@ -215,8 +128,6 @@ void SpawnRunningDust(void) {
         emitter++;
     } while (i != 0);
 }
-extern f32 gRunDustScales[];
-extern u8 gRunDustAlphas[];
 void UpdateRunDust(Dust* dust) {
     dust->x += dust->vx;
     dust->y += dust->vy;
@@ -327,10 +238,6 @@ void UpdatePuffTimers(void) {
         timer++;
     }
 }
-extern s32 gFogColourR;
-extern s32 gFogColourG;
-extern s32 gFogColourB;
-extern u8 gLevelUpPuffAlphas[];
 void UpdateLevelUpPuff(Dust* dust) {
     s32 r;
     s32 g;
@@ -358,20 +265,6 @@ void UpdateLevelUpPuff(Dust* dust) {
 /* ---- effects.c's .data (0x8004EE20-0x8004F060, ROM 0x4FA20). IDO lays it out in definition order, so these five come
    first and the rest are function-local statics, each in the one function that uses it, in the order of the functions.
    The textures / display lists live in the effects block loaded at 0x800C0000. ---- */
-extern u8 gFadingPuffGfx[];              /* fading puff display list */
-extern u8 gPuffGfx[];              /* puff display list */
-extern u8 gPuffTexture[];              /* puff texture */
-extern u8 gSparkleTexture[];              /* sparkle texture */
-extern u8 gSparkleGfx[];              /* sparkle display list */
-extern u8 D_800C3A30[];              /* sparkle frames (gFramedPuffTextures) */
-extern u8 D_800C3C30[];
-extern u8 D_800C3E30[];
-extern u8 gBurstTexture[];              /* burst texture */
-extern u8 gBurstGfx[];              /* burst display list */
-extern u8 D_800CAE68[];              /* gProjPalettes's four projectile palettes (256 colours, 0x200 bytes each) */
-extern u8 D_800CB068[];
-extern u8 D_800CB268[];
-extern u8 D_800CB468[];
 Dust gRunDustTemplate = {                  /* the dust puff template (SpawnRunningDust; player.c's running dust) */
     0xC, 0, 0, UpdateRunDust, 2, 0x10, 0x10, 0, 0, { 0 }, gPuffTexture, gPuffGfx,
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, { 0 },
@@ -451,7 +344,6 @@ void SpawnDamageNumber(MonsterBattleData* target, s32 kind, s32 damage) {
     }
     num->stackIndex = stacked - 1;
 }
-extern u16 gDigitSheet[];             /* the digit sheet: 128 x 10, RGBA16 */
 void DrawDamageNumbers(void) {
     static u8 gDigitColours[4][4] = {              /* digit colours */
         { 0xFF, 0xFF, 0xFF, 0xFF }, { 0xC8, 0xFF, 0xC8, 0xFF }, { 0xC8, 0xC8, 0xFF, 0xFF }, { 0xFF, 0x7F, 0x7F, 0xFF },
@@ -605,7 +497,6 @@ void UpdateSparkleBursts(void) {
         slot++;
     } while (i != 0);
 }
-extern u8 gParticleColours[][4];     /* particle colours, RGBA */
 void UpdateSparkle(Dust* dust) {
     u8* colour;
 
@@ -683,10 +574,6 @@ void ResetStaffHitEffects(void) {
         gStaffHitSlots[i].timer = 0;
     }
 }
-extern Mtx D_2000000[];
-extern Gfx gStaffHitSetupGfx[];
-extern Gfx gStaffHitGfx[];
-extern s32 gMatrixHead;
 void DrawStaffHitEffects(mkst* dyn) {
     s32 t;
     s32 drawn;
@@ -785,7 +672,6 @@ void ResetGroundRings(void) {
         ring++;
     }
 }
-extern PlayerState gPlayerState;
 s32 SpawnBattleRing(u16 type, f32 x, f32 y, f32 z, f32 radius) {
     static u16 sRingDurations[4] = { 0x14, 0xC, 0xC, 0 };   /* per ring type */
     f32 angle;
@@ -858,9 +744,6 @@ void StartGroundRing(s32 index, f32 x, f32 y, f32 z) {
     slot->z = z;
 }
 
-extern Gfx gRingRenderSetup[];             /* ring render setup */
-extern u8 gRingTexture[];              /* ring texture, I8 8 x 8 */
-extern Gfx gRingSegmentGfx[];             /* one ring segment */
 void DrawGroundRings(mkst* dyn) {
     static u8 gRingColours[3][4] = {              /* ring colours */
         { 0xC8, 0xC8, 0x00, 0x00 }, { 0xC8, 0x00, 0x00, 0x00 }, { 0x00, 0x00, 0xC8, 0x00 },
@@ -1007,10 +890,6 @@ ProjSlot* AllocProjectileSlot(s32 anim, s32 model, s32 texture, s32 colour, s32 
     slot->tex = gProjModelDefs[texture];
     return slot;
 }
-extern s32 gPartPositionCount;
-extern Gfx gProjRenderSetup[];                /* the projectiles' render setup */
-void DrawProjectileModel(ProjSlot* slot, Mtx* mtxBuf);
-void SetProjectileTexture(ProjSlot* slot);
 void DrawProjectiles(mkst* dyn) {
     ProjSlot* slot;
     s32 i;
@@ -1187,9 +1066,6 @@ void SetProjectileTexture(ProjSlot* slot) {
         gSPSetGeometryMode(gDisplayListHead++, geom);
     }
 }
-extern Vec3f gBrianFloorPos;             /* Brian's point on the floor (his shadow, the glows) */
-extern Gfx gGlowRenderSetup[];             /* glow render setup */
-extern Gfx gGlowGfx[];             /* the glow */
 void ResetGlows(void) {
     s32 i;
 

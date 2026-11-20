@@ -16,4 +16,13 @@ s32 IsAngleWithin22(f32 angle);
 s32 CheckDoorKeyItem(MapDoor* door);
 void SetDoorWarp(MapDoor* door);
 
+/* The state src/game/collision.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern f32 gCollisionRadius;   /* collision radius (Quest D_80085340) */
+extern s32 D_800842F4;   /* unreferenced (at least two variables before gPendingWarp; */
+extern s32 D_800842F8;   /* unreferenced  0x800842FC may be padding) */
+extern PendingWarp gPendingWarp;   /* the pending warp: map, submap, entrance, ... */
+extern u16* gWarpDoorDest;   /* the destination triple of the door last used */
+extern Coordinates2D gDoorOffset;
+
 #endif

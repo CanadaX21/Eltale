@@ -17,4 +17,11 @@ void nnScExecuteAudio(NNSched *sc);
 void nnScExecuteGraphics(NNSched *sc);
 void nnScWaitTaskReady(NNSched* sc, NNScTask* task);
 
+/* The state src/sched/nnsched.c defines (.bss), in its storage order: the order of these declarations is the
+ * unit's .bss layout (include/bss_order.h). */
+extern u64 nnScStack[NN_SC_STACKSIZE / sizeof(u64)];   /* the scheduler thread's stack */
+extern u64 nnScAudioStack[NN_SC_STACKSIZE / sizeof(u64)];   /* the audio thread's stack */
+extern u64 nnScGraphicsStack[NN_SC_STACKSIZE / sizeof(u64)];   /* the graphics thread's stack */
+extern u16 gRetraceCount;   /* retraces since the last frame: the event handler counts them, main.c waits on it */
+
 #endif

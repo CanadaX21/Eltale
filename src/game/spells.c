@@ -1,4 +1,5 @@
 #include "common.h"
+BSS_ORDER_PAD(0)
 #include "game/spells.h"
 #include "game/camera.h"
 #include "game/collision.h"
@@ -8,124 +9,38 @@
 #include "game/math.h"
 #include "game/screen_fade.h"
 #include "game/sound.h"
+#include "game/encounter.h"
+#include "game/main.h"
+#include "game/map.h"
+#include "spell_bank.h"
+#include "spell_burst.h"
+/* local declaration: the variables this file uses from game/enemy.h and game/player.h, which it does not include (RULE-EXCEPTION R25, the note below): declared here, as the functions are. */
+extern s32 gEnemyCount;
+extern EnemyAction gEnemies[];   /* enemy table, 6 x 0x130 (Quest D_8007C998) */
+extern s32 gArrivalFlags;
+extern PlayerState gPlayerState;
+extern BrianData1 gBrianStats;   /* Brian's stats */
+
 /* RULE-EXCEPTION R25: this file includes neither player.h nor enemy.h. It calls DamageBrian, DamageEnemy and
  * GetEnemyIndex with no declaration in scope, as the original evidently did: SpellEffect_InstantKill passes
  * DamageBrian a fourth argument its prototype refuses, and with DamageEnemy's prototype (u16 parameters)
  * SpellEffect_Damage compiles differently. The other player and enemy functions it calls are declared
  * in this file. */
-extern u16 gHitMaskBits[];
-extern u16 gBattleState;
-extern s32 gEnemyCount;
-extern u16 gMapFlags;   /* map kind flags (Quest D_80084EE0) */
-extern s32 gReturnDest;   /* Return destination map/submap/entry (Quest D_80084EF8..) */
-extern s32 gReturnRoom;
-extern s32 gReturnEntrance;
-extern s32 gCurrentMap;   /* current map (Quest D_80084EE4) */
-extern s32 gExitDest;   /* Exit destination map/submap/entry (Quest D_80084F04..) */
-extern s32 gExitRoom;
-extern s32 gExitEntrance;
-extern EnemyAction gEnemies[];   /* enemy table, 6 x 0x130 (Quest D_8007C998) */
-extern EnemyAction* gLastAutoHitEnemy;    /* last enemy hit by an auto-hit spell (Quest D_800871DC) */
-extern CollisionPollingResult gGroundSample;   /* the spells' ground sample (Quest D_800871E0) */
-/* declared here, not in effects.h: its definition returns ProjSlot*, a type only effects.c defines */
-void* AllocProjectileSlot(s32 anim, s32 model, s32 texture, s32 colour, s32 flags, f32 x, f32 y, f32 z, f32 angle,
-                    f32 scaleX, f32 scaleY, f32 scaleZ);
-extern Submap* gSubmapHeader;
-extern PendingWarp gPendingWarp;
-extern s32 gArrivalFlags;
-extern PlayerState gPlayerState;
-extern s32 gGameState;
-extern s32 gModeCountdown;
 MonsterBattleData* SpellCollision0();   /* RULE-EXCEPTION R25: unprototyped; defined below with two parameters
                                          * (K&R), and SpellCollision2 calls it with none */
-extern Coordinates2D gSpellOffset;
-typedef struct {
-    char unk0[0x28];
-    f32 vx;
-    f32 vy;
-    f32 vz;
-} SpellEffectSlot;  /* unused (SpellFx is the whole object); kept for the declaration count */  /* returned by SpawnEffectObject (AllocProjectileSlot's 0x58 slot) */
-typedef struct {
-    u16 kind;       /* 1 / 2: which burst StartSpellVisual starts (on the caster, at spawn) */
-    u16 arg;
-    u16 land_kind;  /* 0x04: on the target when the object lands (StartSpellLandVisual) */
-    u16 land_arg;
-    u16 hit_kind;   /* 0x08: on the target when a hit resolves (StartSpellHitVisual) */
-    u16 hit_arg;
-} SpellBurstDef;    /* gSpellBurstDefs[school][index], 0xC each: the per-slot effect entry */
-extern EffectSpawnDef gEffectModels[];
-extern SpellBurstDef* gSpellBurstDefs[];
-/* spell update (UpdateSpells; names from vbhayden's Quest 64 scratches) */
-typedef struct {
-    u16 timer;          /* a view of ProjSlot (effects.c); 7 = finish */
-    char unk2[6];
-    u16 flags;          /* 0x08: 1 = active */
-    char unkA[2];
-    f32 x;              /* 0x0C */
-    f32 y;
-    f32 z;
-    char unk18[0x10];
-    f32 vx;             /* 0x28 */
-    f32 vy;
-    f32 vz;
-} SpellFx;
-typedef struct {
-    char unk0[0x10];
-    s16 trail_model;    /* 0x10: second animation stage, < 0 = none */
-    u16 trail_rate;     /* 0x12: high byte = frames between trail pieces */
-} SpellAnimStages;
-typedef struct {
-    u16 school;
-    u16 index;
-    u16 lifetime;       /* 0x04 */
-    u16 trail_timer;    /* 0x06 */
-    u16 delay;          /* 0x08 */
-    u16 flags;          /* 0x0A: 2 = has hit */
-    f32 x;              /* 0x0C */
-    f32 y;
-    f32 z;
-    f32 vx;             /* 0x18 */
-    f32 vy;
-    f32 vz;
-    MonsterBattleData* caster;  /* 0x24 */
-    MonsterBattleData* target;  /* 0x28 */
-    SpellDef* def;              /* 0x2C */
-    SpellAnimDef* anim;         /* 0x30 */
-    SpellFx* fx;                /* 0x34 */
-    SpellFx* hitFx;             /* 0x38 */
-} SpellSlot;            /* gSpellSlots[16], 0x3C each */
-void StartSpellLandVisual(SpellSlot* spell, MonsterBattleData* target);
-extern SpellSlot gSpellSlots[16];   /* the spell slots */
-typedef struct {
-    f32 v[5];
-} SpellTable5;          /* a small per-index table copied to the stack (struct copy) */
-extern SpellTable5 gSpellHomingStrength;  /* movement 0: steering strength by SpellDef.homing */
-extern SpellTable5 gSpellSpeeds;  /* movement 0: speed by SpellDef.speed */
-typedef struct {
-    u16 shots_left;
-    u16 timer;
-    u16 shot;
-    u16 unk6;
-    s32 spell;          /* 0x08 */
-    u16 unkC;
-    u16 unkE;
-    SpellDef* def;          /* 0x10: the spell (shot_gap: frames between shots) */
-    MonsterBattleData* caster;  /* 0x14 */
-} SpellQueue;           /* gSpellQueues[4], 0x18 each */
-extern SpellQueue gSpellQueues[];
-extern void (*gSpellMovementHandlers[])(SpellSlot*);
-extern MonsterBattleData* (*gSpellCollisionHandlers[])(SpellSlot*, s32);
-extern void (*gSpellEffectHandlers[])(SpellSlot*, MonsterBattleData*);
-extern void (*gApplyStatusHandlers[])(u8, MonsterBattleData*);
-extern s32 gSpellLightState;
-extern s32 gSpellLightTimer;
-extern s32 gMapLightAnim;
-extern s32 gSpellEndLights[];
-s32 RollSpellAccuracy(SpellSlot* spell, MonsterBattleData* hit);
-s32 RollStatus(SpellSlot* spell, MonsterBattleData* caster, s32 effect);
-void RollStatusDuration(SpellSlot* spell, MonsterBattleData* hit, s32 effect);
-void SpawnSpellTrail(SpellSlot* spell, MonsterBattleData* target);
-void StartSpellHitVisual(SpellSlot* spell, MonsterBattleData* hit);
+/* ---- spells.c's .bss (0x80085F90-0x800863F0): the spells' lighting, slots, queues and
+   samples. Defined in their storage order, the order its header declares them in: IDO 5.3 lays the unit's
+   .bss out by those declarations (include/bss_order.h), and it 8-aligns every variable of 8
+   bytes or more. The D_ name marked unreferenced is space no code addresses (an unknown variable). ---- */
+s32 gSpellLightState;
+s32 gSpellLightTimer;
+SpellSlot gSpellSlots[16];               /* the spell slots */
+SpellQueue gSpellQueues[4];              /* ResetSpells clears 4 */
+OddVector gSpellOffset;                  /* an offset the spells turn (x, y as a Coordinates2D) and an effect's
+                                            size (x, y and scale: the spell visuals pass it to
+                                            SpawnEffectObject) */
+EnemyAction* gLastAutoHitEnemy;          /* last enemy hit by an auto-hit spell (Quest D_800871DC) */
+CollisionPollingResult gGroundSample;    /* the spells' ground sample (Quest D_800871E0) */
 void ShowEnemyMiss(MonsterBattleData* actor);
 void StartBrianDodge();   /* RULE-EXCEPTION R25: unprototyped; this caller passes the caster, the definition in player.c takes nothing */
 
@@ -141,7 +56,6 @@ void ResetSpells(void) {
     gSpellLightState = 0;
 }
 
-extern SpellDef* gSpellDefs[];   /* each element's first spell record */
 s32 GetSpellFromPath(u16 presses, u8* path) {
     SpellDef* def;
     u8 element;
@@ -179,7 +93,6 @@ s32 GetSpellFromPath(u16 presses, u8* path) {
     }
     return (element << 8) - i + 15;
 }
-extern u16 gSpellMpCosts[];        /* MP cost by press count, [1..3] */
 s32 GetSpellAvailability(u32 spell, u16 mp) {
     s32 element;
     SpellDef* def;
@@ -190,24 +103,17 @@ s32 GetSpellAvailability(u32 spell, u16 mp) {
     spell &= 0xFF;                  /* RULE-EXCEPTION R30: spell becomes the index, as in DrawSpellLabel; a separate index local loses the match */
     def = &gSpellDefs[element][spell];
     if (gPlayerState.stats->spirits[element] < def->minSpirits) {
-        result = 4;
+        result = SPELL_LOW_SPIRITS;
     }
-    if (!(((gBattleState & 1) ? 1 : 2) & def->on_hit)) {
-        result |= 2;
+    if (!(((gBattleState & BATTLE_ACTIVE) ? SPELL_IN_BATTLE : SPELL_IN_FIELD) & def->on_hit)) {
+        result |= SPELL_NOT_HERE;
     }
-    if (mp < gSpellMpCosts[def->presses]) {
-        result |= 1;
+    if (mp < gSpellMpCosts[def->presses - 1]) {
+        result |= SPELL_LOW_MP;
     }
     return result;
 }
 
-extern SpellTable5 gSpellSpawnRadii;  /* spawn radius by SpellDef.spawn_radius */
-extern Vec3f gSpellSpawnOffsets[];      /* spawn offsets, 8 entries, by (spawn_pattern + shot) & 7 */
-extern SpellAnimDef* gSpellAnimDefs[];
-extern s32 gSpellCastLights[];
-extern void (*gSpellTargetHandlers[])(SpellSlot*);
-extern void (*gSpellOriginHandlers[])(SpellSlot*, MonsterBattleData*);
-void StartSpellVisual(SpellSlot* spell, MonsterBattleData* target);
 void ClearHitMaskBit();   /* RULE-EXCEPTION R25: unprototyped; this caller passes four arguments (a0-a3), the definition takes one (four parameters add -g3 arg stores) */
 void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags) {
     SpellQueue* queue;
@@ -237,13 +143,13 @@ void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags) {
             queue++;
         }
         queue->shots_left = def->shots - 1;
-        if (flags & 0x10) {
+        if (flags & SPELLSLOT_BOOSTED) {
             queue->shots_left *= 2;
         }
         queue->timer = def->shot_gap + 1;
         queue->shot = 0;
         queue->spell = spell;
-        queue->unkC = flags;
+        queue->flags = flags;
         queue->def = def;
         queue->caster = caster;
     }
@@ -268,7 +174,7 @@ void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags) {
         case 0:
             gSpellOffset.x = gSpellSpawnOffsets[(def->spawn_pattern + shot) & 7].x * radius.v[def->spawn_radius];
             gSpellOffset.y = gSpellSpawnOffsets[(def->spawn_pattern + shot) & 7].z * radius.v[def->spawn_radius];
-            rotateCoordinatesByAngle(caster->transform.yrot, &gSpellOffset);
+            rotateCoordinatesByAngle(caster->transform.yrot, (Coordinates2D*)&gSpellOffset);
             slot->vx = gSpellOffset.x;
             slot->vz = gSpellOffset.y;
             if (def->gravity & 2) {
@@ -276,7 +182,7 @@ void SpawnSpell(MonsterBattleData* caster, u32 spell, s32 shot, u16 flags) {
             } else {
                 slot->vy = gSpellSpawnOffsets[(def->spawn_pattern + shot) & 7].y * radius.v[def->spawn_radius];
             }
-            if (flags & 0x10) {
+            if (flags & SPELLSLOT_BOOSTED) {
                 slot->lifetime += slot->lifetime >> 1;
             }
             break;
@@ -333,7 +239,7 @@ void SpellOrigin_FrontMiddle(SpellSlot* spell, MonsterBattleData* monster) {
 
     gSpellOffset.x = 0.0f;
     gSpellOffset.y = (monster->transform.base.monster->radius * monster->transform.scale) + spell->def->radius;
-    rotateCoordinatesByAngle(monster->transform.yrot, &gSpellOffset);
+    rotateCoordinatesByAngle(monster->transform.yrot, (Coordinates2D*)&gSpellOffset);
     spell->x = monster->transform.pos.x + gSpellOffset.x;
     spell->z = monster->transform.pos.z + gSpellOffset.y;
     if (monster->transform.base.monster->monsterType == FLYING) {
@@ -346,7 +252,7 @@ void SpellOrigin_FrontAbove(SpellSlot* spell, MonsterBattleData* monster) {
 
     gSpellOffset.x = 0.0f;
     gSpellOffset.y = (monster->transform.base.monster->radius * monster->transform.scale) + spell->def->radius;
-    rotateCoordinatesByAngle(monster->transform.yrot, &gSpellOffset);
+    rotateCoordinatesByAngle(monster->transform.yrot, (Coordinates2D*)&gSpellOffset);
     spell->x = monster->transform.pos.x + gSpellOffset.x;
     spell->z = monster->transform.pos.z + gSpellOffset.y;
     if (monster->transform.base.monster->monsterType == FLYING) {
@@ -359,7 +265,7 @@ void SpellOrigin_BehindAbove(SpellSlot* spell, MonsterBattleData* monster) {
 
     gSpellOffset.x = 0.0f;
     gSpellOffset.y = (-monster->transform.base.monster->radius * monster->transform.scale) + spell->def->radius;
-    rotateCoordinatesByAngle(monster->transform.yrot, &gSpellOffset);
+    rotateCoordinatesByAngle(monster->transform.yrot, (Coordinates2D*)&gSpellOffset);
     spell->x = monster->transform.pos.x + gSpellOffset.x;
     spell->z = monster->transform.pos.z + gSpellOffset.y;
     if (monster->transform.base.monster->monsterType == FLYING) {
@@ -389,7 +295,7 @@ void SpellOrigin_RandomAbove(SpellSlot* spell, MonsterBattleData* monster) {
 
     gSpellOffset.x = 0.0f;
     gSpellOffset.y = (f32) getRandomNumber(20) + 20.0;
-    rotateCoordinatesByAngle((f32) getRandomNumber(16) * M_PI / 8 - M_PI, &gSpellOffset);
+    rotateCoordinatesByAngle((f32) getRandomNumber(16) * M_PI / 8 - M_PI, (Coordinates2D*)&gSpellOffset);
     spell->x = monster->transform.pos.x + gSpellOffset.x;
     spell->z = monster->transform.pos.z + gSpellOffset.y;
     if (monster->transform.base.monster->monsterType == FLYING) {
@@ -417,7 +323,7 @@ void SpellOrigin_Ahead(SpellSlot *spell, MonsterBattleData *monster)
   }
   gSpellOffset.y = dist;
   gSpellOffset.x = dist * 1.5;
-  rotateCoordinatesByAngle(monster->transform.yrot, &gSpellOffset);
+  rotateCoordinatesByAngle(monster->transform.yrot, (Coordinates2D*)&gSpellOffset);
   spell->x = monster->transform.pos.x + gSpellOffset.x;
   spell->z = monster->transform.pos.z + gSpellOffset.y;
   if (monster->transform.base.monster->monsterType == FLYING)
@@ -430,7 +336,7 @@ void SpellOrigin_Ahead(SpellSlot *spell, MonsterBattleData *monster)
 void SpellOrigin_HighAhead(SpellSlot* spell, MonsterBattleData* monster) {
     gSpellOffset.x = 0.0f;
     gSpellOffset.y = 380.0f;
-    rotateCoordinatesByAngle(monster->transform.yrot, &gSpellOffset);
+    rotateCoordinatesByAngle(monster->transform.yrot, (Coordinates2D*)&gSpellOffset);
     spell->x = monster->transform.pos.x + (gSpellOffset.x * monster->transform.scale);
     spell->y = monster->transform.pos.y + (380.0f * monster->transform.scale);
     spell->z = monster->transform.pos.z + (gSpellOffset.y * monster->transform.scale);
@@ -456,7 +362,7 @@ void UpdateSpells(void) {
         if (!context->timer) {
             context->shots_left--;
             context->shot++;
-            SpawnSpell(context->caster, context->spell, context->shot, context->unkC);
+            SpawnSpell(context->caster, context->spell, context->shot, context->flags);
             context->timer = (u16)(context->def->shot_gap + 1);
         }
     }
@@ -476,7 +382,7 @@ void UpdateSpells(void) {
                 actor_hit = gSpellCollisionHandlers[spell_obj->def->auto_hit](spell_obj, i);
                 if (actor_hit != NULL) {
                     SetSpellHitMask(i, actor_hit);
-                    if (!(actor_hit->stats->statusFlags & 0x100) || (spell_obj->def->target_type == 2)) {
+                    if (!(actor_hit->stats->statusFlags & STATUS_SPELL_BARRIER) || (spell_obj->def->target_type == SPELL_TARGET_SELF)) {
                         if (RollSpellAccuracy(spell_obj, actor_hit) != 0) {
                             caster = spell_obj->caster;
                             if (actor_hit == caster) {
@@ -501,20 +407,20 @@ void UpdateSpells(void) {
                                 }
                             }
 
-                            if ((spell_obj->def->spell_type == 5) && (effects_attempted != 0) && (effects_applied == 0)) {
+                            if ((spell_obj->def->spell_type == SPELL_EFFECT_STATUS_ONLY) && (effects_attempted != 0) && (effects_applied == 0)) {
                                 Setup_MISS_Icon(actor_hit);
                             }
                         }
                     }
                     StartSpellHitVisual(spell_obj, actor_hit);
-                    if (!(spell_obj->def->on_hit & 4)) {
+                    if (!(spell_obj->def->on_hit & SPELL_PIERCES)) {
                         spell_obj->lifetime = 0;
                         if ((spell_obj->fx != NULL) && (spell_obj->fx->flags & 1)) {
                             spell_obj->fx->timer = 7;
                             spell_obj->fx->flags &= ~1;
                         }
                     } else {
-                        spell_obj->flags |= 2;
+                        spell_obj->flags |= SPELLSLOT_HIT;
                     }
                 }
             }
@@ -588,9 +494,9 @@ void SpellMovement0(SpellSlot* spell) {
     steer = gSpellHomingStrength;
     speed = gSpellSpeeds;
     target = spell->target;
-    if (!(spell->flags & 1)) {
+    if (!(spell->flags & SPELLSLOT_LANDED)) {
         if (target != NULL) {
-            if ((spell->flags & 2) || (target->transform.modelID == -1)) {
+            if ((spell->flags & SPELLSLOT_HIT) || (target->transform.modelID == -1)) {
                 dz = 0.0f;
                 dy = 0.0f;
                 dx = 0.0f;
@@ -640,7 +546,7 @@ void SpellMovement0(SpellSlot* spell) {
             switch (spell->def->groundMode) {
                 case 1:
                     if (spell->y < gGroundSample.y) {
-                        spell->flags |= 1;
+                        spell->flags |= SPELLSLOT_LANDED;
                         spell->lifetime = 8;
                         spell->vz = 0.0f;
                         spell->vy = 0.0f;
@@ -666,7 +572,7 @@ void SpellMovement1(SpellSlot* spell) {
     MonsterBattleData* proj_target;
     SpellFx* fx;
 
-    if (!(spell->flags & 1)) {
+    if (!(spell->flags & SPELLSLOT_LANDED)) {
         if (spell->def->gravity & 1) {
             spell->vy = spell->vy - 0.3;
         }
@@ -680,7 +586,7 @@ void SpellMovement1(SpellSlot* spell) {
                 fx = spell->fx;
 
                 spell->y = gGroundSample.y;
-                spell->flags |= 1;
+                spell->flags |= SPELLSLOT_LANDED;
                 spell->lifetime = 8;
 
                 spell->vz = 0.0f;
@@ -697,7 +603,7 @@ void SpellMovement1(SpellSlot* spell) {
                 StartSpellLandVisual(spell, spell->target);
             }
         }
-        if (spell->def->target_type == 0) {
+        if (spell->def->target_type == SPELL_TARGET_FACING) {
             proj_target = spell->target;
             if (!(proj_target->transform.stateFlags & ACTOR_BUSY)) {
                 spell->x = proj_target->transform.pos.x;
@@ -811,27 +717,26 @@ s32 SpellCollision2(SpellSlot* spell) {
     s32 hit;
 
     hit = 0;
-    if ((spell->flags & 1) != 0) {
+    if ((spell->flags & SPELLSLOT_LANDED) != 0) {
         hit = SpellCollision0();
     }
     return hit;
 }
-extern u8 gCritFade[];
 void SpellEffect_Damage(SpellSlot* spell, MonsterBattleData* hit) {
     u16 power;
     u16 crit;
 
     crit = 0;
     power = CalcSpellPower(spell->def, spell->caster);
-    if (spell->caster->stats->statusFlags & 1) {
+    if (spell->caster->stats->statusFlags & STATUS_SHRUNK) {
         power >>= 1;
     }
     if (hit->transform.actorFlags & 1) {
-        if (gPlayerState.flags & 0x1000) {
-            if (getRandomNumber((gPlayerState.flags & 0x10000) ? 4 : 0x20) == 0) {
+        if (gPlayerState.flags & PLAYER_AT_50(ELEMENT_FIRE)) {
+            if (getRandomNumber((gPlayerState.flags & PLAYER_ALL_AT_50) ? 4 : 0x20) == 0) {
                 power += (power + 1) >> 1;
                 StartScreenFade(4, 0, gCritFade);
-                crit = 0x4000;
+                crit = HIT_CRITICAL;
             }
         }
         if (DamageEnemy(GetEnemyIndex(hit), power & 0xFFFF, spell->def->path[0], (u16) (spell->def->on_hit | crit), spell->caster) != 0) {
@@ -841,7 +746,7 @@ void SpellEffect_Damage(SpellSlot* spell, MonsterBattleData* hit) {
         if (getRandomNumber(0x20) == 0) {
             power += (power + 1) >> 1;
             StartScreenFade(4, 0, gCritFade);
-            crit = 0x4000;
+            crit = HIT_CRITICAL;
         }
         DamageBrian(power & 0xFFFF, (u16) (spell->def->on_hit | crit), spell->caster);
     }
@@ -905,54 +810,54 @@ void SpellEffect_Escape(SpellSlot* spell, MonsterBattleData* hit) {
         gEnemyCount--;
         return;
     }
-    if (!(gBattleState & 0x100)) {
-        gBattleState |= 0x10;
+    if (!(gBattleState & BATTLE_BOSS)) {
+        gBattleState |= BATTLE_ESCAPED;
         gPlayerState.stats->MPXP++;
         return;
     }
     Setup_MISS_Icon(hit);
 }
 void SpellEffect_Return(SpellSlot* spell, MonsterBattleData* hit) {
-    if ((gMapFlags == 4) && (gReturnDest != -1) && !(gSubmapHeader->flags & 4)) {
+    if ((gMapFlags == MAP_FIELD) && (gReturnDest != -1) && !(gSubmapHeader->flags & SUBMAP_NO_RETURN)) {
         gPendingWarp.map = gReturnDest;
         gPendingWarp.submap = gReturnRoom;
         gPendingWarp.entrance = gReturnEntrance;
-        gArrivalFlags = 0x108;
+        gArrivalFlags = WARP_ARRIVAL;
         gPlayerState.animCue = 0;
         gPlayerState.stats->MPXP++;
-        gGameState |= 0x80;
+        gGameState |= GAME_STATE_MAP_CHANGE;
         gModeCountdown = 0x1E;
     }
 }
 void SpellEffect_StatusOnly(SpellSlot* spell, MonsterBattleData* hit) {
     s32 enemy_index;
 
-    if (spell->def->target_type == 2) {
+    if (spell->def->target_type == SPELL_TARGET_SELF) {
         return;
     }
     if (hit->transform.actorFlags & 1) {
         enemy_index = GetEnemyIndex(hit);
-        DamageEnemy(enemy_index, 0, 0, 4, spell->caster);
+        DamageEnemy(enemy_index, 0, 0, HIT_NO_MELEE, spell->caster);
         gPlayerState.stats->MPXP++;
     } else {
-        DamageBrian(0, 4, spell->caster);
+        DamageBrian(0, HIT_NO_MELEE, spell->caster);
     }
 }
 void SpellEffect_Exit(SpellSlot* spell, MonsterBattleData* hit) {
-    if ((gMapFlags & 8) && (gExitDest != -1) && !(gSubmapHeader->flags & 8) && (gCurrentMap != 0x1E) && (gCurrentMap != 0x22)) {
+    if ((gMapFlags & MAP_DUNGEON) && (gExitDest != -1) && !(gSubmapHeader->flags & SUBMAP_NO_EXIT) && (gCurrentMap != 0x1E) && (gCurrentMap != 0x22)) {
         gPendingWarp.map = gExitDest;
         gPendingWarp.submap = gExitRoom;
         gPendingWarp.entrance = gExitEntrance;
-        gArrivalFlags = 0x108;
+        gArrivalFlags = WARP_ARRIVAL;
         gPlayerState.animCue = 0;
         gPlayerState.stats->MPXP++;
-        gGameState |= 0x80;
+        gGameState |= GAME_STATE_MAP_CHANGE;
         gModeCountdown = 0x1E;
     }
 }
 void SpellEffect_InstantKill(SpellSlot* spell, MonsterBattleData* hit) {
     if (hit->transform.actorFlags & 1) {
-        if (!(gBattleState & 0x100)) {
+        if (!(gBattleState & BATTLE_BOSS)) {
             ClearStatusEffects(hit);
             hit->transform.modelID = -1;
             hit->transform.stateFlags &= ~ACTOR_BUSY;
@@ -963,7 +868,7 @@ void SpellEffect_InstantKill(SpellSlot* spell, MonsterBattleData* hit) {
         Setup_MISS_Icon(hit);
         return;
     }
-    DamageBrian((hit->transform.base.monster->currHP * 4) & 0xFFFF, 4, spell->caster, hit);
+    DamageBrian((hit->transform.base.monster->currHP * 4) & 0xFFFF, HIT_NO_MELEE, spell->caster, hit);
 }
 void SpellEffect_Cure(SpellSlot* spell, MonsterBattleData* hit) {
     ActorStats* data;
@@ -1001,7 +906,7 @@ void SpellTarget_Facing(SpellSlot* spell) {
         spell->target = &gPlayerState.brian;
         return;
     }
-    if ((spell->def->on_hit & 8) && ((spell->vx != 0.0f) || (spell->vz != 0.0f))) {
+    if ((spell->def->on_hit & SPELL_AIM_ALONG) && ((spell->vx != 0.0f) || (spell->vz != 0.0f))) {
         facing = Atan2(spell->vx, spell->vz);
     } else {
         facing = caster->transform.yrot;
@@ -1014,7 +919,7 @@ void SpellTarget_Facing(SpellSlot* spell) {
         if (enemy->battleData.transform.modelID != -1) {
             gSpellOffset.x = enemy->battleData.transform.pos.x - caster->transform.pos.x;
             gSpellOffset.y = enemy->battleData.transform.pos.z - caster->transform.pos.z;
-            rotateCoordinatesByAngle(facing, &gSpellOffset);
+            rotateCoordinatesByAngle(facing, (Coordinates2D*)&gSpellOffset);
             angle = Atan2(gSpellOffset.x, gSpellOffset.y);
             if (angle > M_PI) {
                 angle -= 2 * M_PI;
@@ -1059,11 +964,11 @@ void SpellTarget_Self(SpellSlot* spell) {
 void ApplyStatusSlot0(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
-    if (!(gBattleState & 0x100)) {
+    if (!(gBattleState & BATTLE_BOSS)) {
         data = target->stats;
-        data->statusFlags |= 1;
+        data->statusFlags |= STATUS_SHRUNK;
         target->transform.scale = target->transform.base.monster->modelScale * 0.5;
-        UpdateStatusVisuals(target, 1, 4, -1);
+        UpdateStatusVisuals(target, STATUS_SHRUNK, 4, -1);
         return;
     }
     Setup_MISS_Icon(target);
@@ -1072,14 +977,14 @@ void ApplyStatusSlot1(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 2;
-    UpdateStatusVisuals(target, 2, 2, -1);
+    data->statusFlags |= STATUS_DRAIN;
+    UpdateStatusVisuals(target, STATUS_DRAIN, 2, -1);
 }
 void ApplyStatusSlot2(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 4;
+    data->statusFlags |= STATUS_ATTACK_UP;
     switch (level) {
     case 1:
         target->stats->atkScale = 0x18;
@@ -1088,22 +993,22 @@ void ApplyStatusSlot2(s32 level, MonsterBattleData* target) {
         target->stats->atkScale = 0x20;
         break;
     }
-    UpdateStatusVisuals(target, 4, 3, -1);
+    UpdateStatusVisuals(target, STATUS_ATTACK_UP, 3, -1);
 }
 void ApplyStatusSlot3(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
-    if (!(gBattleState & 0x100)) {
+    if (!(gBattleState & BATTLE_BOSS)) {
         data = target->stats;
-        data->statusFlags |= 8;
+        data->statusFlags |= STATUS_IMMOBILE;
         target->transform.stateFlags |= ACTOR_BUSY;
-        UpdateStatusVisuals(target, 8, (u16) (level - 1), -1);
+        UpdateStatusVisuals(target, STATUS_IMMOBILE, (u16) (level - 1), -1);
         return;
     }
     Setup_MISS_Icon(target);
 }
 void ApplyStatusSlot4(s32 level, MonsterBattleData* target) {
-    target->stats->statusFlags |= 0x10;
+    target->stats->statusFlags |= STATUS_MOVE_SCALE;
 
     switch (level) {
     case 1:
@@ -1114,33 +1019,33 @@ void ApplyStatusSlot4(s32 level, MonsterBattleData* target) {
         break;
     }
 
-    UpdateStatusVisuals(target, 0x10, (u16) (target->stats->moveScale > 1.0 ? 8 : 9), -1);
+    UpdateStatusVisuals(target, STATUS_MOVE_SCALE, (u16) (target->stats->moveScale > 1.0 ? 8 : 9), -1);
 }
 void ApplyStatusSlot5(s32 level, MonsterBattleData* target) {
-    target->stats->statusFlags |= 0x20;
+    target->stats->statusFlags |= STATUS_AGILITY_SCALE;
 
     switch (level) {
     case 1:
         target->stats->agi = target->transform.base.monster->agi * 2;
-        UpdateStatusVisuals(target, 0x20, 7, -1);
+        UpdateStatusVisuals(target, STATUS_AGILITY_SCALE, 7, -1);
         return;
     case 2:
         target->stats->agi = target->transform.base.monster->agi * 4;
-        UpdateStatusVisuals(target, 0x20, 7, -1);
+        UpdateStatusVisuals(target, STATUS_AGILITY_SCALE, 7, -1);
         return;
     case 3:
         target->stats->agi = target->transform.base.monster->agi >> 1;
-        UpdateStatusVisuals(target, 0x20, 0xC, -1);
+        UpdateStatusVisuals(target, STATUS_AGILITY_SCALE, 0xC, -1);
         return;
     }
 }
 void ApplyStatusSlot6(s32 level, MonsterBattleData* target) {
     ActorStats* data;  
 
-    if (!(gBattleState & 0x100)) {
+    if (!(gBattleState & BATTLE_BOSS)) {
         data = target->stats;
-        data->statusFlags |= 0x40;
-        UpdateStatusVisuals(target, 0x40, 0xB, -1);
+        data->statusFlags |= STATUS_SILENCE;
+        UpdateStatusVisuals(target, STATUS_SILENCE, 0xB, -1);
         return;
     }
     Setup_MISS_Icon(target);
@@ -1149,25 +1054,25 @@ void ApplyStatusSlot7(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 0x80;
-    UpdateStatusVisuals(target, 0x80, 0xA, -1);
+    data->statusFlags |= STATUS_REVEALED;
+    UpdateStatusVisuals(target, STATUS_REVEALED, 0xA, -1);
 }
 void ApplyStatusSlot8(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 0x100;
-    UpdateStatusVisuals(target, 0x100, 4, -1);
+    data->statusFlags |= STATUS_SPELL_BARRIER;
+    UpdateStatusVisuals(target, STATUS_SPELL_BARRIER, 4, -1);
 }
 void ApplyStatusSlot9(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 0x200;
-    UpdateStatusVisuals(target, 0x200, 3, -1);
+    data->statusFlags |= STATUS_MP_ABSORB;
+    UpdateStatusVisuals(target, STATUS_MP_ABSORB, 3, -1);
 }
 void ApplyStatusSlot10(s32 level, MonsterBattleData* target) {
-    target->stats->statusFlags |= 0x400;
+    target->stats->statusFlags |= STATUS_DEFENCE_SCALE;
     switch (level) {
     case 1:
         target->stats->def = target->transform.base.monster->def >> 1;
@@ -1183,16 +1088,14 @@ void ApplyStatusSlot10(s32 level, MonsterBattleData* target) {
         break;
     }
 
-    UpdateStatusVisuals(target, 0x400, (u16) (target->transform.base.monster->def < target->stats->def ? 5 : 6), -1);
+    UpdateStatusVisuals(target, STATUS_DEFENCE_SCALE, (u16) (target->transform.base.monster->def < target->stats->def ? 5 : 6), -1);
 }
 void ApplyStatusSlot11(s32 level, MonsterBattleData* target) {
     ActorStats* data;
 
     data = target->stats;
-    data->statusFlags |= 0x800;
+    data->statusFlags |= STATUS_SLOT11;
 }
-extern u16 gElementPowerOrder[];      /* per element: the opposite element (counts /16), then the other two (/8 each) */
-extern BrianData1 gBrianStats;  /* Brian's stats */
 u16 CalcSpellPower(SpellDef* def, MonsterBattleData* caster) {
     u16 level;
     u16* w;
@@ -1220,7 +1123,7 @@ u16 CalcSpellPower(SpellDef* def, MonsterBattleData* caster) {
     return (u32) power;
 }
 
-void* SpawnEffectObject(u16 colour, u16 duration, f32 x, f32 y, f32 z, f32 angle, EffectSpawnDef* model, OddVector* size, ActorTransform* actor) {
+void* SpawnEffectObject(u16 colour, u16 flags, f32 x, f32 y, f32 z, f32 angle, EffectSpawnDef* model, OddVector* size, ActorTransform* actor) {
     f32 scaled_y;
     f32 scaled_x;
 
@@ -1253,7 +1156,7 @@ void* SpawnEffectObject(u16 colour, u16 duration, f32 x, f32 y, f32 z, f32 angle
         scaled_y = size->y;
     }
 
-    return AllocProjectileSlot(model->anim, model->gfx, model->texture, colour & 0xFF, duration,
+    return AllocProjectileSlot(model->anim, model->gfx, model->texture, colour & 0xFF, flags,
                          x, y, z, angle, scaled_x, scaled_y, scaled_x);
 }
 void StartSpellVisual(SpellSlot* spell, MonsterBattleData* target) {
@@ -1271,9 +1174,9 @@ void StartSpellVisual(SpellSlot* spell, MonsterBattleData* target) {
 
     if (anim->model >= 0) {
         model = &gEffectModels[anim->model];
-        ((OddVector*)&gSpellOffset)->x = anim->size_x;
-        ((OddVector*)&gSpellOffset)->y = anim->size_y;
-        ((OddVector*)&gSpellOffset)->scale = def->radius;
+        gSpellOffset.x = anim->size_x;
+        gSpellOffset.y = anim->size_y;
+        gSpellOffset.scale = def->radius;
 
         if ((spell->vx != 0.0f) || (spell->vz != 0.0f)) {
             angle = Atan2(spell->vx, spell->vz);
@@ -1281,8 +1184,8 @@ void StartSpellVisual(SpellSlot* spell, MonsterBattleData* target) {
             angle = target->transform.yrot;
         }
 
-        spell->fx = SpawnEffectObject(anim->color, anim->duration, spell->x, spell->y, spell->z, angle,
-                                    model, (OddVector*)&gSpellOffset, &target->transform);
+        spell->fx = SpawnEffectObject(anim->color, anim->flags, spell->x, spell->y, spell->z, angle,
+                                    model, &gSpellOffset, &target->transform);
 
         spell->fx->vx = spell->vx;
         spell->fx->vy = spell->vy;
@@ -1321,16 +1224,16 @@ void SpawnSpellTrail(SpellSlot* spell, MonsterBattleData* target) {
     anim = spell->anim;
     def = spell->def;
     model = &gEffectModels[anim->trail_model];
-    ((OddVector*)&gSpellOffset)->x = anim->trail_size_x;
-    ((OddVector*)&gSpellOffset)->y = anim->trail_size_y;
-    ((OddVector*)&gSpellOffset)->scale = def->radius;
+    gSpellOffset.x = anim->trail_size_x;
+    gSpellOffset.y = anim->trail_size_y;
+    gSpellOffset.scale = def->radius;
     if (anim->trail_flags & 0x10) {
         angle = (u32)spell->lifetime * 3.141592653589793 / 10.0;
     } else {
         angle = target->transform.yrot;
     }
     fx = SpawnEffectObject(anim->trail_rate, anim->trail_flags, spell->x, spell->y, spell->z, angle, model,
-                       (OddVector*)&gSpellOffset, &spell->caster->transform);
+                       &gSpellOffset, &spell->caster->transform);
     fx->vx = spell->vx;
     fx->vy = spell->vy;
     fx->vz = spell->vz;
@@ -1353,9 +1256,9 @@ void StartSpellHitVisual(SpellSlot* spell, MonsterBattleData* hit) {
 
     if (anim->hit_model >= 0) {
         entry = &gEffectModels[anim->hit_model];
-        ((OddVector*) &gSpellOffset)->x = anim->hit_size_x;
-        ((OddVector*) &gSpellOffset)->y = anim->hit_size_y;
-        ((OddVector*) &gSpellOffset)->scale = def->radius;
+        gSpellOffset.x = anim->hit_size_x;
+        gSpellOffset.y = anim->hit_size_y;
+        gSpellOffset.scale = def->radius;
         flags = anim->hit_flags;
         if (anim->hit_flags & 0x40) {
             hit = spell->caster;
@@ -1372,7 +1275,7 @@ void StartSpellHitVisual(SpellSlot* spell, MonsterBattleData* hit) {
             y = hit->transform.pos.y;
         }
         spell->hitFx = SpawnEffectObject(anim->hit_color, anim->hit_flags, hit->transform.pos.x, y, hit->transform.pos.z, hit->transform.yrot,
-                                           entry, (OddVector*) &gSpellOffset, &hit->transform);
+                                           entry, &gSpellOffset, &hit->transform);
         spell->hitFx->vx = spell->vx;
         spell->hitFx->vy = spell->vy;
         spell->hitFx->vz = spell->vz;
@@ -1417,11 +1320,11 @@ void StartSpellLandVisual(SpellSlot* spell, MonsterBattleData* target) {
 
     if (anim->land_model >= 0) {
         entry = &gEffectModels[anim->land_model];
-        ((OddVector*) &gSpellOffset)->x = anim->land_size_x;
-        ((OddVector*) &gSpellOffset)->y = anim->land_size_y;
-        ((OddVector*) &gSpellOffset)->scale = def->radius;
-        fx = SpawnEffectObject(anim->land_color, anim->land_duration, spell->x, spell->y, spell->z,
-                           target->transform.yrot, entry, (OddVector*) &gSpellOffset,
+        gSpellOffset.x = anim->land_size_x;
+        gSpellOffset.y = anim->land_size_y;
+        gSpellOffset.scale = def->radius;
+        fx = SpawnEffectObject(anim->land_color, anim->land_flags, spell->x, spell->y, spell->z,
+                           target->transform.yrot, entry, &gSpellOffset,
                            &spell->caster->transform);
         fx->vx = spell->vx;
         fx->vy = spell->vy;
@@ -1462,17 +1365,17 @@ void CountDownStatuses(MonsterBattleData* actor) {
         if (status->statusFlags & bit) {
             if (--status->statusTimers[i] == 0) {
                 status->statusFlags ^= bit;
-                if (bit & 1) {
+                if (bit & STATUS_SHRUNK) {
                     actor->transform.scale = actor->transform.base.monster->modelScale;
-                } else if (bit & 4) {
+                } else if (bit & STATUS_ATTACK_UP) {
                     actor->stats->atkScale = 0x10;
-                } else if (bit & 0x10) {
+                } else if (bit & STATUS_MOVE_SCALE) {
                     actor->stats->moveScale = 1.0f;
-                } else if (bit & 0x20) {
+                } else if (bit & STATUS_AGILITY_SCALE) {
                     actor->stats->agi = actor->transform.base.monster->agi;
-                } else if (bit & 0x400) {
+                } else if (bit & STATUS_DEFENCE_SCALE) {
                     actor->stats->def = actor->transform.base.monster->def;
-                } else if (bit & 8) {
+                } else if (bit & STATUS_IMMOBILE) {
                     actor->transform.stateFlags &= ~ACTOR_BUSY;
                 }
             }
@@ -1504,14 +1407,13 @@ void ClearHitMaskBit(s32 slot) {
         gEnemies[i].battleData.statsBuf.hitMask &= mask;
     }
 }
-extern u32 gAccuracyResults[];
 s32 RollStaffHit(s32 enemy, MonsterBattleData* caster);
 s32 EnemyAgilityCheck(MonsterBattleData* attacker); /* the enemy-side agility check (Quest func_8000ABF4) */
 s32 RollSpellAccuracy(SpellSlot* spell, MonsterBattleData* hit) {
     s32 result;
     MonsterBattleData* caster;
 
-    if (spell->flags & 4) {
+    if (spell->flags & SPELLSLOT_SURE) {
         result = 2;
     } else {
         result = getRandomNumber(100) < spell->def->hit_rate;
@@ -1529,24 +1431,21 @@ s32 RollSpellAccuracy(SpellSlot* spell, MonsterBattleData* hit) {
     }
     return gAccuracyResults[result];
 }
-extern u8 gStatusChances[];  /* each status slot's chance, out of 32 for Brian (28 with 0x8000) or 64 for enemies */
 s32 RollStatus(SpellSlot* spell, MonsterBattleData* caster, s32 effect) {
     s32 result;
     SpellDef* def;
 
-    if (spell->flags & 4) {
+    if (spell->flags & SPELLSLOT_SURE) {
         result = 1;
-    } else if (def = spell->def, def->target_type == 2) {
+    } else if (def = spell->def, def->target_type == SPELL_TARGET_SELF) {
         result = 1;
     } else if (caster->transform.actorFlags & 1) {
         result = getRandomNumber(0x40) < gStatusChances[effect];
     } else {
-        result = getRandomNumber((gPlayerState.flags & 0x8000) ? 0x1C : 0x20) < gStatusChances[effect];
+        result = getRandomNumber((gPlayerState.flags & PLAYER_AT_50(ELEMENT_WIND)) ? 0x1C : 0x20) < gStatusChances[effect];
     }
     return result;
 }
-extern u32 gStatusDurationOther[];  /* each status slot's duration range on another target: rand(3) + 2 */
-extern u32 gStatusDurationSelf[];  /* on the caster itself: rand(5) + 3 */
 void RollStatusDuration(SpellSlot* spell, MonsterBattleData* hit, s32 effect) {
     if (hit != spell->caster) {
         hit->stats->statusTimers[effect] = getRandomNumber(gStatusDurationOther[effect]) + 2;

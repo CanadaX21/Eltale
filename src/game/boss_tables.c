@@ -1,16 +1,11 @@
 #include "common.h"
+#include "game/boss_tables.h"
+#include "segment_symbols.h"
+#include "boss_files.h"
 
 /* Part of the cutscene bank (ROM 0xD74AC0, resident at 0x8039ADB0 from boot): the boss files' ROM bounds, by boss
  * number. LoadMapBoss DMAs gBossFiles[bossNumber] to the boss buffer when its room loads; each pair is that boss
  * segment's own bounds, so a boss file is found wherever the ROM's layout puts it. */
-extern u8 boss_solvaring_ROM_START[], boss_solvaring_ROM_END[];
-extern u8 boss_zelse_ROM_START[], boss_zelse_ROM_END[];
-extern u8 boss_nepty_ROM_START[], boss_nepty_ROM_END[];
-extern u8 boss_shilf_ROM_START[], boss_shilf_ROM_END[];
-extern u8 boss_fargo_ROM_START[], boss_fargo_ROM_END[];
-extern u8 boss_guilty_ROM_START[], boss_guilty_ROM_END[];
-extern u8 boss_beigis_ROM_START[], boss_beigis_ROM_END[];
-extern u8 boss_mammon_ROM_START[], boss_mammon_ROM_END[];
 
 bossFile gBossFiles[8] = {
     { (s32)boss_solvaring_ROM_START, (s32)boss_solvaring_ROM_END },/* 0 */
@@ -23,14 +18,6 @@ bossFile gBossFiles[8] = {
     { (s32)boss_mammon_ROM_START, (s32)boss_mammon_ROM_END },   /* 7 */
 };
 
-extern AnimEntry gSolvaringAnims[];   /* Solvaring's animation table (boss_solvaring) */
-extern AnimEntry gZelseAnims[];   /* Zelse's animation table (boss_zelse) */
-extern AnimEntry gNeptyAnims[];   /* Nepty's animation table (boss_nepty) */
-extern AnimEntry gShilfAnims[];   /* Shilf's animation table (boss_shilf) */
-extern AnimEntry gFargoAnims[];   /* Fargo's animation table (boss_fargo) */
-extern AnimEntry gGuiltyAnims[];   /* Guilty's animation table (boss_guilty) */
-extern AnimEntry gBeigisAnims[];   /* Beigis's animation table (boss_beigis) */
-extern AnimEntry gMammonAnims[];   /* Mammon's animation table (boss_mammon) */
 
 /* Each boss placement: its room (map, submap), its boss file (gBossFiles[]), its model's animation table (the
  * same as its gBossAnimTables entry; no code reads this copy) and where it stands. */

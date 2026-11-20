@@ -8,10 +8,12 @@ outputs (the ROM, the linker map and the compiled objects). It checks that:
 
   1. build/eltail.jp.z64 is byte-identical to baserom.jp.z64, with the SHA-1 in eltail.jp.sha1;
   2. no C file of the main code (src/game, src/sched, src/libultra) and no project header in include/ has active
-     assembly: no GLOBAL_ASM / INCLUDE_ASM / INCLUDE_RODATA pragma or macro, no asm statement (comments are ignored;
-     the SDK headers in include/2.0I are not project code and are not scanned). The overlays' C files
-     (src/title_overlay, src/intro_overlay) may include a function still in assembly with a GLOBAL_ASM pragma: they
-     are game code outside the main code region, counted on their own at the end;
+     assembly: no GLOBAL_ASM pragma, no INCLUDE_ASM / INCLUDE_RODATA macro, no asm statement, and a GLOBAL_ASM block
+     holds only data included from your ROM (.section .data or .rodata, glabel, .incbin of baserom.jp.z64, alignment:
+     no instruction), counted in the report. Comments are ignored; the SDK headers in include/2.0I are not project
+     code and are not scanned. The overlays' C files (src/title_overlay, src/intro_overlay, src/pak_menu_module) may
+     also include a function still in assembly with a GLOBAL_ASM pragma: they are game code outside the main code
+     region, counted on their own at the end;
   3. the splat config (eltail.jp.yaml) splits the code region into C translation units and assembly as stated:
      the C units in one run, assembly only for the boot entry before them and the SDK library code after them;
   4. the linker map puts code from objects compiled from src/*.c, and nothing else, in the C units' address range;
@@ -27,8 +29,9 @@ import glob, hashlib, os, re, struct, sys
 EXPECTED = dict(
     c_units=40, functions=530, function_bytes=224_616, c_unit_bytes=224_864,
     entry_bytes=80, sdk_asm_segments=121, sdk_asm_bytes=83_664,
-    # the overlays (game code outside the main code region): (functions compiled from C, functions in all)
-    overlays={'title_overlay': (7, 8), 'intro_overlay': (0, 32)},
+    # the game code outside the main code region, by folder: (functions compiled from C, functions in all); a folder
+    # whose objects hold no code (Brian's model's tables) is data and is not counted
+    overlays={'title_overlay': (7, 8), 'intro_overlay': (0, 32), 'pak_menu_module': (14, 16)},
 )
 MAIN_DIRS = ('src/game/', 'src/sched/', 'src/libultra/')
 ROM_BASE, VRAM_BASE = 0x1000, 0x80000400          # the main code segment: ROM offset 0x1000 runs at 0x80000400
@@ -95,27 +98,47 @@ def main():
            % (got, 'identical to' if built == base else 'DIFFERENT from', want))
 
     # 2. no active assembly in the project's C ------------------------------------------------------------------
-    pat = re.compile(r'#\s*pragma\s+GLOBAL_ASM|\bINCLUDE_ASM\b|\bINCLUDE_RODATA\b|\b__asm__\b|\basm\s*(volatile\s*)?\(')
+    pat = re.compile(r'\bGLOBAL_ASM\b|\bINCLUDE_ASM\b|\bINCLUDE_RODATA\b|\b__asm__\b|\basm\s*(volatile\s*)?\(')
+    # an asm-processor block (GLOBAL_ASM( on its own line, its body, a closing parenthesis at the line's start) may
+    # include data from your ROM and nothing else: any other line in one is a finding
+    block = re.compile(r'(?ms)^GLOBAL_ASM\(\s*\n(.*?)^\)')
+    data_line = re.compile(r'\.section\s+\.(?:data|rodata)$|glabel\s+[A-Za-z_]\w*$|\.b?align\s+\d+$|'
+                           r'\.incbin\s+"baserom\.jp\.z64"\s*,\s*(0x[0-9A-Fa-f]+|\d+)\s*,\s*(0x[0-9A-Fa-f]+|\d+)$')
     headers = sorted(h for h in glob.glob('include/**/*.h', recursive=True) if not h.replace(os.sep, '/').startswith('include/2.0I/'))
     cfiles = sorted(f.replace(os.sep, '/') for f in glob.glob('src/**/*.c', recursive=True))
     main_files = [f for f in cfiles if f.startswith(MAIN_DIRS)]
     ovl_files = [f for f in cfiles if f not in main_files]
-    hits, ovl_asm = [], {}
+    hits, ovl_asm, spans = [], {}, {'main': [0, 0], 'overlays': [0, 0]}
+
+    def without_data_blocks(f, code, where):
+        for m in block.finditer(code):
+            spans[where][0] += 1
+            for line in m.group(1).splitlines():
+                s = line.strip()
+                d = data_line.match(s) if s else None
+                if s and not d:
+                    hits.append('%s: a GLOBAL_ASM block holds %r, not data from the ROM' % (f, s[:60]))
+                elif d and d.group(2):
+                    spans[where][1] += int(d.group(2), 0)
+        return block.sub('', code)
+
     for f in main_files + headers:
-        code = strip_c_comments(open(f, encoding='utf-8', errors='replace').read())
+        code = without_data_blocks(f, strip_c_comments(open(f, encoding='utf-8', errors='replace').read()), 'main')
         hits += ['%s: %s' % (f, m.group(0)) for m in pat.finditer(code)]
     for f in ovl_files:
         code = strip_c_comments(open(f, encoding='utf-8', errors='replace').read())
         names = re.findall(r'#\s*pragma\s+GLOBAL_ASM\(\s*"[^"]*/([A-Za-z_]\w*)\.s"\s*\)', code)
         ovl_asm[f] = names
-        # an overlay's file may include its functions still in assembly (#pragma GLOBAL_ASM("...")); any other
-        # assembly in it is a finding
-        rest = re.sub(r'#\s*pragma\s+GLOBAL_ASM\(\s*"[^"]*"\s*\)', '', code)
+        # an overlay's file may include its functions still in assembly (#pragma GLOBAL_ASM("...")) and data from
+        # the ROM; any other assembly in it is a finding
+        rest = without_data_blocks(f, re.sub(r'#\s*pragma\s+GLOBAL_ASM\(\s*"[^"]*"\s*\)', '', code), 'overlays')
         hits += ['%s: %s' % (f, m.group(0)) for m in pat.finditer(rest)]
-    report(not hits, 'source: %d C files of the main code and %d project headers, %d with active assembly%s; the '
-           'overlays\' %d C files include %d functions still in assembly (GLOBAL_ASM)'
+    report(not hits, 'source: %d C files of the main code and %d project headers, %d with active assembly%s; their %d '
+           'GLOBAL_ASM blocks include %s bytes of data from your ROM (.incbin, no instruction); the overlays\' %d C files '
+           'include %d functions still in assembly (GLOBAL_ASM) and %d blocks of data from your ROM (%s bytes)'
            % (len(main_files), len(headers), len(hits), (': ' + '; '.join(hits[:5])) if hits else '',
-              len(ovl_files), sum(len(v) for v in ovl_asm.values())))
+              spans['main'][0], '{:,}'.format(spans['main'][1]), len(ovl_files), sum(len(v) for v in ovl_asm.values()),
+              spans['overlays'][0], '{:,}'.format(spans['overlays'][1])))
 
     # 3. the splat config's code region ------------------------------------------------------------------------------
     subs = []
@@ -188,6 +211,8 @@ def main():
             continue
         folder = rel.split('/')[1]
         tsize, funcs = read_elf_functions(o)
+        if not tsize and not funcs:
+            continue                                             # a data unit (Brian's model's tables): no code
         asm = set(ovl_asm.get(rel, []))
         c_f = [(n, s) for n, s in funcs if n not in asm]
         a_f = [(n, s) for n, s in funcs if n in asm]
